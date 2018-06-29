@@ -1,0 +1,74 @@
+\documentclass{kththesis}
+
+\usepackage{blindtext} % This is just to get some nonsense text in this template, can be safely removed
+
+\usepackage{csquotes} % Recommended by biblatex
+\usepackage{biblatex}
+\addbibresource{references.bib} % The file containing our references, in BibTeX format
+
+
+\title{Learning robot-human handovers of novel objects through unsupervised learning}
+\alttitle{Inlärning av robot till människa överlämningar genom unsupervised learning}
+\author{Simon Simonsson}
+\email{simonsim@kth.se}
+\supervisor{Christian Smith}
+\examiner{John Folkesson}
+\programme{Master in Computer Science}
+\school{School of Electrical Engineering and Computer Science}
+\date{\today}
+
+
+\begin{document}
+
+% Frontmatter includes the titlepage, abstracts and table-of-contents
+\frontmatter
+
+\titlepage
+
+\begin{abstract}
+	english abstract
+\end{abstract}
+
+
+\begin{otherlanguage}{swedish}
+  \begin{abstract}
+	  svensk sammanfattning
+  \end{abstract}
+\end{otherlanguage}
+
+
+\tableofcontents
+
+
+% Mainmatter is where the actual contents of the thesis goes
+\mainmatter
+
+
+\chapter{Introduction}
+\input{tex/intro.tex}
+
+
+\chapter{Related Work}
+\input{tex/related-work.tex}
+
+
+\chapter{Methodology}
+\input{tex/methods.tex}
+
+
+\chapter{Results}
+
+
+\chapter{Discussion}
+
+
+\chapter{Conclusion and future work}
+
+
+\printbibliography[heading=bibintoc] % Print the bibliography (and make it appear in the table of contents)
+
+\appendix
+
+\chapter{Unnecessary Appended Material}
+
+\end{document}
