@@ -31,11 +31,33 @@ void ObjectTracker::run ()
 	interface->stop ();
 }
 
-void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &scene)
+void ObjectTracker::visualize (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &scene, std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> rototranslations)
 {
 	if (!viewer.wasStopped ())
-		viewer.addPointCloud (scene, "scene_cloud"); // visualize the input data
+	{
+		viewer.removeAllPointClouds ();
+		viewer.addPointCloud (scene, "scene_cloud");
+	}
 
+	// visualize the found object
+	for (size_t i = 0; i < rototranslations.size (); i++)
+	{
+		pcl::PointCloud<pcl::PointXYZRGBA>::Ptr rotated_model (new pcl::PointCloud<pcl::PointXYZRGBA> ());
+		pcl::transformPointCloud (*object_model, *rotated_model, rototranslations[i]);
+		std::stringstream ss_cloud;
+		ss_cloud << "instance" << i;
+
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBA> rotated_model_color_handler (
+				rotated_model,
+				255,
+				0,
+				0);
+		viewer.addPointCloud (rotated_model, rotated_model_color_handler, ss_cloud.str ());
+	}
+}
+
+void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &scene)
+{
 	// compute the normals of the scene
 	pcl::PointCloud<pcl::Normal>::Ptr scene_normals (new pcl::PointCloud<pcl::Normal>);
 	normal_estimation.setInputCloud (scene);
@@ -117,9 +139,7 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 	std::vector<pcl::Correspondences> clustered_correspondences;
 	clusterer.recognize (rototranslations, clustered_correspondences);
 
-
-	//  Output results
-	//
+	// output results
 	std::cout << "Model instances found: " << rototranslations.size () << std::endl;
 	for (size_t i = 0; i < rototranslations.size (); ++i)
 	{
@@ -138,22 +158,7 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 		printf ("        t = < %0.3f, %0.3f, %0.3f >\n", translation (0), translation (1), translation (2));
 	}
 
-	// visualize the found object
-	for (size_t i = 0; i < rototranslations.size (); i++)
-	{
-		pcl::PointCloud<pcl::PointXYZRGBA>::Ptr rotated_model (new pcl::PointCloud<pcl::PointXYZRGBA> ());
-		pcl::transformPointCloud (*object_model, *rotated_model, rototranslations[i]);
-		std::stringstream ss_cloud;
-		ss_cloud << "instance" << i;
-
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBA> rotated_model_color_handler (
-				rotated_model,
-				255,
-				0,
-				0);
-		viewer.addPointCloud (rotated_model, rotated_model_color_handler, ss_cloud.str ());
-	}
-
+	visualize (scene, rototranslations);
 	while (!viewer.wasStopped ())
 		viewer.spinOnce();
 }

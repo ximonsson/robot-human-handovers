@@ -15,6 +15,7 @@ class ObjectTracker
 		void run ();
 		void set_object (pcl::PointCloud<pcl::PointXYZRGBA>::Ptr);
 		void track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&);
+		void visualize (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&, std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>);
 
 	private:
 		pcl::visualization::PCLVisualizer viewer;
