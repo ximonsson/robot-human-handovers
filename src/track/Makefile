@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/ximon/school/thesis/src/rec
+CMAKE_SOURCE_DIR = /home/ximon/school/thesis/src/track
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/ximon/school/thesis/src/rec
+CMAKE_BINARY_DIR = /home/ximon/school/thesis/src/track
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/ximon/school/thesis/src/rec/CMakeFiles /home/ximon/school/thesis/src/rec/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ximon/school/thesis/src/track/CMakeFiles /home/ximon/school/thesis/src/track/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/ximon/school/thesis/src/rec/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ximon/school/thesis/src/track/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -150,32 +150,32 @@ main.cpp.s:
 	$(MAKE) -f CMakeFiles/track.dir/build.make CMakeFiles/track.dir/main.cpp.s
 .PHONY : main.cpp.s
 
-tracker.o: tracker.cpp.o
+object_tracker.o: object_tracker.cpp.o
 
-.PHONY : tracker.o
+.PHONY : object_tracker.o
 
 # target to build an object file
-tracker.cpp.o:
-	$(MAKE) -f CMakeFiles/track.dir/build.make CMakeFiles/track.dir/tracker.cpp.o
-.PHONY : tracker.cpp.o
+object_tracker.cpp.o:
+	$(MAKE) -f CMakeFiles/track.dir/build.make CMakeFiles/track.dir/object_tracker.cpp.o
+.PHONY : object_tracker.cpp.o
 
-tracker.i: tracker.cpp.i
+object_tracker.i: object_tracker.cpp.i
 
-.PHONY : tracker.i
+.PHONY : object_tracker.i
 
 # target to preprocess a source file
-tracker.cpp.i:
-	$(MAKE) -f CMakeFiles/track.dir/build.make CMakeFiles/track.dir/tracker.cpp.i
-.PHONY : tracker.cpp.i
+object_tracker.cpp.i:
+	$(MAKE) -f CMakeFiles/track.dir/build.make CMakeFiles/track.dir/object_tracker.cpp.i
+.PHONY : object_tracker.cpp.i
 
-tracker.s: tracker.cpp.s
+object_tracker.s: object_tracker.cpp.s
 
-.PHONY : tracker.s
+.PHONY : object_tracker.s
 
 # target to generate assembly for a file
-tracker.cpp.s:
-	$(MAKE) -f CMakeFiles/track.dir/build.make CMakeFiles/track.dir/tracker.cpp.s
-.PHONY : tracker.cpp.s
+object_tracker.cpp.s:
+	$(MAKE) -f CMakeFiles/track.dir/build.make CMakeFiles/track.dir/object_tracker.cpp.s
+.PHONY : object_tracker.cpp.s
 
 # Help Target
 help:
@@ -189,9 +189,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... tracker.o"
-	@echo "... tracker.i"
-	@echo "... tracker.s"
+	@echo "... object_tracker.o"
+	@echo "... object_tracker.i"
+	@echo "... object_tracker.s"
 .PHONY : help
 
 

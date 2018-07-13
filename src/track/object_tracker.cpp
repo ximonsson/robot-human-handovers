@@ -1,4 +1,4 @@
-#include <rec/tracker.h>
+#include <track/object_tracker.h>
 #include <pcl/io/openni_grabber.h>
 #include <pcl/correspondence.h>
 #include <pcl/recognition/cg/hough_3d.h>
