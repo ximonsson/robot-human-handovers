@@ -4,8 +4,8 @@ project (track)
 
 find_package (PCL 1.5 REQUIRED)
 
-include_directories (${PCL_INCLUDE_DIRS} ../../include)
-link_directories (${PCL_LIBRARY_DIRS} ../../lib)
+include_directories (${PCL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+link_directories (${PCL_LIBRARY_DIRS} ${PROJECT_LIB_DIR})
 add_definitions (${PCL_DEFINITIONS})
 
 add_executable (track main.cpp object_tracker.cpp)
