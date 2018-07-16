@@ -11,3 +11,4 @@ set (PROJECT_LIB_DIR ${CMAKE_SOURCE_DIR}/lib)
 include_directories (${PROJECT_INCLUDE_DIR})
 
 add_subdirectory (src/track)
+add_subdirectory (src/object_pcd)
