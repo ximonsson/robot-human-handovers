@@ -1,18 +1,25 @@
 #include <track/object_tracker.h>
 #include <pcl/io/openni_grabber.h>
-#include <pcl/correspondence.h>
-#include <pcl/recognition/cg/hough_3d.h>
 #include <pcl/recognition/cg/geometric_consistency.h>
 #include <pcl/common/transforms.h>
-#include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/kdtree/impl/kdtree_flann.hpp>
-#include <pcl/features/board.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
 ObjectTracker::ObjectTracker () : viewer ("PCL OpenNI Viewer")
 {
 	normal_estimation.setKSearch (10);
+
 	descriptor_estimation.setRadiusSearch (0.02f); // NOTE hardcoded
+
+	// cluster settings
+	clusterer.setHoughBinSize (0.01f);
+	clusterer.setHoughThreshold (5.0f);
+	clusterer.setUseInterpolation (true);
+	clusterer.setUseDistanceWeight (false);
+
+	// reference frame settings
+	ref_estimation.setFindHoles (true);
+	ref_estimation.setRadiusSearch (0.015f);
 }
 
 void ObjectTracker::run ()
@@ -66,7 +73,7 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 	// downsample cloud for scene and extract keypoints
 	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr scene_keypoints (new pcl::PointCloud<pcl::PointXYZRGBA>);
 	uniform_sampling.setInputCloud (scene);
-	uniform_sampling.setRadiusSearch (0.01f); // NOTE hardcoded
+	uniform_sampling.setRadiusSearch (0.03f); // NOTE hardcoded
 	uniform_sampling.filter (*scene_keypoints);
 
 	// compute descriptors
@@ -97,7 +104,7 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 				neighbor_indices,
 				neighbor_sqr_distances);
 		// add match only if the squared descriptor distance is less than 0.25
-		if (neighbors_found == 1 && neighbor_sqr_distances[0] < .25f)
+		if (neighbors_found == 1 && neighbor_sqr_distances[0] < 0.25f)
 		{
 			pcl::Correspondence c (neighbor_indices[0], static_cast<int> (i), neighbor_sqr_distances[0]);
 			object_scene_correspondences->push_back (c);
@@ -105,17 +112,7 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 	}
 
 	// compute (keypoint) reference frames (for Hough)
-	pcl::PointCloud<pcl::ReferenceFrame>::Ptr obj_ref_frame (new pcl::PointCloud<pcl::ReferenceFrame>);
 	pcl::PointCloud<pcl::ReferenceFrame>::Ptr scene_ref_frame (new pcl::PointCloud<pcl::ReferenceFrame>);
-
-	pcl::BOARDLocalReferenceFrameEstimation<pcl::PointXYZRGBA, pcl::Normal, pcl::ReferenceFrame> ref_estimation;
-	ref_estimation.setFindHoles (true);
-	ref_estimation.setRadiusSearch (.015f);
-
-	ref_estimation.setInputCloud (object_keypoints);
-	ref_estimation.setInputNormals (object_normals);
-	ref_estimation.setSearchSurface (object_model);
-	ref_estimation.compute (*obj_ref_frame);
 
 	ref_estimation.setInputCloud (scene_keypoints);
 	ref_estimation.setInputNormals (scene_normals);
@@ -123,12 +120,6 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 	ref_estimation.compute (*scene_ref_frame);
 
 	// cluster
-	pcl::Hough3DGrouping<pcl::PointXYZRGBA, pcl::PointXYZRGBA, pcl::ReferenceFrame, pcl::ReferenceFrame> clusterer;
-	clusterer.setHoughBinSize (0.01f);
-	clusterer.setHoughThreshold (5.0f);
-	clusterer.setUseInterpolation (true);
-	clusterer.setUseDistanceWeight (false);
-
 	clusterer.setInputCloud (object_keypoints);
 	clusterer.setInputRf (obj_ref_frame);
 	clusterer.setSceneCloud (scene_keypoints);
@@ -159,8 +150,6 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 	}
 
 	visualize (scene, rototranslations);
-	while (!viewer.wasStopped ())
-		viewer.spinOnce();
 }
 
 void ObjectTracker::set_object (pcl::PointCloud<pcl::PointXYZRGBA>::Ptr model)
@@ -168,18 +157,28 @@ void ObjectTracker::set_object (pcl::PointCloud<pcl::PointXYZRGBA>::Ptr model)
 	// set new object and compute it's normals, keypoints and descriptors
 	object_model = model;
 
+	// normals
 	object_normals = pcl::PointCloud<pcl::Normal>::Ptr (new pcl::PointCloud<pcl::Normal> ());
 	normal_estimation.setInputCloud (object_model);
 	normal_estimation.compute (*object_normals);
 
+	// keypoints
 	object_keypoints = pcl::PointCloud<pcl::PointXYZRGBA>::Ptr (new pcl::PointCloud<pcl::PointXYZRGBA> ());
 	uniform_sampling.setInputCloud (object_model);
 	uniform_sampling.setRadiusSearch (0.01f); // NOTE hardcoded
 	uniform_sampling.filter (*object_keypoints);
 
+	// descriptors
 	object_descriptors = pcl::PointCloud<pcl::SHOT352>::Ptr (new pcl::PointCloud<pcl::SHOT352> ());
 	descriptor_estimation.setInputCloud (object_keypoints);
 	descriptor_estimation.setInputNormals (object_normals);
 	descriptor_estimation.setSearchSurface (object_model);
 	descriptor_estimation.compute (*object_descriptors);
+
+	// reference frame estimation
+	obj_ref_frame = pcl::PointCloud<pcl::ReferenceFrame>::Ptr (new pcl::PointCloud<pcl::ReferenceFrame>);
+	ref_estimation.setInputCloud (object_keypoints);
+	ref_estimation.setInputNormals (object_normals);
+	ref_estimation.setSearchSurface (object_model);
+	ref_estimation.compute (*obj_ref_frame);
 }
