@@ -1,3 +1,8 @@
+/**
+ * TODO try and remove the hardcoded levels
+ */
+
+#include <pcl/filters/passthrough.h>
 #include <track/object_tracker.h>
 #include <pcl/io/openni_grabber.h>
 #include <pcl/recognition/cg/geometric_consistency.h>
@@ -42,45 +47,62 @@ void ObjectTracker::visualize (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPt
 {
 	if (!viewer.wasStopped ())
 	{
-		viewer.removeAllPointClouds ();
-		viewer.addPointCloud (scene, "scene_cloud");
+		viewer.removeAllPointClouds (); // clear the viewport
+		viewer.addPointCloud (scene, "scene_cloud"); // add the scene
+		// visualize the found objects
+		for (size_t i = 0; i < rototranslations.size (); i++)
+		{
+			pcl::PointCloud<pcl::PointXYZRGBA>::Ptr rotated_model (new pcl::PointCloud<pcl::PointXYZRGBA> ());
+			pcl::transformPointCloud (*object_model, *rotated_model, rototranslations[i]);
+			std::stringstream ss_cloud;
+			ss_cloud << "instance" << i;
+			pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBA> rotated_model_color_handler (
+					rotated_model,
+					255,
+					0,
+					0);
+			viewer.addPointCloud (rotated_model, rotated_model_color_handler, ss_cloud.str ());
+		}
+		viewer.spinOnce ();
 	}
+}
 
-	// visualize the found object
-	for (size_t i = 0; i < rototranslations.size (); i++)
-	{
-		pcl::PointCloud<pcl::PointXYZRGBA>::Ptr rotated_model (new pcl::PointCloud<pcl::PointXYZRGBA> ());
-		pcl::transformPointCloud (*object_model, *rotated_model, rototranslations[i]);
-		std::stringstream ss_cloud;
-		ss_cloud << "instance" << i;
+void passthrough (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_filtered)
+{
+	pcl::PassThrough<pcl::PointXYZRGBA> pass;
 
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBA> rotated_model_color_handler (
-				rotated_model,
-				255,
-				0,
-				0);
-		viewer.addPointCloud (rotated_model, rotated_model_color_handler, ss_cloud.str ());
-	}
+	pass.setInputCloud (cloud);
+	pass.setFilterFieldName ("z");
+	pass.setFilterLimits (0.0f, 1.0f);
+	pass.filter (*cloud_filtered);
+
+	pass.setInputCloud (cloud_filtered);
+	pass.setFilterFieldName ("x");
+	pass.setFilterLimits (-0.3f, 0.3f);
+	pass.filter (*cloud_filtered);
 }
 
 void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &scene)
 {
+	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr scene_filtered (new pcl::PointCloud<pcl::PointXYZRGBA>);
+	passthrough (scene, scene_filtered);
+
 	// compute the normals of the scene
 	pcl::PointCloud<pcl::Normal>::Ptr scene_normals (new pcl::PointCloud<pcl::Normal>);
-	normal_estimation.setInputCloud (scene);
+	normal_estimation.setInputCloud (scene_filtered);
 	normal_estimation.compute (*scene_normals);
 
 	// downsample cloud for scene and extract keypoints
 	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr scene_keypoints (new pcl::PointCloud<pcl::PointXYZRGBA>);
-	uniform_sampling.setInputCloud (scene);
-	uniform_sampling.setRadiusSearch (0.03f); // NOTE hardcoded
+	uniform_sampling.setInputCloud (scene_filtered);
+	uniform_sampling.setRadiusSearch (0.10f); // NOTE hardcoded
 	uniform_sampling.filter (*scene_keypoints);
 
 	// compute descriptors
 	pcl::PointCloud<pcl::SHOT352>::Ptr scene_descriptors (new pcl::PointCloud<pcl::SHOT352>);
 	descriptor_estimation.setInputCloud (scene_keypoints);
 	descriptor_estimation.setInputNormals (scene_normals);
-	descriptor_estimation.setSearchSurface (scene);
+	descriptor_estimation.setSearchSurface (scene_filtered);
 	descriptor_estimation.compute (*scene_descriptors);
 
 	// find object-scene correspondences with KdTree
@@ -111,12 +133,13 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 		}
 	}
 
+	std::cout << "correspondences found: " << object_scene_correspondences->size () << std::endl;
+
 	// compute (keypoint) reference frames (for Hough)
 	pcl::PointCloud<pcl::ReferenceFrame>::Ptr scene_ref_frame (new pcl::PointCloud<pcl::ReferenceFrame>);
-
 	ref_estimation.setInputCloud (scene_keypoints);
 	ref_estimation.setInputNormals (scene_normals);
-	ref_estimation.setSearchSurface (scene);
+	ref_estimation.setSearchSurface (scene_filtered);
 	ref_estimation.compute (*scene_ref_frame);
 
 	// cluster
@@ -149,7 +172,7 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 		printf ("        t = < %0.3f, %0.3f, %0.3f >\n", translation (0), translation (1), translation (2));
 	}
 
-	visualize (scene, rototranslations);
+	visualize (scene_filtered, rototranslations);
 }
 
 void ObjectTracker::set_object (pcl::PointCloud<pcl::PointXYZRGBA>::Ptr model)
