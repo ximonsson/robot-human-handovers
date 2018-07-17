@@ -9,6 +9,8 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/correspondence.h>
 
+const int TRACKING = 0x1;
+
 /**
  *
  */
@@ -21,6 +23,7 @@ class ObjectTracker
 		void track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&);
 		void visualize (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&, std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>);
 		pcl::visualization::PCLVisualizer viewer;
+		void keyboard_event (const pcl::visualization::KeyboardEvent&);
 
 	private:
 		// object features
@@ -35,4 +38,6 @@ class ObjectTracker
 		pcl::SHOTEstimationOMP<pcl::PointXYZRGBA, pcl::Normal, pcl::SHOT352> descriptor_estimation;
 		pcl::Hough3DGrouping<pcl::PointXYZRGBA, pcl::PointXYZRGBA, pcl::ReferenceFrame, pcl::ReferenceFrame> clusterer;
 		pcl::BOARDLocalReferenceFrameEstimation<pcl::PointXYZRGBA, pcl::Normal, pcl::ReferenceFrame> ref_estimation;
+
+		int flags;
 };

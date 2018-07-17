@@ -18,13 +18,36 @@ ObjectTracker::ObjectTracker () : viewer ("PCL OpenNI Viewer")
 
 	// cluster settings
 	clusterer.setHoughBinSize (0.01f);
-	clusterer.setHoughThreshold (5.0f);
+	clusterer.setHoughThreshold (8.0f); // org: 5.0f
 	clusterer.setUseInterpolation (true);
 	clusterer.setUseDistanceWeight (false);
 
 	// reference frame settings
 	ref_estimation.setFindHoles (true);
 	ref_estimation.setRadiusSearch (0.015f);
+
+	// register for keyboard events
+	boost::function<void (const pcl::visualization::KeyboardEvent&)> f = boost::bind (&ObjectTracker::keyboard_event, this, _1);
+	viewer.registerKeyboardCallback (f);
+
+	flags = 0;
+}
+
+void ObjectTracker::keyboard_event (const pcl::visualization::KeyboardEvent &ev)
+{
+	if (ev.keyDown())
+		return;
+
+	switch (ev.getKeyCode ())
+	{
+		case 't':
+			flags ^= TRACKING;
+			if (flags & TRACKING)
+				std::cout << "we are now tracking for the object!" << std::endl;
+			else
+				std::cout << "stopped tracking" << std::endl;
+			break;
+	}
 }
 
 void ObjectTracker::run ()
@@ -63,6 +86,24 @@ void ObjectTracker::visualize (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPt
 					0);
 			viewer.addPointCloud (rotated_model, rotated_model_color_handler, ss_cloud.str ());
 		}
+
+		// create screenshots
+		if (rototranslations.size () > 0)
+		{
+			std::cout << "taking a screenshot!" << std::endl;
+			static int i = 0;
+			std::stringstream ss;
+			ss << "screen_" << i << ".png";
+			viewer.saveScreenshot (ss.str ());
+
+			pcl::PCDWriter writer;
+			ss.str (std::string ());
+			ss << "screen_" << i << ".pcd";
+			writer.write<pcl::PointXYZRGBA> (ss.str (), *scene, false); //*
+
+			i++;
+		}
+
 		viewer.spinOnce ();
 	}
 }
@@ -84,8 +125,16 @@ void passthrough (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud, pcl
 
 void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &scene)
 {
-	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr scene_filtered (new pcl::PointCloud<pcl::PointXYZRGBA>);
+	// run scene image through a passthrough to narrow it down a little and make it less heavy for processing
+	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr scene_filtered (new pcl::PointCloud<pcl::PointXYZRGBA> ());
 	passthrough (scene, scene_filtered);
+
+	if (~flags & TRACKING) // we are not tracking skip
+	{
+		std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> rototranslations;
+		visualize (scene_filtered, rototranslations);
+		return;
+	}
 
 	// compute the normals of the scene
 	pcl::PointCloud<pcl::Normal>::Ptr scene_normals (new pcl::PointCloud<pcl::Normal>);
@@ -95,7 +144,7 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 	// downsample cloud for scene and extract keypoints
 	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr scene_keypoints (new pcl::PointCloud<pcl::PointXYZRGBA>);
 	uniform_sampling.setInputCloud (scene_filtered);
-	uniform_sampling.setRadiusSearch (0.10f); // NOTE hardcoded
+	uniform_sampling.setRadiusSearch (0.005f); // NOTE hardcoded
 	uniform_sampling.filter (*scene_keypoints);
 
 	// compute descriptors
@@ -188,7 +237,7 @@ void ObjectTracker::set_object (pcl::PointCloud<pcl::PointXYZRGBA>::Ptr model)
 	// keypoints
 	object_keypoints = pcl::PointCloud<pcl::PointXYZRGBA>::Ptr (new pcl::PointCloud<pcl::PointXYZRGBA> ());
 	uniform_sampling.setInputCloud (object_model);
-	uniform_sampling.setRadiusSearch (0.01f); // NOTE hardcoded
+	uniform_sampling.setRadiusSearch (0.005f); // NOTE hardcoded
 	uniform_sampling.filter (*object_keypoints);
 
 	// descriptors
