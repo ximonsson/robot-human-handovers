@@ -2,156 +2,101 @@
  * TODO try and remove the hardcoded levels
  */
 
-#include <pcl/filters/passthrough.h>
 #include <track/object_tracker.h>
-#include <pcl/io/openni_grabber.h>
 #include <pcl/recognition/cg/geometric_consistency.h>
-#include <pcl/common/transforms.h>
 #include <pcl/kdtree/impl/kdtree_flann.hpp>
-#include <pcl/visualization/pcl_visualizer.h>
 
-ObjectTracker::ObjectTracker () : viewer ("PCL OpenNI Viewer")
+ObjectTracker::ObjectTracker ()
 {
+	flags = 0;
+
+	object_sampling_radius = 0.005f;
+	scene_sampling_radius  = 0.005f;
+	hough_threshold        = 0.8f; // org: 5.0f
+	hough_bin_size         = 0.01f;
+	descriptor_radius      = 0.01f;
+	ref_radius             = 0.015f;
+
 	normal_estimation.setKSearch (10);
 
-	descriptor_estimation.setRadiusSearch (0.02f); // NOTE hardcoded
+	descriptor_estimation.setRadiusSearch (descriptor_radius);
 
 	// cluster settings
-	clusterer.setHoughBinSize (0.01f);
-	clusterer.setHoughThreshold (8.0f); // org: 5.0f
+	clusterer.setHoughBinSize (hough_bin_size);
+	clusterer.setHoughThreshold (hough_threshold);
 	clusterer.setUseInterpolation (true);
 	clusterer.setUseDistanceWeight (false);
 
 	// reference frame settings
 	ref_estimation.setFindHoles (true);
-	ref_estimation.setRadiusSearch (0.015f);
-
-	// register for keyboard events
-	boost::function<void (const pcl::visualization::KeyboardEvent&)> f = boost::bind (&ObjectTracker::keyboard_event, this, _1);
-	viewer.registerKeyboardCallback (f);
-
-	flags = 0;
+	ref_estimation.setRadiusSearch (ref_radius);
 }
 
-void ObjectTracker::keyboard_event (const pcl::visualization::KeyboardEvent &ev)
+void ObjectTracker::toggle_tracking ()
 {
-	if (ev.keyDown())
-		return;
-
-	switch (ev.getKeyCode ())
-	{
-		case 't':
-			flags ^= TRACKING;
-			if (flags & TRACKING)
-				std::cout << "we are now tracking for the object!" << std::endl;
-			else
-				std::cout << "stopped tracking" << std::endl;
-			break;
-	}
+	flags ^= TRACKING;
 }
 
-void ObjectTracker::run ()
+void ObjectTracker::set_hough_threshold (float v)
 {
-	// create an interface towards the Kinect using OpenNI and start grabbing
-	// RGBD frames that are sent to the ObjectTracker::track function as callback
-	pcl::Grabber* interface = new pcl::OpenNIGrabber ();
-	boost::function <void (const pcl::PointCloud <pcl::PointXYZRGBA>::ConstPtr&)> f =
-		boost::bind (&ObjectTracker::track, this, _1);
-	interface->registerCallback (f);
-	interface->start ();
-	while (!viewer.wasStopped ())
-	{
-		boost::this_thread::sleep (boost::posix_time::seconds (1));
-	}
-	interface->stop ();
+	hough_threshold = v;
+	clusterer.setHoughThreshold (hough_threshold);
 }
 
-void ObjectTracker::visualize (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &scene, std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> rototranslations)
+void ObjectTracker::set_hough_bin_size (float v)
 {
-	if (!viewer.wasStopped ())
-	{
-		viewer.removeAllPointClouds (); // clear the viewport
-		viewer.addPointCloud (scene, "scene_cloud"); // add the scene
-		// visualize the found objects
-		for (size_t i = 0; i < rototranslations.size (); i++)
-		{
-			pcl::PointCloud<pcl::PointXYZRGBA>::Ptr rotated_model (new pcl::PointCloud<pcl::PointXYZRGBA> ());
-			pcl::transformPointCloud (*object_model, *rotated_model, rototranslations[i]);
-			std::stringstream ss_cloud;
-			ss_cloud << "instance" << i;
-			pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBA> rotated_model_color_handler (
-					rotated_model,
-					255,
-					0,
-					0);
-			viewer.addPointCloud (rotated_model, rotated_model_color_handler, ss_cloud.str ());
-		}
-
-		// create screenshots
-		if (rototranslations.size () > 0)
-		{
-			std::cout << "taking a screenshot!" << std::endl;
-			static int i = 0;
-			std::stringstream ss;
-			ss << "screen_" << i << ".png";
-			viewer.saveScreenshot (ss.str ());
-
-			pcl::PCDWriter writer;
-			ss.str (std::string ());
-			ss << "screen_" << i << ".pcd";
-			writer.write<pcl::PointXYZRGBA> (ss.str (), *scene, false); //*
-
-			i++;
-		}
-
-		viewer.spinOnce ();
-	}
+	hough_bin_size = v;
+	clusterer.setHoughBinSize (hough_bin_size);
 }
 
-void passthrough (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_filtered)
+void ObjectTracker::set_descriptor_radius (float v)
 {
-	pcl::PassThrough<pcl::PointXYZRGBA> pass;
-
-	pass.setInputCloud (cloud);
-	pass.setFilterFieldName ("z");
-	pass.setFilterLimits (0.0f, 1.0f);
-	pass.filter (*cloud_filtered);
-
-	pass.setInputCloud (cloud_filtered);
-	pass.setFilterFieldName ("x");
-	pass.setFilterLimits (-0.3f, 0.3f);
-	pass.filter (*cloud_filtered);
+	descriptor_radius = v;
+	descriptor_estimation.setRadiusSearch (descriptor_radius);
 }
 
-void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &scene)
+void ObjectTracker::set_scene_sampling_radius (float v)
 {
-	// run scene image through a passthrough to narrow it down a little and make it less heavy for processing
-	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr scene_filtered (new pcl::PointCloud<pcl::PointXYZRGBA> ());
-	passthrough (scene, scene_filtered);
+	scene_sampling_radius = v;
+}
 
+void ObjectTracker::set_object_sampling_radius (float v)
+{
+	object_sampling_radius = v;
+}
+
+void ObjectTracker::set_reference_radius (float v)
+{
+	ref_radius = v;
+	ref_estimation.setRadiusSearch (ref_radius);
+}
+
+void ObjectTracker::track (
+		const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &scene,
+		std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> &rototranslations,
+		std::vector<pcl::Correspondences> &clustered_correspondences)
+{
 	if (~flags & TRACKING) // we are not tracking skip
 	{
-		std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> rototranslations;
-		visualize (scene_filtered, rototranslations);
 		return;
 	}
 
 	// compute the normals of the scene
-	pcl::PointCloud<pcl::Normal>::Ptr scene_normals (new pcl::PointCloud<pcl::Normal>);
-	normal_estimation.setInputCloud (scene_filtered);
+	pcl::PointCloud<pcl::Normal>::Ptr scene_normals (new pcl::PointCloud<pcl::Normal> ());
+	normal_estimation.setInputCloud (scene);
 	normal_estimation.compute (*scene_normals);
 
 	// downsample cloud for scene and extract keypoints
-	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr scene_keypoints (new pcl::PointCloud<pcl::PointXYZRGBA>);
-	uniform_sampling.setInputCloud (scene_filtered);
-	uniform_sampling.setRadiusSearch (0.005f); // NOTE hardcoded
+	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr scene_keypoints (new pcl::PointCloud<pcl::PointXYZRGBA> ());
+	uniform_sampling.setInputCloud (scene);
+	uniform_sampling.setRadiusSearch (scene_sampling_radius); // NOTE hardcoded
 	uniform_sampling.filter (*scene_keypoints);
 
 	// compute descriptors
-	pcl::PointCloud<pcl::SHOT352>::Ptr scene_descriptors (new pcl::PointCloud<pcl::SHOT352>);
+	pcl::PointCloud<pcl::SHOT352>::Ptr scene_descriptors (new pcl::PointCloud<pcl::SHOT352> ());
 	descriptor_estimation.setInputCloud (scene_keypoints);
 	descriptor_estimation.setInputNormals (scene_normals);
-	descriptor_estimation.setSearchSurface (scene_filtered);
+	descriptor_estimation.setSearchSurface (scene);
 	descriptor_estimation.compute (*scene_descriptors);
 
 	// find object-scene correspondences with KdTree
@@ -185,10 +130,10 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 	std::cout << "correspondences found: " << object_scene_correspondences->size () << std::endl;
 
 	// compute (keypoint) reference frames (for Hough)
-	pcl::PointCloud<pcl::ReferenceFrame>::Ptr scene_ref_frame (new pcl::PointCloud<pcl::ReferenceFrame>);
+	pcl::PointCloud<pcl::ReferenceFrame>::Ptr scene_ref_frame (new pcl::PointCloud<pcl::ReferenceFrame> ());
 	ref_estimation.setInputCloud (scene_keypoints);
 	ref_estimation.setInputNormals (scene_normals);
-	ref_estimation.setSearchSurface (scene_filtered);
+	ref_estimation.setSearchSurface (scene);
 	ref_estimation.compute (*scene_ref_frame);
 
 	// cluster
@@ -197,9 +142,6 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 	clusterer.setSceneCloud (scene_keypoints);
 	clusterer.setSceneRf (scene_ref_frame);
 	clusterer.setModelSceneCorrespondences (object_scene_correspondences);
-
-	std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> rototranslations;
-	std::vector<pcl::Correspondences> clustered_correspondences;
 	clusterer.recognize (rototranslations, clustered_correspondences);
 
 	// output results
@@ -220,8 +162,6 @@ void ObjectTracker::track (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &s
 		printf ("\n");
 		printf ("        t = < %0.3f, %0.3f, %0.3f >\n", translation (0), translation (1), translation (2));
 	}
-
-	visualize (scene_filtered, rototranslations);
 }
 
 void ObjectTracker::set_object (pcl::PointCloud<pcl::PointXYZRGBA>::Ptr model)
@@ -237,7 +177,7 @@ void ObjectTracker::set_object (pcl::PointCloud<pcl::PointXYZRGBA>::Ptr model)
 	// keypoints
 	object_keypoints = pcl::PointCloud<pcl::PointXYZRGBA>::Ptr (new pcl::PointCloud<pcl::PointXYZRGBA> ());
 	uniform_sampling.setInputCloud (object_model);
-	uniform_sampling.setRadiusSearch (0.005f); // NOTE hardcoded
+	uniform_sampling.setRadiusSearch (object_sampling_radius); // NOTE hardcoded
 	uniform_sampling.filter (*object_keypoints);
 
 	// descriptors
@@ -248,7 +188,7 @@ void ObjectTracker::set_object (pcl::PointCloud<pcl::PointXYZRGBA>::Ptr model)
 	descriptor_estimation.compute (*object_descriptors);
 
 	// reference frame estimation
-	obj_ref_frame = pcl::PointCloud<pcl::ReferenceFrame>::Ptr (new pcl::PointCloud<pcl::ReferenceFrame>);
+	obj_ref_frame = pcl::PointCloud<pcl::ReferenceFrame>::Ptr (new pcl::PointCloud<pcl::ReferenceFrame> ());
 	ref_estimation.setInputCloud (object_keypoints);
 	ref_estimation.setInputNormals (object_normals);
 	ref_estimation.setSearchSurface (object_model);
