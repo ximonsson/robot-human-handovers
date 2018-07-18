@@ -14,8 +14,22 @@
 #include <iostream>
 #include <pcl/point_types.h>
 #include <pcl/filters/model_outlier_removal.h>
+#include <pcl/console/parse.h>
 
 typedef pcl::PointXYZRGBA Point;
+
+float seg_dthresh (0.01);
+float c_tol (0.02);
+
+
+double colors[5][3] =
+{
+	{255, 0, 0},
+	{0, 255, 0},
+	{0, 0, 255},
+	{255, 255, 0},
+	{0, 255, 255},
+};
 
 class ObjectExtractor
 {
@@ -35,16 +49,15 @@ class ObjectExtractor
 			seg.setModelType (pcl::SACMODEL_PLANE);
 			seg.setMethodType (pcl::SAC_RANSAC);
 			seg.setMaxIterations (100);
-			seg.setDistanceThreshold (0.02);
-
-			//
+			seg.setDistanceThreshold (seg_dthresh);
 		}
 
-		void visualize_cluster (const pcl::PointCloud<Point>::ConstPtr &cluster, const std::string name)
+		void visualize_cluster (const pcl::PointCloud<Point>::ConstPtr &cluster, int j)
 		{
-			pcl::visualization::PointCloudColorHandlerCustom<Point> color_handler (cluster, 255, 0, 0);
-			viewer.addPointCloud (cluster, color_handler, name);
-			//viewer.addPointCloud (cluster, name);
+			std::stringstream ss;
+			ss << "cluster_" << j;
+			pcl::visualization::PointCloudColorHandlerCustom<Point> color_handler (cluster, colors[j][0], colors[j][1], colors[j][2]);
+			viewer.addPointCloud (cluster, color_handler, ss.str ());
 		}
 
 		void visualize (const pcl::PointCloud<Point>::ConstPtr &scene)
@@ -67,10 +80,10 @@ class ObjectExtractor
 					cloud_cluster->height = 1;
 					cloud_cluster->is_dense = true;
 
-					std::stringstream ss;
-					ss << "cluster_" << j;
-					visualize_cluster (cloud_cluster, ss.str ());
+					visualize_cluster (cloud_cluster, j);
+
 					j++;
+					if (j == 5) break;
 				}
 				viewer.spinOnce();
 			}
@@ -82,12 +95,19 @@ class ObjectExtractor
 			pass.setInputCloud (scene);
 			pass.setFilterFieldName ("z");
 			pass.setFilterLimits (0.0f, 1.0f);
+			pass.filter (*cloud_filtered);
+
+			pass.setInputCloud (cloud_filtered);
+			pass.setFilterFieldName ("x");
+			pass.setFilterLimits (-0.2f, 0.2f);
 			pass.filter (*filtered_scene);
 
 			pass.setInputCloud (filtered_scene);
-			pass.setFilterFieldName ("x");
+			pass.setFilterFieldName ("y");
 			pass.setFilterLimits (-0.3f, 0.3f);
 			pass.filter (*cloud_filtered);
+
+			*filtered_scene = *cloud_filtered;
 
 			//vg.setInputCloud (filtered_scene);
 			//vg.setLeafSize (0.01f, 0.01f, 0.01f);
@@ -122,7 +142,7 @@ class ObjectExtractor
 
 			cluster_indices.clear ();
 			pcl::EuclideanClusterExtraction<Point> ec;
-			ec.setClusterTolerance (0.02); // 2cm
+			ec.setClusterTolerance (c_tol); // 2cm
 			ec.setMinClusterSize (100);
 			ec.setMaxClusterSize (25000);
 			ec.setSearchMethod (tree);
@@ -158,6 +178,7 @@ class ObjectExtractor
 			{
 				case 's':
 					snapshot ();
+					break;
 			}
 		}
 
@@ -200,6 +221,9 @@ class ObjectExtractor
 
 int main (int argc, char** argv)
 {
+	pcl::console::parse_argument (argc, argv, "--seg_dthresh", seg_dthresh);
+	pcl::console::parse_argument (argc, argv, "--c_tol", c_tol);
+
 	ObjectExtractor oex;
 	oex.run();
 	return 0;
