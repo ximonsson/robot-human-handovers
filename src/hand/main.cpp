@@ -75,7 +75,8 @@ cv::Mat depth2mat (const Cloud::ConstPtr cloud)
 	return mat;
 }
 
-#define cloud2mat depth2mat
+#define cloud2mat rgb2mat
+//#define cloud2mat depth2mat
 
 void passthrough (const Cloud::ConstPtr &cloud, Cloud::Ptr cloud_filtered)
 {
