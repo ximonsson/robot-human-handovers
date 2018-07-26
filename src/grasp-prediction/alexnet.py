@@ -4,10 +4,165 @@ Implementation of the AlexNet model taken from:
     http://www.cs.toronto.edu/~guerzhoy/tf_alexnet/
 '''
 
+import tensorflow as tf
 import numpy as np
-from model import conv_layer, fc_layer, max_pool_layer, local_response_normalization, dropout_layer
 
-def load_weights(path, skip_layer):
+
+IN_WIDTH  = 227
+IN_HEIGHT = 227
+IN_DEPTH  = 3
+
+
+def __conv__(x, fh, fw, co, sy, sx, name, padding="VALID", group=1):
+    """
+    __conv__ creates a new 2D convolution layer with tensorflow.
+    note that there is no activation function linked to it.
+
+    :param x: kernel input to the layer
+    :param fh: filter height
+    :param fw: filter width
+    :param co: output size
+    :param sy: stride y-axis
+    :param sx: stride x-axis
+    :param name: name of the layer
+    :param padding: type of padding
+    :param group: AlexNet is divided in two groups, group defines which one this layer belongs to
+    :returns: tensor representing the layer
+    """
+    # get input size
+    ci = int(x.get_shape()[-1])
+    # convenience function to create a 2d convolutional layer
+    convolve = lambda i, k: tf.nn.conv2d(i, k, strides=[1, sx, sy, 1], padding=padding)
+
+    with tf.variable_scope(name) as scope:
+        # variables for weights and biases
+        weights = tf.get_variable("weights", shape=[fh, fw, ci/group, co])
+        biases = tf.get_variable("biases", shape=[co])
+
+        if group == 1:
+            conv = convolve(x, weights)
+        else:
+            # in case we have mutliple groups we split the inputs and weights
+            groups_in = tf.split(x, group, 3)
+            groups_weights = tf.split(weights, group, 3)
+            groups_out = [convolve(i, k) for i, k in zip(groups_in, groups_weights)]
+            # concatenate the output back into one output
+            conv = tf.concat(groups_out, 3)
+
+        # add bias and return
+        return tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape().as_list())
+
+
+def __fc__(x, ci, co, name, relu=True):
+    """
+    __fc__ returns a new fully connected layer.
+
+    :param x: input kernel to the layer
+    :param ci: number of input variables
+    :param co: number of output variables
+    :param name: name of the layer
+    :param relu: add relu activation to the layer if True.
+    :returns: tensor representing the layer
+    """
+    with tf.variable_scope(name) as scope:
+        weights = tf.get_variable('weights', shape=[ci, co], trainable=True)
+        biases = tf.get_variable('biases', [co], trainable=True)
+        activation = tf.nn.xw_plus_b(x, weights, biases, name=scope.name)
+
+        if relu: # apply relu
+            activation = tf.nn.relu(activation)
+
+        return activation
+
+
+def model(x):
+    """
+    model creates a new model with all the layers as defined by AlexNet.
+    See https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks
+    for more documenation on the actual model.
+
+    :param x: tensorflow placeholder for input
+    :returns: tensor to the last layer
+    """
+
+    # 1st layer
+    conv1 = __conv__(x, 11, 11, 96, 4, 4, "conv1", padding="SAME", group=1)
+    conv1 = tf.nn.relu(conv1, name="conv1")
+    lrn1 = tf.nn.local_response_normalization(
+            conv1,
+            depth_radius=2,
+            alpha=2e-05,
+            beta=0.75,
+            bias=1.0,
+            name="norm1")
+    pool1 = tf.nn.max_pool(
+            lrn1,
+            ksize=[1, 3, 3, 1],
+            strides=[1, 2, 2, 1],
+            padding="VALID",
+            name="pool1")
+
+    # 2nd layer
+    conv2 = __conv__(pool1, 5, 5, 256, 1, 1, "conv2", padding="SAME", group=2)
+    conv2 = tf.nn.relu(conv2, name="conv2")
+    lrn2 = tf.nn.local_response_normalization(
+            conv2,
+            depth_radius=2,
+            alpha=2e-05,
+            beta=0.75,
+            bias=1.0,
+            name="norm2")
+    pool2 = tf.nn.max_pool(
+            lrn2,
+            ksize=[1, 3, 3, 1],
+            strides=[1, 2, 2, 1],
+            padding="VALID",
+            name="pool2")
+
+    # 3rd layer
+    conv3 = __conv__(pool2, 3, 3, 384, 1, 1, "conv3", padding="SAME", group=1)
+    conv3 = tf.nn.relu(conv3)
+
+    # 4th layer
+    conv4 = __conv__(conv3, 3, 3, 384, 1, 1, "conv4", padding="SAME", group=2)
+    conv4 = tf.nn.relu(conv4)
+
+    # 5th layer
+    conv5 = __conv__(conv4, 3, 3, 256, 1, 1, "conv5", padding="SAME", group=2)
+    conv5 = tf.nn.relu(conv5)
+    pool5 = tf.nn.max_pool(
+            conv5,
+            ksize=[1, 3, 3, 1],
+            strides=[1, 2, 2, 1],
+            padding="VALID",
+            name="pool5")
+
+    # 6th layer
+    # flatten the output of the last layer so it can be used as input for a fully connected layer
+    flat = tf.reshape(pool5, [-1, int(np.prod(pool5.get_shape()[1:]))])
+    fc6 = __fc__(flat, 6 * 6 * 256, 4096, "fc6")
+    #drop6 = dropout_layer(fc6, 0.5)
+
+    # TODO check if there is supposed to be dropout here or not
+
+    # 7th layer
+    fc7 = __fc__(fc6, 4096, 4096, "fc7")
+    #drop7 = dropout_layer(fc7, 0.5)
+
+    # TODO check if there is supposed to be dropout here or not
+
+    return __fc__(fc7, 4096, 1000, "fc8", relu=False)
+
+
+def load_weights(path, session, skip_layer):
+    """
+    Loads pretrained weights for the AlexNet model from file.
+    The weights will be assigned within the current tensorflow session.
+
+    :param path: filepath to file containing weights
+    :param session: tensorflow session the model is loaded into
+    :param skip_layers: list of layers by name to skip to be trained from scratch
+    """
     # Load the weights into memory
     weights_dict = np.load(path, encoding='bytes').item()
     # Loop over all layer names stored in the weights dict
@@ -25,47 +180,3 @@ def load_weights(path, skip_layer):
                     else:
                         var = tf.get_variable('weights', trainable=False)
                         session.run(var.assign(data))
-
-# TODO solve nclasses (number of classes to output)
-def model(path, nclasses):
-    x = tf.placeholder(tf.float32, (None,) + np.zeros((1, 227, 227, 3)).astype(float32))
-
-    # 1st layer
-    conv1 = conv_layer(x, 11, 11, 96, 4, 4, "conv1" padding="SAME", group=1)
-    conv1 = tf.relu(conv1)
-    lrn1 = local_response_normalization(conv1, 2, 2e-05, 0.75, 1.0, "norm1")
-    pool1 = max_pool_layer(lrn1, 3, 3, 2, 2, "pool1", padding="VALID")
-
-    # 2nd layer
-    conv2 = conv_layer(pool1, 5, 5, 256, 1, 1, "conv2", padding="SAME", group=2)
-    conv2 = tf.relu(conv2)
-    lrn2 = local_response_normalization(conv2, 2, 2e-05, 0.75, 1.0, "norm2")
-    pool2 = max_pool_layer(lrn2, 3, 3, 2, 2, "pool2", padding="VALID")
-
-    # 3rd layer
-    conv3 = conv_layer(pool2, 3, 3, 384, 1, 1, "conv3", padding="SAME", group=1)
-    conv3 = tf.relu(conv3)
-
-    # 4th layer
-    conv4 = conv_layer(conv3, 3, 3, 384, 1, 1, "conv4", padding="SAME", group=2)
-    conv4 = tf.relu(conv4)
-
-    # 5th layer
-    conv5 = conv_layer(conv4, 3, 3, 256, 1, 1, "conv5", padding="SAME", group=2)
-    conv5 = tf.relu(conv5)
-    pool5 = max_pool_layer(conv5, 3, 3, 2, 2, "pool5", padding="VALID")
-
-    # 6th layer
-    tmp = tf.reshape(pool5, [-1, int(prod(pool5.get_shape()[1:]))])
-    fc6 = fc_layer(6 * 6 * 256, 4096, "fc6")
-    #drop6 = dropout_layer(fc6, 0.5)
-
-    # TODO check if there is supposed to be dropout here or not
-
-    # 7th layer
-    fc7 = fc_layer(fc6, 4096, 4096, "fc7")
-    #drop7 = dropout_layer(fc7, 0.5)
-
-    # TODO check if there is supposed to be dropout here or not
-
-    return fc_layer(fc7, 4096, nclasses, "fc8", relu=False)
