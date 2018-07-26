@@ -121,15 +121,15 @@ def model(x):
 
     # 3rd layer
     conv3 = __conv__(pool2, 3, 3, 384, 1, 1, "conv3", padding="SAME", group=1)
-    conv3 = tf.nn.relu(conv3)
+    conv3 = tf.nn.relu(conv3, name="conv3")
 
     # 4th layer
     conv4 = __conv__(conv3, 3, 3, 384, 1, 1, "conv4", padding="SAME", group=2)
-    conv4 = tf.nn.relu(conv4)
+    conv4 = tf.nn.relu(conv4, name="conv4")
 
     # 5th layer
     conv5 = __conv__(conv4, 3, 3, 256, 1, 1, "conv5", padding="SAME", group=2)
-    conv5 = tf.nn.relu(conv5)
+    conv5 = tf.nn.relu(conv5, name="conv5")
     pool5 = tf.nn.max_pool(
             conv5,
             ksize=[1, 3, 3, 1],
