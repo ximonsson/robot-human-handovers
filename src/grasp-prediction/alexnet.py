@@ -161,22 +161,18 @@ def load_weights(path, session, skip_layer):
 
     :param path: filepath to file containing weights
     :param session: tensorflow session the model is loaded into
-    :param skip_layers: list of layers by name to skip to be trained from scratch
+    :param skip_layer: list of layers by name to skip to be trained from scratch
     """
     # Load the weights into memory
-    weights_dict = np.load(path, encoding='bytes').item()
+    weights = np.load(path, encoding='bytes').item()
     # Loop over all layer names stored in the weights dict
-    for op_name in weights_dict:
+    for layer in weights:
         # Check if layer should be trained from scratch
-        if op_name not in skip_layer:
-            with tf.variable_scope(op_name, reuse=True):
+        if layer not in skip_layer:
+            with tf.variable_scope(layer, reuse=True):
                 # Assign weights/biases to their corresponding tf variable
-                for data in weights_dict[op_name]:
-                    # Biases
-                    if len(data.shape) == 1:
-                        var = tf.get_variable('biases', trainable=False)
-                        session.run(var.assign(data))
-                    # Weights
-                    else:
-                        var = tf.get_variable('weights', trainable=False)
-                        session.run(var.assign(data))
+                for data in weights[layer]:
+                    w = tf.get_variable("weights", trainable=False)
+                    session.run(w.assign(weights[layer][0]))
+                    b = tf.get_variable('biases', trainable=False)
+                    session.run(b.assign(weights[layer][1]))
