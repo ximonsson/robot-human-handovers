@@ -15,20 +15,28 @@ train_layers = ["fc6", "fc7"]
 # tensorflow variables, x input, y output and dropout
 x = tf.placeholder(tf.float32, [batch_size, alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH])
 y = tf.placeholder(tf.float32, [None, outputs])
-dropout = tf.placeholder_with_default(1.0, shape=())
+keep_prob = tf.placeholder_with_default(1.0, shape=())
+
+# create network
+m = alexnet.model(x, keep_prob, outputs)
 
 # calculate loss
 with tf.name_scope("loss"):
-    pass
+    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=m, labels=y))
 
 # training operation applying optimizer function
 with tf.name_scope("train"):
-    pass
+    # TODO gradient descent?
+    train_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
 
-# create network
-m = alexnet.model(x, dropout, outputs)
-softmax = tf.nn.softmax(m)
+correct_pred = tf.equal(tf.argmax(m, 1), tf.argmax(y, 1))
+accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+tf.summary.scalar("accuracy", accuracy)
 
 with tf.Session() as session:
+    # initialize and load weights
     s.run(tf.global_variables_initializer())
     alexnet.load_weights("weights/bvlc_alexnet.npy", session, train_layers)
+
+    # train
+    tf.run(train_op, feed_dict={x: None, y: None, keep_prob:1.0-dropout})
