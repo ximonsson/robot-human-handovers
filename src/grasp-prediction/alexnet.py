@@ -75,13 +75,15 @@ def __fc__(x, ci, co, name, relu=True):
         return activation
 
 
-def model(x):
+def model(x, dropout, classes=1000):
     """
     model creates a new model with all the layers as defined by AlexNet.
     See https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks
     for more documenation on the actual model.
 
     :param x: tensorflow placeholder for input
+    :param dropout: tensor with keep probability for dropout after layers 6 and 7
+    :param classes: number of output classes
     :returns: tensor to the last layer
     """
 
@@ -137,21 +139,18 @@ def model(x):
             padding="VALID",
             name="pool5")
 
-    # 6th layer
     # flatten the output of the last layer so it can be used as input for a fully connected layer
     flat = tf.reshape(pool5, [-1, int(np.prod(pool5.get_shape()[1:]))])
-    fc6 = __fc__(flat, 6 * 6 * 256, 4096, "fc6")
-    #drop6 = dropout_layer(fc6, 0.5)
 
-    # TODO check if there is supposed to be dropout here or not
+    # 6th layer
+    fc6 = __fc__(flat, 6 * 6 * 256, 4096, "fc6")
+    drop6 = tf.nn.dropout(fc6, dropout)
 
     # 7th layer
-    fc7 = __fc__(fc6, 4096, 4096, "fc7")
-    #drop7 = dropout_layer(fc7, 0.5)
+    fc7 = __fc__(drop6, 4096, 4096, "fc7")
+    drop7 = tf.nn.dropout(fc7, dropout)
 
-    # TODO check if there is supposed to be dropout here or not
-
-    return __fc__(fc7, 4096, 1000, "fc8", relu=False)
+    return __fc__(drop7, 4096, classes, "fc8", relu=False)
 
 
 def load_weights(path, session, skip_layer):
