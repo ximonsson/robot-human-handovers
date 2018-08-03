@@ -10,17 +10,17 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/visualization/cloud_viewer.h>
-#include <pcl/io/openni_grabber.h>
+#include <pcl/io/openni2_grabber.h>
 #include <iostream>
 #include <pcl/point_types.h>
 #include <pcl/filters/model_outlier_removal.h>
 #include <pcl/console/parse.h>
 
 typedef pcl::PointXYZRGBA Point;
+typedef pcl::PointCloud<Point> PointCloud;
 
-float seg_dthresh (0.01);
-float c_tol (0.02);
-
+float seg_dthresh (0.02);
+float c_tol (0.02); // 2cm
 
 double colors[5][3] =
 {
@@ -36,11 +36,11 @@ class ObjectExtractor
 	public:
 		ObjectExtractor () : viewer ("Object Extraction Viewer")
 		{
-			cloud_filtered = pcl::PointCloud<Point>::Ptr (new pcl::PointCloud<Point>);
-			cloud_f = pcl::PointCloud<Point>::Ptr (new pcl::PointCloud<Point>);
+			cloud_filtered = PointCloud::Ptr (new PointCloud);
+			cloud_f = PointCloud::Ptr (new PointCloud);
 			inliers = pcl::PointIndices::Ptr (new pcl::PointIndices);
 			coefs = pcl::ModelCoefficients::Ptr (new pcl::ModelCoefficients);
-			cloud_plane = pcl::PointCloud<Point>::Ptr (new pcl::PointCloud<Point>);
+			cloud_plane = PointCloud::Ptr (new PointCloud);
 			coefs = pcl::ModelCoefficients::Ptr (new pcl::ModelCoefficients);
 			tree = pcl::search::KdTree<Point>::Ptr (new pcl::search::KdTree<Point>);
 
@@ -52,7 +52,7 @@ class ObjectExtractor
 			seg.setDistanceThreshold (seg_dthresh);
 		}
 
-		void visualize_cluster (const pcl::PointCloud<Point>::ConstPtr &cluster, int j)
+		void visualize_cluster (const PointCloud::ConstPtr &cluster, int j)
 		{
 			std::stringstream ss;
 			ss << "cluster_" << j;
@@ -60,7 +60,7 @@ class ObjectExtractor
 			viewer.addPointCloud (cluster, color_handler, ss.str ());
 		}
 
-		void visualize (const pcl::PointCloud<Point>::ConstPtr &scene)
+		void visualize (const PointCloud::ConstPtr &scene)
 		{
 			if (!viewer.wasStopped ())
 			{
@@ -71,7 +71,7 @@ class ObjectExtractor
 				int j = 0;
 				for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); it++)
 				{
-					pcl::PointCloud<Point>::Ptr cloud_cluster (new pcl::PointCloud<Point>);
+					PointCloud::Ptr cloud_cluster (new PointCloud);
 					for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
 					{
 						cloud_cluster->points.push_back (cloud_filtered->points[*pit]);
@@ -89,9 +89,10 @@ class ObjectExtractor
 			}
 		}
 
-		void extract (const pcl::PointCloud<Point>::ConstPtr &scene)
+		void extract (const PointCloud::ConstPtr &scene)
 		{
-			pcl::PointCloud<Point>::Ptr filtered_scene (new pcl::PointCloud<Point>);
+			// passthrough
+			PointCloud::Ptr filtered_scene (new PointCloud);
 			pass.setInputCloud (scene);
 			pass.setFilterFieldName ("z");
 			pass.setFilterLimits (0.0f, 1.0f);
@@ -142,7 +143,7 @@ class ObjectExtractor
 
 			cluster_indices.clear ();
 			pcl::EuclideanClusterExtraction<Point> ec;
-			ec.setClusterTolerance (c_tol); // 2cm
+			ec.setClusterTolerance (c_tol);
 			ec.setMinClusterSize (100);
 			ec.setMaxClusterSize (25000);
 			ec.setSearchMethod (tree);
@@ -158,7 +159,7 @@ class ObjectExtractor
 			int j = 0;
 			for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
 			{
-				pcl::PointCloud<Point>::Ptr cloud_cluster (new pcl::PointCloud<Point>);
+				PointCloud::Ptr cloud_cluster (new PointCloud);
 				for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
 					cloud_cluster->points.push_back (cloud_filtered->points[*pit]); //*
 				cloud_cluster->width = cloud_cluster->points.size ();
@@ -182,6 +183,13 @@ class ObjectExtractor
 			}
 		}
 
+
+		void cb (const PointCloud::ConstPtr &cloud)
+		{
+			boost::mutex::scoped_lock lock (mut);
+			scene = cloud;
+		}
+
 		void run ()
 		{
 			// register for keyboard events
@@ -191,30 +199,44 @@ class ObjectExtractor
 
 			// create an interface towards the Kinect using OpenNI and start grabbing
 			// RGBD frames that are sent to the ObjectTracker::track function as callback
-			pcl::Grabber* interface = new pcl::OpenNIGrabber ();
-			boost::function<void (const pcl::PointCloud<Point>::ConstPtr&)> f =
-				boost::bind (&ObjectExtractor::extract, this, _1);
-			interface->registerCallback (f);
-			interface->start ();
+			pcl::Grabber* grabber = new pcl::io::OpenNI2Grabber ();
+			boost::function<void (const PointCloud::ConstPtr&)> f =
+				boost::bind (&ObjectExtractor::cb, this, _1);
+			boost::signals2::connection conn = grabber->registerCallback (f);
+			grabber->start ();
 			while (!viewer.wasStopped ())
 			{
-				boost::this_thread::sleep (boost::posix_time::seconds (1));
+				PointCloud::ConstPtr c;
+				if (mut.try_lock ())
+				{
+					scene.swap (c);
+					mut.unlock ();
+				}
+
+				if (c)
+				{
+					extract (c);
+				}
+				//boost::this_thread::sleep (boost::posix_time::seconds (1));
 			}
-			interface->stop ();
+			grabber->stop ();
+			conn.disconnect ();
 		}
 
 		pcl::visualization::PCLVisualizer viewer;
 		pcl::VoxelGrid<Point> vg; // filtering object
-		pcl::PointCloud<Point>::Ptr cloud_filtered;
-		pcl::PointCloud<Point>::Ptr cloud_f;
-		pcl::PointCloud<Point>::Ptr filtered_scene;
+		PointCloud::Ptr cloud_filtered;
+		PointCloud::Ptr cloud_f;
+		PointCloud::ConstPtr scene;
+		PointCloud::Ptr filtered_scene;
 		pcl::SACSegmentation<Point> seg;
 		pcl::PointIndices::Ptr inliers;
 		pcl::ModelCoefficients::Ptr coefs;
-		pcl::PointCloud<Point>::Ptr cloud_plane;
+		PointCloud::Ptr cloud_plane;
 		pcl::search::KdTree<Point>::Ptr tree;
 		std::vector<pcl::PointIndices> cluster_indices;
 		pcl::PassThrough<Point> pass;
+		boost::mutex mut;
 };
 
 
