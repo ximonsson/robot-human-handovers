@@ -17,7 +17,7 @@ ObjectTracker::ObjectTracker ()
 	descriptor_radius      = 0.01f;
 	ref_radius             = 0.015f;
 
-	normal_estimation.setKSearch (10);
+	normal_estimation.setKSearch (5);
 
 	descriptor_estimation.setRadiusSearch (descriptor_radius);
 
@@ -101,7 +101,7 @@ void ObjectTracker::track (
 
 	// find object-scene correspondences with KdTree
 	pcl::CorrespondencesPtr object_scene_correspondences (new pcl::Correspondences ());
-	pcl::KdTreeFLANN <pcl::SHOT352> match_search;
+	pcl::KdTreeFLANN<pcl::SHOT352> match_search;
 	match_search.setInputCloud (object_descriptors);
 
 	// for each scene keypoint descriptor, find nearest neighbor into the object keypoints descriptor

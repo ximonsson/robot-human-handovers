@@ -1,19 +1,25 @@
 #include <track/object_tracker.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/io/openni_grabber.h>
+#include <pcl/io/openni2_grabber.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/common/transforms.h>
 #include <pcl/console/parse.h>
 
-pcl::visualization::PCLVisualizer viewer ("PCL Object Tracking Viewer");
-pcl::PointCloud<pcl::PointXYZRGBA>::Ptr model (new pcl::PointCloud<pcl::PointXYZRGBA> ());
-ObjectTracker tracker;
+typedef pcl::PointXYZRGBA Point;
+typedef pcl::PointCloud<Point> PointCloud;
 
-void passthrough (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_filtered)
+pcl::visualization::PCLVisualizer viewer ("PCL Object Tracking Viewer");
+PointCloud::Ptr model (new PointCloud ());
+ObjectTracker tracker;
+boost::mutex mut;
+PointCloud::ConstPtr scene;
+
+void passthrough (const PointCloud::ConstPtr &cloud, PointCloud::Ptr cloud_filtered)
 {
-	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr tmp (new pcl::PointCloud<pcl::PointXYZRGBA> ());
+	PointCloud::Ptr tmp (new PointCloud ());
 	pcl::PassThrough<pcl::PointXYZRGBA> pass;
 
 	pass.setInputCloud (cloud);
@@ -35,7 +41,7 @@ void passthrough (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud, pcl
 }
 
 void visualize (
-		const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &scene,
+		const PointCloud::ConstPtr &scene,
 		std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> &rototranslations,
 		std::vector<pcl::Correspondences> &clustered_correspondences)
 {
@@ -47,7 +53,7 @@ void visualize (
 		// we only visualize the one with the most correspondences, we say that everything is else false positives
 		for (size_t i = 0; i < rototranslations.size (); i++)
 		{
-			pcl::PointCloud<pcl::PointXYZRGBA>::Ptr rotated_model (new pcl::PointCloud<pcl::PointXYZRGBA> ());
+			PointCloud::Ptr rotated_model (new PointCloud ());
 			pcl::transformPointCloud (*model, *rotated_model, rototranslations[i]);
 			std::stringstream ss_cloud;
 			ss_cloud << "instance" << i;
@@ -93,9 +99,9 @@ void keyboard_event (const pcl::visualization::KeyboardEvent &ev)
 	}
 }
 
-void cb (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
+void process (const PointCloud::ConstPtr &cloud)
 {
-	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGBA> ());
+	PointCloud::Ptr cloud_filtered (new PointCloud ());
 	passthrough (cloud, cloud_filtered); // downsample
 
 	// track the object
@@ -105,19 +111,38 @@ void cb (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
 	visualize (cloud_filtered, rototranslations, clustered_correspondences);
 }
 
+void cb (const PointCloud::ConstPtr &cloud)
+{
+	boost::mutex::scoped_lock lock (mut);
+	scene = cloud;
+}
+
 void run ()
 {
 	// create an interface towards the Kinect using OpenNI and start grabbing
 	// RGBD frames that are sent to the ObjectTracker::track function as callback
-	pcl::Grabber* interface = new pcl::OpenNIGrabber ();
-	boost::function<void (const pcl::PointCloud <pcl::PointXYZRGBA>::ConstPtr&)> f = cb;
-	interface->registerCallback (f);
+	pcl::Grabber* interface = new pcl::io::OpenNI2Grabber ();
+	boost::function<void (const PointCloud::ConstPtr&)> f = cb;
+	boost::signals2::connection conn = interface->registerCallback (f);
 	interface->start ();
 	while (!viewer.wasStopped ())
 	{
-		boost::this_thread::sleep (boost::posix_time::seconds (1));
+		//boost::this_thread::sleep (boost::posix_time::seconds (1));
+		PointCloud::ConstPtr c;
+		if (mut.try_lock ())
+		{
+			scene.swap (c);
+			mut.unlock ();
+		}
+		if (c)
+		{
+			viewer.removeAllPointClouds ();
+			//viewer.addPointCloud (c, "cloud");
+			process (c);
+		}
 	}
 	interface->stop ();
+	conn.disconnect ();
 }
 
 

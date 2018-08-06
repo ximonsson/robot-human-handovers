@@ -48,7 +48,7 @@ class ObjectExtractor
 			seg.setOptimizeCoefficients (true);
 			seg.setModelType (pcl::SACMODEL_PLANE);
 			seg.setMethodType (pcl::SAC_RANSAC);
-			seg.setMaxIterations (100);
+			seg.setMaxIterations (200);
 			seg.setDistanceThreshold (seg_dthresh);
 		}
 
@@ -95,23 +95,23 @@ class ObjectExtractor
 			PointCloud::Ptr filtered_scene (new PointCloud);
 			pass.setInputCloud (scene);
 			pass.setFilterFieldName ("z");
-			pass.setFilterLimits (0.0f, 1.0f);
+			pass.setFilterLimits (0.3f, 0.9f);
 			pass.filter (*cloud_filtered);
 
 			pass.setInputCloud (cloud_filtered);
 			pass.setFilterFieldName ("x");
-			pass.setFilterLimits (-0.2f, 0.2f);
+			pass.setFilterLimits (-0.5f, 0.5f);
 			pass.filter (*filtered_scene);
 
 			pass.setInputCloud (filtered_scene);
 			pass.setFilterFieldName ("y");
-			pass.setFilterLimits (-0.3f, 0.3f);
+			pass.setFilterLimits (-0.5f, 0.5f);
 			pass.filter (*cloud_filtered);
 
 			*filtered_scene = *cloud_filtered;
 
 			//vg.setInputCloud (filtered_scene);
-			//vg.setLeafSize (0.01f, 0.01f, 0.01f);
+			//vg.setLeafSize (0.001f, 0.001f, 0.001f);
 			//vg.filter (*cloud_filtered);
 
 			int i = 0, npoints = (int) cloud_filtered->points.size ();
@@ -144,8 +144,8 @@ class ObjectExtractor
 			cluster_indices.clear ();
 			pcl::EuclideanClusterExtraction<Point> ec;
 			ec.setClusterTolerance (c_tol);
-			ec.setMinClusterSize (100);
-			ec.setMaxClusterSize (25000);
+			ec.setMinClusterSize (500);
+			ec.setMaxClusterSize (10000);
 			ec.setSearchMethod (tree);
 			ec.setInputCloud (cloud_filtered);
 			ec.extract (cluster_indices);
@@ -155,6 +155,7 @@ class ObjectExtractor
 
 		void snapshot ()
 		{
+			boost::mutex::scoped_lock lock (mut);
 			pcl::PCDWriter writer;
 			int j = 0;
 			for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
@@ -217,7 +218,6 @@ class ObjectExtractor
 				{
 					extract (c);
 				}
-				//boost::this_thread::sleep (boost::posix_time::seconds (1));
 			}
 			grabber->stop ();
 			conn.disconnect ();
@@ -243,9 +243,11 @@ class ObjectExtractor
 
 int main (int argc, char** argv)
 {
+	// extract parameters
 	pcl::console::parse_argument (argc, argv, "--seg_dthresh", seg_dthresh);
 	pcl::console::parse_argument (argc, argv, "--c_tol", c_tol);
 
+	// run the object extractor
 	ObjectExtractor oex;
 	oex.run();
 	return 0;
