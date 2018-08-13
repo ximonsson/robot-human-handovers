@@ -1,8 +1,3 @@
-#include <pcl/point_cloud.h>
-//#include <pcl/visualization/image_viewer.h>
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-
 #include <iostream>
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
@@ -16,9 +11,6 @@
 
 #include "apriltag.h"
 #include "tag36h11.h"
-
-typedef pcl::PointXYZRGBA Point;
-typedef pcl::PointCloud<Point> PointCloud;
 
 libfreenect2::Freenect2 freenect2;
 libfreenect2::Freenect2Device *device = NULL;
@@ -79,93 +71,11 @@ int quit ()
 	return 0;
 }
 
-/**
- * mat2cloud overwrites the RGB data in the points of cloud with the data from mat.
- * mat needs to be a cv::Mat of type CV_8UC4 with the color channels ordered by RGB
- * (note that this is not the standard in OpenCV).
- */
-void matRGB2cloud (cv::Mat mat, PointCloud::Ptr cloud)
-{
-	for (int j = 0; j < mat.rows; j++)
-	{
-		for (int i = 0; i < mat.cols; i++)
-		{
-			Point p = cloud->at (i, j);
-			uint32_t rgb = mat.at<uint32_t> (j, i);
-			p.rgb = *reinterpret_cast<float*> (&rgb);
-			cloud->at (i, j) = p;
-		}
-	}
-}
-
-void matDepth2cloud (cv::Mat mat, PointCloud::Ptr cloud)
-{
-	for (int j = 0; j < mat.rows; j++)
-	{
-		for (int i = 0; i < mat.cols; i++)
-		{
-			Point p = cloud->at (i, j);
-			p.x = (float) i;
-			p.y = (float) j;
-			p.z = mat.at<float> (j, i);
-			cloud->at (i, j) = p;
-		}
-	}
-}
-
-PointCloud::Ptr freenectFrame2cloud (libfreenect2::Frame registered, libfreenect2::Frame undistorted)
-{
-	libfreenect2::Freenect2Device::IrCameraParams ir_params = device->getIrCameraParams ();
-	float cx = ir_params.cx, cy = ir_params.cy, fx = ir_params.fx, fy = ir_params.fy;
-	PointCloud::Ptr cloud (new PointCloud (registered.width, registered.height));
-
-	float *undistorted_data = (float *) undistorted.data;
-	float *registered_data = (float *) registered.data;
-
-	for (int xi = 0; xi < registered.width; xi++)
-	{
-		for (int yi = 0; yi < registered.height; yi++)
-		{
-			float xu = (xi + 0.5 - cx) / fx;
-			float yu = (yi + 0.5 - cy) / fy;
-			Point p;
-			p.x = xu * undistorted_data[512 * yi + xi];
-			p.y = yu * undistorted_data[512 * yi + xi];
-			p.z = undistorted_data[512 * yi + xi];
-			p.rgb = registered_data[512 * yi + xi];
-			cloud->push_back (p);
-		}
-	}
-
-	return cloud;
-}
-
-int store_pcd ()
-{
-	//PointCloud::Ptr cloud (new PointCloud (registered.width, registered.height));
-	//cloud->is_dense = true;
-	//matRGB2cloud (image_rgb_f, cloud);
-	//matDepth2cloud (image_depth_f, cloud);
-
-	PointCloud::Ptr cloud = freenectFrame2cloud (registered, undistorted);
-	pcl::PCDWriter writer;
-	writer.write<Point> ("cloud.pcd", *cloud, false);
-	return 0;
-}
-
-int store ()
-{
-	FILE *fp = fopen ("depth.bin", "wb");
-	fwrite (image_depth.data, image_depth.elemSize (), image_depth.rows * image_depth.cols, fp);
-	fclose (fp);
-	cv::imwrite ("frame.jpg", image_rgb);
-	return store_pcd ();
-}
-
 int flags = 0;
 
-#define REC 0x01
-#define DETECT 0x02
+#define REC      0x01
+#define DETECT   0x02
+#define SNAPSHOT 0x04
 
 int handle_key ()
 {
@@ -175,7 +85,8 @@ int handle_key ()
 		case 'q':
 			return 1;
 		case 's':
-			return store ();
+			flags |= SNAPHOST;
+			break;
 		case 'r':
 			flags ^= REC;
 			break;
@@ -323,45 +234,18 @@ void run ()
 		registration->apply (rgb, depth, &undistorted, &registered);
 		visualize (rgb, depth, &registered);
 
+		// take a snapshot
+		if (flags & SNAPSHOT)
+		{
+			store_frame (output_dir, rgb, depth, &registered);
+			flags &= ~SNAPSHOT;
+		}
+
+		// recording
 		if (flags & REC)
 		{
 			store_frame (output_dir, rgb, depth, &registered);
 		}
-
-
-		//cv::Mat (depth->height, depth->width, CV_32FC1, depth->data).copyTo (image_depth);
-		//cv::Mat (rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo (image_rgb);
-
-		// normalize depth image
-		/*
-		for (int i = 0; i < depth->height; i++)
-			for (int j = 0; j < depth->width; j ++)
-			{
-				float v = image_depth.at<float> (i, j);
-				v /= 4500;
-				image_depth.at<float> (i, j) = v;
-			}
-		//*/
-
-		//cv::Rect roi (100, 100, 200, 200);
-		// create binary mask
-		//image_rgb (roi).copyTo (im_bin);
-		//cv::cvtColor (im_bin, im_bin, cv::COLOR_RGB2GRAY);
-		//cv::GaussianBlur (im_bin, im_bin, cv::Size (5, 5), 0, 0);
-		//cv::threshold (im_bin, im_bin, thresh_min, thresh_max, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
-
-		//cv::Mat mask (image_rgb.rows, image_rgb.cols, im_bin.type (), cv::Scalar (0, 0, 0));
-		//im_bin.copyTo (mask (roi));
-
-		//image_rgb_f.setTo (cv::Scalar (0, 0, 0));
-		//image_rgb.copyTo (image_rgb_f, mask);
-
-		//image_depth_f.setTo (cv::Scalar (0, 0, 0));
-		//image_depth.copyTo (image_depth_f, mask);
-
-		//cv::imshow ("color", image_rgb_f);
-		//cv::imshow ("depth", image_depth_f);
-		//cv::imshow ("binary", mask);
 
 		listener.release (frames);
 	}
