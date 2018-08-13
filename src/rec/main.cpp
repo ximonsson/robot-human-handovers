@@ -85,7 +85,7 @@ int handle_key ()
 		case 'q':
 			return 1;
 		case 's':
-			flags |= SNAPHOST;
+			flags |= SNAPSHOT;
 			break;
 		case 'r':
 			flags ^= REC;
@@ -188,14 +188,18 @@ void visualize (libfreenect2::Frame *rgb, libfreenect2::Frame *depth, libfreenec
 {
 	cv::Mat image_rgb;
 	cv::Mat (rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo (image_rgb);
-	cv::cvtColor (image_rgb, image_rgb, cv::COLOR_BGRA2BGR);
 	cv::resize (image_rgb, image_rgb, cv::Size (1280, 720));
 	cv::flip (image_rgb, image_rgb, 1);
 	if (flags & DETECT)
 	{
 		detect (image_rgb);
 	}
+
+	cv::Mat reg;
+	cv::Mat (registered->height, registered->width, CV_8UC4, registered->data).copyTo (reg);
+
 	cv::imshow ("rgb", image_rgb);
+	cv::imshow ("registered", reg);
 }
 
 void run ()
