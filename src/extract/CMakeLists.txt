@@ -8,7 +8,7 @@ find_package (PkgConfig REQUIRED)
 set (ENV{PKG_CONFIG_PATH} "/usr/local/lib/pkgconfig")
 pkg_check_modules (APRILTAG REQUIRED apriltag)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3")
 include_directories (${OpenCV_INCLUDE_DIRS} /usr/local/include/apriltag)
 link_directories (${PROJECT_LIB_DIR})
 add_definitions (${OPENCV__DEFINITIONS})

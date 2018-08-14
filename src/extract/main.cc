@@ -118,10 +118,10 @@ cv::Mat transformation (apriltag_detection_t *d, cv::Mat ref)
 	src.push_back (cv::Point2f (refd->p[3][0], refd->p[3][1]));
 
 	std::vector<cv::Point2f> dst;
-	src.push_back (cv::Point2f (d->p[0][0], d->p[0][1]));
-	src.push_back (cv::Point2f (d->p[1][0], d->p[1][1]));
-	src.push_back (cv::Point2f (d->p[2][0], d->p[2][1]));
-	src.push_back (cv::Point2f (d->p[3][0], d->p[3][1]));
+	dst.push_back (cv::Point2f (d->p[0][0], d->p[0][1]));
+	dst.push_back (cv::Point2f (d->p[1][0], d->p[1][1]));
+	dst.push_back (cv::Point2f (d->p[2][0], d->p[2][1]));
+	dst.push_back (cv::Point2f (d->p[3][0], d->p[3][1]));
 
 	zarray_destroy (detections);
 	return cv::findHomography (src, dst);
@@ -141,8 +141,8 @@ void print_detection (apriltag_detection_t *d)
 	std::cout << std::endl;
 }
 
-const char *imfile;
-int display_f, homography_f;
+char imfile[255] = {0};
+int display_f, homography_f, flip_f;
 
 void parse_command_line (int argc, char **argv)
 {
@@ -151,20 +151,21 @@ void parse_command_line (int argc, char **argv)
 		{"image",      required_argument, 0,             'i'},
 		{"visualize",  no_argument,       &display_f,    1},
 		{"homography", no_argument,       &homography_f, 1},
+		{"flip",       no_argument,       &flip_f,       1},
 		{0, 0, 0, 0},
 	};
 
 	int opt = 0, index;
 	while (opt != -1)
 	{
-		opt = getopt_long (argc, argv, "i:vm", longopts, &index);
+		opt = getopt_long (argc, argv, "i:", longopts, &index);
 		switch (opt)
 		{
 			case 0:
 				break;
 
 			case 'i':
-				imfile = std::string (optarg).c_str ();
+				strcpy (imfile, optarg);
 				break;
 		}
 	}
@@ -176,7 +177,9 @@ int main (int argc, char **argv)
 	parse_command_line (argc, argv);
 	init ();
 	cv::Mat frame = cv::imread (imfile); // load image
-	//cv::flip (frame, frame, 1); // frames from the kinect camera are mirrored
+
+	if (flip_f) // frames from the kinect camera need to be mirrored
+		cv::flip (frame, frame, 1);
 
 	// detect tag in the image
 	zarray_t *detections = detect (frame);
@@ -194,10 +197,19 @@ int main (int argc, char **argv)
 				std::stringstream ss;
 				ss << "data/objects/" << d->id << ".jpg";
 				cv::Mat ref = cv::imread (ss.str ());
+				cv::flip (ref, ref, 1);
 				cv::Mat trans = transformation (d, ref);
 				std::cout << trans << std::endl;
-				cv::warpPerspective (ref, ref, trans, frame.size ());
-				cv::imshow ("transformed", ref);
+
+
+				ss.str ("");
+				ss << "data/objects/" << d->id << "_mask.jpg";
+				cv::Mat mask = cv::imread (ss.str ());
+				cv::flip (mask, mask, 1);
+				cv::warpPerspective (mask, mask, trans, frame.size ());
+				cv::Mat neg;
+				frame.copyTo (neg, mask);
+				cv::imshow ("masked out", neg);
 			}
 		}
 
