@@ -5,7 +5,7 @@ BIN=./bin/extract
 
 function ex
 {
-	$BIN --image $1 --flip --homography --visualize
+	$BIN --image $1 --flip --pose
 }
 
 if [ "$#" -gt 0 ]
