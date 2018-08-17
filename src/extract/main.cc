@@ -5,42 +5,43 @@
 #include <tag36artoolkit.h>
 #include <getopt.h>
 
-
 apriltag_detector_t *td = apriltag_detector_create ();
 apriltag_family_t *tf = tag36h11_create ();
 
-void init ()
+std::string detection2string (apriltag_detection_t *d)
 {
-	tf->black_border = 1;
-	apriltag_detector_add_family (td, tf);
-
-	// not sure what these settings do...
-	td->quad_decimate = 1.0;
-	td->quad_sigma    = 0.0;
-	td->nthreads      = 4;
-	td->debug         = 0;
-	td->refine_edges  = 1;
-	td->refine_decode = 0;
-	td->refine_pose   = 0;
-}
-
-zarray_t* detect (cv::Mat frame)
-{
-	cv::Mat gray;
-	cv::cvtColor (frame, gray, cv::COLOR_BGR2GRAY);
-	// Make an image_u8_t header for the Mat data
-	image_u8_t im =
+	// identifier
+	std::stringstream ss;
+	ss << d->id << ":";
+	// four corners
+	for (int i = 0; i < 4; i++)
 	{
-		.width  = gray.cols,
-		.height = gray.rows,
-		.stride = gray.cols * static_cast<size_t>(gray.elemSize ()),
-		.buf    = gray.data
-	};
-	zarray_t *detections = apriltag_detector_detect (td, &im);
-	return detections;
+		ss << "(" << d->p[i][0] << "," << d->p[i][1] << ")";
+	}
+	// center
+	ss << ":(" << d->c[0] << "," << d->c[1] << ")";
+	return ss.str ();
 }
 
-void visualize (cv::Mat frame, zarray_t* detections)
+cv::Mat load_object_image (int id)
+{
+	std::stringstream ss;
+	ss << "data/objects/" << id << ".jpg";
+	cv::Mat ref = cv::imread (ss.str ());
+	cv::flip (ref, ref, 1);
+	return ref;
+}
+
+cv::Mat load_object_mask (int id)
+{
+	std::stringstream ss;
+	ss << "data/objects/" << id << "_mask.jpg";
+	cv::Mat mask = cv::imread (ss.str ());
+	cv::flip (mask, mask, 1);
+	return mask;
+}
+
+void visualize_detections (cv::Mat frame, zarray_t* detections)
 {
 	// Draw detection outlines
 	for (int i = 0; i < zarray_size (detections); i++)
@@ -87,23 +88,55 @@ void visualize (cv::Mat frame, zarray_t* detections)
 				cv::Scalar (0xff, 0x99, 0), 2);
 	}
 
-	//cv::resize (frame, frame, cv::Size (720, 1280));
+	cv::resize (frame, frame, cv::Size (1280, 720));
 	// display the image in window and wait for a key press
 	cv::imshow ("Tag Detections", frame);
-	while (true)
-	{
-		char c = (char) cv::waitKey (0);
-		if (c == 'q')
-			break;
-	}
 }
 
-void grasp_region (cv::Mat ref, cv::Mat trans)
+void init ()
 {
+	tf->black_border = 1;
+	apriltag_detector_add_family (td, tf);
 
+	// not sure what these settings do...
+	td->quad_decimate = 1.0;
+	td->quad_sigma    = 0.0;
+	td->nthreads      = 4;
+	td->debug         = 0;
+	td->refine_edges  = 1;
+	td->refine_decode = 0;
+	td->refine_pose   = 0;
 }
 
-cv::Mat transformation (apriltag_detection_t *d, cv::Mat ref)
+zarray_t* detect (cv::Mat frame)
+{
+	cv::Mat gray;
+	cv::cvtColor (frame, gray, cv::COLOR_BGR2GRAY);
+	// Make an image_u8_t header for the Mat data
+	image_u8_t im =
+	{
+		.width  = gray.cols,
+		.height = gray.rows,
+		.stride = gray.cols * static_cast<size_t>(gray.elemSize ()),
+		.buf    = gray.data
+	};
+	zarray_t *detections = apriltag_detector_detect (td, &im);
+	return detections;
+}
+
+#define ROI_W 500
+#define ROI_H 500
+
+cv::Mat detect_handover (cv::Mat frame, zarray_t *&detections)
+{
+	int roix = frame.cols / 2 - ROI_W / 2;
+	int roiy = frame.rows / 2 - ROI_H / 2;
+	cv::Mat handover_region = frame (cv::Range (roiy, roiy + ROI_H), cv::Range (roix, roix + ROI_W));
+	detections = detect (handover_region);
+	return handover_region;
+}
+
+cv::Mat find_transformation (apriltag_detection_t *d, cv::Mat ref)
 {
 	// detect the apriltag again in the reference image and then compute the homography from it
 	// to the detected tag in the scene
@@ -127,22 +160,13 @@ cv::Mat transformation (apriltag_detection_t *d, cv::Mat ref)
 	return cv::findHomography (src, dst);
 }
 
-void print_detection (apriltag_detection_t *d)
+cv::Rect find_grasp_region (cv::Mat m)
 {
-	// identifier
-	std::cout << d->id << ":";
-	// four corners
-	for (int i = 0; i < 4; i++)
-	{
-		std::cout << "(" << d->p[i][0] << "," << d->p[i][1] << ")";
-	}
-	// center
-	std::cout << ":(" << d->c[0] << "," << d->c[1] << ")";
-	std::cout << std::endl;
+	return cv::Rect ();
 }
 
 char imfile[255] = {0};
-int display_f, homography_f, flip_f;
+int display_f, pose_f, flip_f;
 
 void parse_command_line (int argc, char **argv)
 {
@@ -150,7 +174,7 @@ void parse_command_line (int argc, char **argv)
 	{
 		{"image",      required_argument, 0,             'i'},
 		{"visualize",  no_argument,       &display_f,    1},
-		{"homography", no_argument,       &homography_f, 1},
+		{"pose",       no_argument,       &pose_f,       1},
 		{"flip",       no_argument,       &flip_f,       1},
 		{0, 0, 0, 0},
 	};
@@ -171,6 +195,21 @@ void parse_command_line (int argc, char **argv)
 	}
 }
 
+void wait ()
+{
+	bool done = false;
+	while (!done)
+	{
+		char c = (char) cv::waitKey (0);
+		switch (c)
+		{
+			case 'q':
+				done = true;
+				break;
+		}
+	}
+}
+
 int main (int argc, char **argv)
 {
 	// initialize
@@ -182,40 +221,40 @@ int main (int argc, char **argv)
 		cv::flip (frame, frame, 1);
 
 	// detect tag in the image
-	zarray_t *detections = detect (frame);
+	zarray_t *detections;
+	cv::Mat handover = detect_handover (frame, detections);
 	if (zarray_size (detections))
 	{
+		cv::imshow ("handover", handover);
 		for (int i = 0; i < zarray_size (detections); i++)
 		{
 			apriltag_detection_t *d;
 			zarray_get (detections, i, &d);
-			print_detection (d);
+			//std::cout << detection2string (d) << std::endl;
 
-			if (homography_f) // calculate transformation of the object
+			if (pose_f) // calculate transformation of the object
 			{
-				// load the detected object's reference image
-				std::stringstream ss;
-				ss << "data/objects/" << d->id << ".jpg";
-				cv::Mat ref = cv::imread (ss.str ());
-				cv::flip (ref, ref, 1);
-				cv::Mat trans = transformation (d, ref);
+				// find transformation of object in original image to the one in handover
+				// TODO not sure this can count as pose
+				cv::Mat ref = load_object_image (d->id);
+				cv::Mat trans = find_transformation (d, ref);
 				std::cout << trans << std::endl;
 
-
-				ss.str ("");
-				ss << "data/objects/" << d->id << "_mask.jpg";
-				cv::Mat mask = cv::imread (ss.str ());
-				cv::flip (mask, mask, 1);
-				cv::warpPerspective (mask, mask, trans, frame.size ());
+				cv::Rect grasp = find_grasp_region (handover);
+				cv::Mat mask = load_object_mask (d->id);
+				cv::warpPerspective (mask, mask, trans, handover.size ());
 				cv::Mat neg;
-				frame.copyTo (neg, mask);
+				handover.copyTo (neg, mask);
+
 				cv::imshow ("masked out", neg);
+				cv::imwrite ("object.png", neg);
 			}
 		}
 
 		if (display_f) // if visualize option was passed
 		{
-			visualize (frame, detections);
+			visualize_detections (frame, detections);
+			wait ();
 		}
 	}
 	else
