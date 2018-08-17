@@ -246,6 +246,11 @@ int main (int argc, char **argv)
 				cv::Mat neg;
 				handover.copyTo (neg, mask);
 
+				cv::Mat itrans, test;
+				cv::invert (trans, itrans);
+				cv::warpPerspective (neg, test, itrans, handover.size ());
+				cv::imwrite ("test.png", test);
+
 				cv::imshow ("masked out", neg);
 				cv::imwrite ("object.png", neg);
 			}
