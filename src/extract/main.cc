@@ -338,7 +338,6 @@ int main (int argc, char **argv)
 	cv::Mat handover = detect_handover (frame, detections);
 	if (zarray_size (detections))
 	{
-		//cv::imshow ("handover", handover);
 		for (int i = 0; i < zarray_size (detections); i++)
 		{
 			apriltag_detection_t *d;
@@ -360,13 +359,15 @@ int main (int argc, char **argv)
 			cv::Mat mask = load_object_mask (d->id);
 			cv::Mat object;
 			handover.copyTo (object, mask);
-			cv::imwrite ("test.jpg", object);
 			Grasp grasp = find_grasp_region (object);
 			std::cout << grasp2str (grasp) << std::endl;
 
-			draw_grasp (object, grasp);
-			cv::imshow ("opencv grasp", object);
-			wait ();
+			if (display_f)
+			{
+				draw_grasp (object, grasp);
+				cv::imshow ("opencv grasp", object);
+				wait ();
+			}
 		}
 		ret = 0;
 	}
