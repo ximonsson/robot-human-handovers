@@ -23,7 +23,12 @@ void wait ()
 	}
 }
 
-std::string detection2string (apriltag_detection_t *d)
+/**
+ * detection2str returns a string representation of a apriltag_detection_t pointed at by d.
+ * The string is a one-line version of the detection in the following format:
+ *     ID:(P0x,P0y)(P1x,P1y)(P2x,P2y)(P3x,P3y):(Cx,Cy)
+ */
+std::string detection2str (apriltag_detection_t *d)
 {
 	// identifier
 	std::stringstream ss;
@@ -38,25 +43,140 @@ std::string detection2string (apriltag_detection_t *d)
 	return ss.str ();
 }
 
+/**
+ * homography2str returns a string representation of the obtained homography matrix h.
+ * The output is one line with each value separated by a ',', as well as ending with one.
+ */
+std::string homography2str (cv::Mat h)
+{
+	std::stringstream ss;
+	for (int r = 0; r < h.rows; r++)
+	{
+		double *p = h.ptr<double> (r);
+		for (int c = 0; c < h.cols; c++)
+		{
+			ss << *p << ",";
+			p++;
+		}
+	}
+	return ss.str ();
+}
+
+typedef cv::RotatedRect Grasp;
+
+/**
+ * grasp2str returns a string representation of the grasp region defined by the Grasp g.
+ * The output is a one-line string in the format:
+ *     X,Y,W,H,Angle
+ */
+std::string grasp2str (Grasp g)
+{
+	std::stringstream ss;
+	ss << g.center.x << "," << g.center.y << "," << g.size.width << "," << g.size.height << "," << g.angle;
+	return ss.str ();
+}
+
+/**
+ * Draw the grasping region denoted by g in dst.
+ */
+void draw_grasp (cv::Mat &dst, Grasp g)
+{
+	/*
+	cv::rectangle (
+			dst,
+			cv::Point (g.x, g.y),
+			cv::Point (g.x + g.width, g.y + g.height),
+			cv::Scalar (0, 0, 255),
+			1);
+		*/
+	cv::Point2f points[4];
+	g.points (points);
+	for (int i = 0; i < 4; i++)
+		cv::line (dst, points[i], points[(i + 1) % 4], cv::Scalar (0, 0, 255), 1);
+}
+
+/**
+ * skin color minimum and maximum values for range detection
+ */
+#define SKIN_MIN 80, 133, 77
+#define SKIN_MAX 255, 173, 127
+
+/**
+ * kernel size for erode and dilate operations in skin detection
+ */
+#define SKIN_KSIZE 4, 4
+
+/**
+ * compare_contours returns if c1 > c2 based on cv::contourArea.
+ */
+bool compare_contours (std::vector<cv::Point> c1, std::vector<cv::Point> c2)
+{
+	double a1 = cv::contourArea (c1);
+	double a2 = cv::contourArea (c2);
+	return (a1 > a2);
+}
+
+/**
+ * Finds the grasping region in the image.
+ * The function searches for regions that match skin color and returns a bounding
+ * rectangle around the largest part.
+ */
+Grasp find_grasp_region (cv::Mat &m)
+{
+	// convert the image to YCrCb and extract regions that are within the skin color range
+	// erode and dilate the image back to remove any noise that comes from individual pixels
+	// falling within the range but do not belong to any skin.
+	cv::Mat skin;
+	cv::cvtColor (m, skin, cv::COLOR_BGR2YCrCb);
+	cv::inRange (skin, cv::Scalar (SKIN_MIN), cv::Scalar (SKIN_MAX), skin);
+	cv::erode (skin, skin, cv::Mat::ones (SKIN_KSIZE, CV_8UC1));
+	cv::dilate (skin, skin, cv::Mat::ones (SKIN_KSIZE, CV_8UC1));
+
+	// find the contours around the skin area and return a bounding rectangle of it
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours (skin, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+	std::sort (contours.begin (), contours.end (), compare_contours);
+
+	cv::drawContours (m, contours, 0, cv::Scalar (0, 255, 0), 1);
+	return cv::minAreaRect (contours[0]);
+}
+
+/**
+ * Directory containing object data images.
+ */
+#define DATA_OBJECT_DIR "data/objects/"
+
+/**
+ * load_object_image returns the reference image for the object.
+ */
 cv::Mat load_object_image (int id)
 {
 	std::stringstream ss;
-	ss << "data/objects/" << id << ".jpg";
+	ss << DATA_OBJECT_DIR << id << ".jpg";
 	cv::Mat ref = cv::imread (ss.str ());
 	cv::flip (ref, ref, 1);
 	return ref;
 }
 
+/**
+ * load_object_mask returns the mask for the object with ID id.
+ */
 cv::Mat load_object_mask (int id)
 {
 	std::stringstream ss;
-	ss << "data/objects/" << id << "_mask.jpg";
-	cv::Mat mask = cv::imread (ss.str ());
+	ss << DATA_OBJECT_DIR << id << "_mask.jpg";
+	cv::Mat mask = cv::imread (ss.str (), CV_LOAD_IMAGE_GRAYSCALE);
 	cv::flip (mask, mask, 1);
+	cv::threshold (mask, mask, 155, 255, cv::THRESH_BINARY); // must have done the masks wrong
 	return mask;
 }
 
-void visualize_detections (cv::Mat frame, zarray_t* detections)
+/**
+ * draw_detections draws the detection found in image frame.
+ * A square is drawn around the apriltag with the ID in the middle.
+ */
+void draw_detections (cv::Mat frame, zarray_t* detections)
 {
 	// Draw detection outlines
 	for (int i = 0; i < zarray_size (detections); i++)
@@ -102,10 +222,6 @@ void visualize_detections (cv::Mat frame, zarray_t* detections)
 				fontscale,
 				cv::Scalar (0xff, 0x99, 0), 2);
 	}
-
-	cv::resize (frame, frame, cv::Size (1280, 720));
-	// display the image in window and wait for a key press
-	cv::imshow ("Tag Detections", frame);
 }
 
 void init ()
@@ -158,6 +274,7 @@ cv::Mat find_transformation (apriltag_detection_t *d, cv::Mat ref)
 	zarray_t *detections = detect (ref);
 	apriltag_detection_t *refd;
 	zarray_get (detections, 0, &refd); // first detected tag - would be poor reference images otherwise
+	//std::cout << detection2str (refd) << std::endl;
 
 	std::vector<cv::Point2f> src;
 	src.push_back (cv::Point2f (refd->p[0][0], refd->p[0][1]));
@@ -173,43 +290,6 @@ cv::Mat find_transformation (apriltag_detection_t *d, cv::Mat ref)
 
 	zarray_destroy (detections);
 	return cv::findHomography (src, dst);
-}
-
-// skin color minimum and maximum values for range detection
-#define SKIN_MIN 80, 133, 77
-#define SKIN_MAX 255, 173, 127
-
-// kernel size for erode and dilate operations in skin detection
-#define SKIN_KSIZE 4, 4
-
-bool compare_contours (std::vector<cv::Point> c1, std::vector<cv::Point> c2)
-{
-	double a1 = cv::contourArea (c1);
-	double a2 = cv::contourArea (c2);
-	return (a1 > a2);
-}
-
-cv::Rect find_grasp_region (cv::Mat m)
-{
-	int an = 10;
-	cv::Mat element = cv::getStructuringElement (cv::MORPH_RECT, cv::Size (4, 4));
-
-	// convert the image to YCrCb and extract regions that are within the skin color range
-	// erode and dilate the image back to remove any noise that comes from individual pixels
-	// falling within the range but do not belong to any skin.
-	cv::Mat skin;
-	cv::cvtColor (m, skin, cv::COLOR_BGR2YCrCb);
-	cv::inRange (skin, cv::Scalar (SKIN_MIN), cv::Scalar (SKIN_MAX), skin);
-	cv::erode (skin, skin, cv::Mat::zeros (SKIN_KSIZE, CV_8UC1));
-	cv::dilate (skin, skin, cv::Mat::zeros (SKIN_KSIZE, CV_8UC1));
-
-	// find the contours around the skin area and return a bounding rectangle of it
-	std::vector<std::vector<cv::Point>> contours;
-	std::vector<cv::Vec4i> hierarchy;
-	cv::findContours (skin, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-	std::sort (contours.begin (), contours.end (), compare_contours);
-
-	return cv::boundingRect (contours[0]);
 }
 
 char imfile[255] = {0};
@@ -247,6 +327,7 @@ int main (int argc, char **argv)
 	// initialize
 	parse_command_line (argc, argv);
 	init ();
+	int ret = 1;
 	cv::Mat frame = cv::imread (imfile); // load image
 
 	if (flip_f) // frames from the kinect camera need to be mirrored
@@ -262,42 +343,32 @@ int main (int argc, char **argv)
 		{
 			apriltag_detection_t *d;
 			zarray_get (detections, i, &d);
-			std::cout << detection2string (d) << std::endl;
+			std::cout << detection2str (d) << std::endl;
 
 			// find transformation of object in original image to the one in handover
-			// TODO not sure this can count as pose
 			cv::Mat ref = load_object_image (d->id);
 			cv::Mat trans = find_transformation (d, ref);
+			std::cout << homography2str (trans) << std::endl;
 
-			// load the mask and transform it accordingly to extract the object in the scene
-			// then invert the transformation of the extracted object into ground zero
-			// and lastly extract the grasping region that is latter drawn onto the original image of the object.
-			cv::Mat mask = load_object_mask (d->id);
-			cv::warpPerspective (mask, mask, trans, handover.size ());
-			cv::Mat object;
-			handover.copyTo (object, mask);
-
+			// invert the homography matrix and transform the handover to fit the object
 			cv::Mat itrans;
 			cv::invert (trans, itrans);
-			cv::warpPerspective (object, object, itrans, object.size ());
-			cv::Rect grasp = find_grasp_region (object);
+			cv::warpPerspective (handover, handover, itrans, handover.size ());
 
-			// draw the grasp region
-			cv::rectangle (
-					ref,
-					cv::Point (grasp.x, grasp.y),
-					cv::Point (grasp.x + grasp.width, grasp.y + grasp.height),
-					cv::Scalar (0, 0, 255),
-					1);
-			cv::imshow ("opencv grasp", ref);
+			// load the mask and extract only the object from the scene
+			// from it the occluded region will be the grasp region
+			cv::Mat mask = load_object_mask (d->id);
+			cv::Mat object;
+			handover.copyTo (object, mask);
+			cv::imwrite ("test.jpg", object);
+			Grasp grasp = find_grasp_region (object);
+			std::cout << grasp2str (grasp) << std::endl;
+
+			draw_grasp (object, grasp);
+			cv::imshow ("opencv grasp", object);
 			wait ();
 		}
-
-		if (display_f) // if visualize option was passed
-		{
-			visualize_detections (frame, detections);
-			wait ();
-		}
+		ret = 0;
 	}
 	else
 		std::cout << "no tags detected" << std::endl;
@@ -307,5 +378,5 @@ int main (int argc, char **argv)
 	zarray_destroy (detections);
 	apriltag_detector_destroy (td);
 	tag36h11_destroy (tf);
-	return 0;
+	return ret;
 }
