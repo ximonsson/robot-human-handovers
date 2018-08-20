@@ -155,6 +155,7 @@ cv::Mat load_object_image (int id)
 	std::stringstream ss;
 	ss << DATA_OBJECT_DIR << id << ".jpg";
 	cv::Mat ref = cv::imread (ss.str ());
+	assert (ref.data != NULL);
 	cv::flip (ref, ref, 1);
 	return ref;
 }
@@ -274,7 +275,6 @@ cv::Mat find_transformation (apriltag_detection_t *d, cv::Mat ref)
 	zarray_t *detections = detect (ref);
 	apriltag_detection_t *refd;
 	zarray_get (detections, 0, &refd); // first detected tag - would be poor reference images otherwise
-	//std::cout << detection2str (refd) << std::endl;
 
 	std::vector<cv::Point2f> src;
 	src.push_back (cv::Point2f (refd->p[0][0], refd->p[0][1]));
