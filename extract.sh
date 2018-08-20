@@ -5,7 +5,7 @@ BIN=./bin/extract
 
 function ex
 {
-	$BIN --image $1 --flip --pose
+	$BIN --image $1 --flip
 }
 
 if [ "$#" -gt 0 ]
@@ -24,21 +24,15 @@ do
 	do
 		# extract data
 		# if we didn't find any tag we continue to the next frame
-		OUT=`$BIN --image $FRAME --flip`
-		if [ "$OUT" == "no tags detected" ]
+		OUT=`ex $FRAME`
+		if [ $? -ne 0 ]
 		then
 			continue
 		fi
 
 		IFS=':' read -ra TAG <<< "$OUT"
 		ID="${TAG[0]}"
-
 		echo "in frame $FRAME we found TAG#$ID"
-		if [ "$ID" == "12" ]
-		then
-			ex $FRAME
-			exit
-		fi
 	done
 done
 
