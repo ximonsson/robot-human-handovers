@@ -8,6 +8,21 @@
 apriltag_detector_t *td = apriltag_detector_create ();
 apriltag_family_t *tf = tag36h11_create ();
 
+void wait ()
+{
+	bool done = false;
+	while (!done)
+	{
+		char c = (char) cv::waitKey (0);
+		switch (c)
+		{
+			case 'q':
+				done = true;
+				break;
+		}
+	}
+}
+
 std::string detection2string (apriltag_detection_t *d)
 {
 	// identifier
@@ -117,7 +132,7 @@ zarray_t* detect (cv::Mat frame)
 	{
 		.width  = gray.cols,
 		.height = gray.rows,
-		.stride = gray.cols * static_cast<size_t>(gray.elemSize ()),
+		.stride = gray.cols,
 		.buf    = gray.data
 	};
 	zarray_t *detections = apriltag_detector_detect (td, &im);
@@ -160,9 +175,41 @@ cv::Mat find_transformation (apriltag_detection_t *d, cv::Mat ref)
 	return cv::findHomography (src, dst);
 }
 
+// skin color minimum and maximum values for range detection
+#define SKIN_MIN 80, 133, 77
+#define SKIN_MAX 255, 173, 127
+
+// kernel size for erode and dilate operations in skin detection
+#define SKIN_KSIZE 4, 4
+
+bool compare_contours (std::vector<cv::Point> c1, std::vector<cv::Point> c2)
+{
+	double a1 = cv::contourArea (c1);
+	double a2 = cv::contourArea (c2);
+	return (a1 > a2);
+}
+
 cv::Rect find_grasp_region (cv::Mat m)
 {
-	return cv::Rect ();
+	int an = 10;
+	cv::Mat element = cv::getStructuringElement (cv::MORPH_RECT, cv::Size (4, 4));
+
+	// convert the image to YCrCb and extract regions that are within the skin color range
+	// erode and dilate the image back to remove any noise that comes from individual pixels
+	// falling within the range but do not belong to any skin.
+	cv::Mat skin;
+	cv::cvtColor (m, skin, cv::COLOR_BGR2YCrCb);
+	cv::inRange (skin, cv::Scalar (SKIN_MIN), cv::Scalar (SKIN_MAX), skin);
+	cv::erode (skin, skin, cv::Mat::zeros (SKIN_KSIZE, CV_8UC1));
+	cv::dilate (skin, skin, cv::Mat::zeros (SKIN_KSIZE, CV_8UC1));
+
+	// find the contours around the skin area and return a bounding rectangle of it
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours (skin, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+	std::sort (contours.begin (), contours.end (), compare_contours);
+
+	return cv::boundingRect (contours[0]);
 }
 
 char imfile[255] = {0};
@@ -195,21 +242,6 @@ void parse_command_line (int argc, char **argv)
 	}
 }
 
-void wait ()
-{
-	bool done = false;
-	while (!done)
-	{
-		char c = (char) cv::waitKey (0);
-		switch (c)
-		{
-			case 'q':
-				done = true;
-				break;
-		}
-	}
-}
-
 int main (int argc, char **argv)
 {
 	// initialize
@@ -225,35 +257,40 @@ int main (int argc, char **argv)
 	cv::Mat handover = detect_handover (frame, detections);
 	if (zarray_size (detections))
 	{
-		cv::imshow ("handover", handover);
+		//cv::imshow ("handover", handover);
 		for (int i = 0; i < zarray_size (detections); i++)
 		{
 			apriltag_detection_t *d;
 			zarray_get (detections, i, &d);
-			//std::cout << detection2string (d) << std::endl;
+			std::cout << detection2string (d) << std::endl;
 
-			if (pose_f) // calculate transformation of the object
-			{
-				// find transformation of object in original image to the one in handover
-				// TODO not sure this can count as pose
-				cv::Mat ref = load_object_image (d->id);
-				cv::Mat trans = find_transformation (d, ref);
-				std::cout << trans << std::endl;
+			// find transformation of object in original image to the one in handover
+			// TODO not sure this can count as pose
+			cv::Mat ref = load_object_image (d->id);
+			cv::Mat trans = find_transformation (d, ref);
 
-				cv::Rect grasp = find_grasp_region (handover);
-				cv::Mat mask = load_object_mask (d->id);
-				cv::warpPerspective (mask, mask, trans, handover.size ());
-				cv::Mat neg;
-				handover.copyTo (neg, mask);
+			// load the mask and transform it accordingly to extract the object in the scene
+			// then invert the transformation of the extracted object into ground zero
+			// and lastly extract the grasping region that is latter drawn onto the original image of the object.
+			cv::Mat mask = load_object_mask (d->id);
+			cv::warpPerspective (mask, mask, trans, handover.size ());
+			cv::Mat object;
+			handover.copyTo (object, mask);
 
-				cv::Mat itrans, test;
-				cv::invert (trans, itrans);
-				cv::warpPerspective (neg, test, itrans, handover.size ());
-				cv::imwrite ("test.png", test);
+			cv::Mat itrans;
+			cv::invert (trans, itrans);
+			cv::warpPerspective (object, object, itrans, object.size ());
+			cv::Rect grasp = find_grasp_region (object);
 
-				cv::imshow ("masked out", neg);
-				cv::imwrite ("object.png", neg);
-			}
+			// draw the grasp region
+			cv::rectangle (
+					ref,
+					cv::Point (grasp.x, grasp.y),
+					cv::Point (grasp.x + grasp.width, grasp.y + grasp.height),
+					cv::Scalar (0, 0, 255),
+					1);
+			cv::imshow ("opencv grasp", ref);
+			wait ();
 		}
 
 		if (display_f) // if visualize option was passed
