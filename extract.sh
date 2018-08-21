@@ -1,7 +1,7 @@
 DATA=data
 RECORDINGS=$DATA/recordings
 TRAINING=$DATA/training
-BIN=./bin/extract
+BIN=./bin/extract_handover
 
 function ex
 {
