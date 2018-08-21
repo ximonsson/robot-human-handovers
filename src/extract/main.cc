@@ -24,26 +24,6 @@ void wait ()
 }
 
 /**
- * detection2str returns a string representation of a apriltag_detection_t pointed at by d.
- * The string is a one-line version of the detection in the following format:
- *     ID:(P0x,P0y)(P1x,P1y)(P2x,P2y)(P3x,P3y):(Cx,Cy)
- */
-std::string detection2str (apriltag_detection_t *d)
-{
-	// identifier
-	std::stringstream ss;
-	ss << d->id << ":";
-	// four corners
-	for (int i = 0; i < 4; i++)
-	{
-		ss << "(" << d->p[i][0] << "," << d->p[i][1] << ")";
-	}
-	// center
-	ss << ":(" << d->c[0] << "," << d->c[1] << ")";
-	return ss.str ();
-}
-
-/**
  * homography2str returns a string representation of the obtained homography matrix h.
  * The output is one line with each value separated by a ',', as well as ending with one.
  */
@@ -216,6 +196,26 @@ void init ()
 	td->refine_edges  = 1;
 	td->refine_decode = 0;
 	td->refine_pose   = 0;
+}
+
+/**
+ * detection2str returns a string representation of a apriltag_detection_t pointed at by d.
+ * The string is a one-line version of the detection in the following format:
+ *     ID:(P0x,P0y)(P1x,P1y)(P2x,P2y)(P3x,P3y):(Cx,Cy)
+ */
+std::string detection2str (apriltag_detection_t *d)
+{
+	// identifier
+	std::stringstream ss;
+	ss << d->id << ":";
+	// four corners
+	for (int i = 0; i < 4; i++)
+	{
+		ss << "(" << d->p[i][0] << "," << d->p[i][1] << ")";
+	}
+	// center
+	ss << ":(" << d->c[0] << "," << d->c[1] << ")";
+	return ss.str ();
 }
 
 /**
