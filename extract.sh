@@ -1,11 +1,11 @@
-export LD_LIBRARY_PATH=/usr/local/lib
-RECORDINGS=data/recordings
+DATA=data
+RECORDINGS=$DATA/recordings
+TRAINING=$DATA/training
 BIN=./bin/extract
-OUTFILE=
 
 function ex
 {
-	$BIN --image $1 --flip
+	LD_LIBRARY_PATH=/usr/local/lib $BIN --image $1 --flip
 }
 
 # if an input argument was supplied only run the extraction on that file
@@ -13,6 +13,15 @@ if [ "$#" -gt 0 ]
 then
 	ex $1
 	exit
+fi
+
+# create directory if it does not exist and remove all old training data
+if [ ! -d $TRAINING ]
+then
+	mkdir -p $TRAINING
+elif [ "$(ls -A $TRAINING)" ]
+then
+	rm $TRAINING/*
 fi
 
 # loop over all recording directories
@@ -30,15 +39,19 @@ do
 			continue
 		fi
 
+		# parse the output of the application
 		echo $FRAME
-		IFS=$'\n'
-		for LINE in $OUT
-		do
-			echo " > $LINE"
-		done
+		IFS=$'\n' read -rd '' -a LINES <<< $"$OUT"
 
-		#IFS=':' read -ra TAG <<< "$OUT"
-		#ID="${TAG[0]}"
-		#echo "in frame $FRAME we found TAG#$ID"
+		# parse ID of the tag
+		IFS=':' read -ra TAG <<< "${LINES[0]}"
+		ID="${TAG[0]}"
+
+		# write data to file
+		DATAFILE="$TRAINING/$ID"
+		echo "#$FRAME" >> $DATAFILE
+		echo "${LINES[0]}" >> $DATAFILE
+		echo "${LINES[1]}" >> $DATAFILE
+		echo "${LINES[2]}" >> $DATAFILE
 	done
 done
