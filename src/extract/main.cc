@@ -148,20 +148,29 @@ Grasp find_grasp_region (cv::Mat &m)
 #define DATA_OBJECT_DIR "data/objects/"
 
 /**
+ * Size of the Region Of Interest (ROI)
+ */
+#define ROI_W 300
+#define ROI_H 300
+
+/**
  * load_object_image returns the reference image for the object.
+ * The image is resized to the size of the region of interest for convenience.
  */
 cv::Mat load_object_image (int id)
 {
 	std::stringstream ss;
 	ss << DATA_OBJECT_DIR << id << ".jpg";
 	cv::Mat ref = cv::imread (ss.str ());
-	assert (ref.data != NULL);
+	assert (ref.data != NULL); // make sure we have a reference image of the object stored to disk to work with
+	cv::resize (ref, ref, cv::Size (ROI_W, ROI_H), 0, 0, cv::INTER_NEAREST);
 	cv::flip (ref, ref, 1);
 	return ref;
 }
 
 /**
  * load_object_mask returns the mask for the object with ID id.
+ * The mask is resized to the size of the ROI for convenience.
  */
 cv::Mat load_object_mask (int id)
 {
@@ -169,8 +178,81 @@ cv::Mat load_object_mask (int id)
 	ss << DATA_OBJECT_DIR << id << "_mask.jpg";
 	cv::Mat mask = cv::imread (ss.str (), CV_LOAD_IMAGE_GRAYSCALE);
 	cv::flip (mask, mask, 1);
+	cv::resize (mask, mask, cv::Size (ROI_W, ROI_H), 0, 0, cv::INTER_NEAREST);
 	cv::threshold (mask, mask, 155, 255, cv::THRESH_BINARY); // must have done the masks wrong
 	return mask;
+}
+
+/**
+ * extract_object will return a cv::Mat of the object in the frame masked out.
+ * The mask of the object with the supplied ID is loaded from disk and then applied to a warped version of the
+ * supplied frame to extract only the object in the scene.
+ */
+cv::Mat extract_object (cv::Mat frame, int id, cv::Mat H)
+{
+	// load the mask for the object and resize if needed to the size of the frame
+	cv::Mat mask = load_object_mask (id);
+
+	// transform the scene to fit the aspect ratio of the mask
+	cv::Mat m;
+	cv::warpPerspective (frame, m, H, frame.size ());
+
+	// mask out the object
+	cv::Mat object;
+	m.copyTo (object, mask);
+	return object;
+}
+
+void init ()
+{
+	tf->black_border = 1;
+	apriltag_detector_add_family (td, tf);
+
+	// not sure what these settings do...
+	td->quad_decimate = 1.0;
+	td->quad_sigma    = 0.0;
+	td->nthreads      = 4;
+	td->debug         = 0;
+	td->refine_edges  = 1;
+	td->refine_decode = 0;
+	td->refine_pose   = 0;
+}
+
+/**
+ * Detect any AprilTags in the image.
+ * Returns a pointer to zarray_t struct with the results. zarray_destroy needs to be called on the pointer later.
+ */
+zarray_t* detect (cv::Mat frame)
+{
+	cv::Mat gray;
+	cv::cvtColor (frame, gray, cv::COLOR_BGR2GRAY);
+	// Make an image_u8_t header for the Mat data
+	image_u8_t im =
+	{
+		.width  = gray.cols,
+		.height = gray.rows,
+		.stride = gray.cols,
+		.buf    = gray.data
+	};
+	zarray_t *detections = apriltag_detector_detect (td, &im);
+	return detections;
+}
+
+/**
+ * detect_handover takes a frame with a scene and tries to detect the handover in it.
+ * This function extracts a region of interest within the scene and tries to detect any objects within it. If
+ * it does we count this as a handover moment.
+ * In case no handover was detected the zarray_t pointer will point to an object with an empty size.
+ *
+ * Returns the ROI in the frame.
+ */
+cv::Mat detect_handover (cv::Mat frame, zarray_t *&detections)
+{
+	int roix = frame.cols / 2 - ROI_W / 2;
+	int roiy = frame.rows / 2 - ROI_H / 2;
+	cv::Mat handover_region = frame (cv::Range (roiy, roiy + ROI_H), cv::Range (roix, roix + ROI_W));
+	detections = detect (handover_region);
+	return handover_region;
 }
 
 /**
@@ -225,51 +307,18 @@ void draw_detections (cv::Mat frame, zarray_t* detections)
 	}
 }
 
-void init ()
+/**
+ * find_transformation finds the transformation that has been applied to find the detection in a frame.
+ * This is done by loading the reference image of the AprilTag ID, and then computing the homography between
+ * the tag in it to the detection that is supplied.
+ *
+ * Returns the Homography matrix between the reference AprilTag and the one in the detection.
+ */
+cv::Mat find_transformation (apriltag_detection_t *d)
 {
-	tf->black_border = 1;
-	apriltag_detector_add_family (td, tf);
+	// load the reference image and compute the homography from it
+	cv::Mat ref = load_object_image (d->id);
 
-	// not sure what these settings do...
-	td->quad_decimate = 1.0;
-	td->quad_sigma    = 0.0;
-	td->nthreads      = 4;
-	td->debug         = 0;
-	td->refine_edges  = 1;
-	td->refine_decode = 0;
-	td->refine_pose   = 0;
-}
-
-zarray_t* detect (cv::Mat frame)
-{
-	cv::Mat gray;
-	cv::cvtColor (frame, gray, cv::COLOR_BGR2GRAY);
-	// Make an image_u8_t header for the Mat data
-	image_u8_t im =
-	{
-		.width  = gray.cols,
-		.height = gray.rows,
-		.stride = gray.cols,
-		.buf    = gray.data
-	};
-	zarray_t *detections = apriltag_detector_detect (td, &im);
-	return detections;
-}
-
-#define ROI_W 500
-#define ROI_H 500
-
-cv::Mat detect_handover (cv::Mat frame, zarray_t *&detections)
-{
-	int roix = frame.cols / 2 - ROI_W / 2;
-	int roiy = frame.rows / 2 - ROI_H / 2;
-	cv::Mat handover_region = frame (cv::Range (roiy, roiy + ROI_H), cv::Range (roix, roix + ROI_W));
-	detections = detect (handover_region);
-	return handover_region;
-}
-
-cv::Mat find_transformation (apriltag_detection_t *d, cv::Mat ref)
-{
 	// detect the apriltag again in the reference image and then compute the homography from it
 	// to the detected tag in the scene
 	zarray_t *detections = detect (ref);
@@ -328,52 +377,56 @@ int main (int argc, char **argv)
 	parse_command_line (argc, argv);
 	init ();
 	int ret = 1;
-	cv::Mat frame = cv::imread (imfile); // load image
 
+	// load scene image
+	cv::Mat frame = cv::imread (imfile);
 	if (flip_f) // frames from the kinect camera need to be mirrored
 		cv::flip (frame, frame, 1);
 
 	// detect tag in the image
 	zarray_t *detections;
 	cv::Mat handover = detect_handover (frame, detections);
-	if (zarray_size (detections))
+	// if we detect more than one object it is too confusing and we will abort
+	if (zarray_size (detections) > 1)
 	{
-		for (int i = 0; i < zarray_size (detections); i++)
+		std::cerr << "Too many objects in handover region! Aborting..." << std::endl;
+		goto quit;
+	}
+	// else if there are none we abort also
+	else if (zarray_size (detections) == 0)
+	{
+		std::cerr << "No objects in handover region" << std::endl;
+		goto quit;
+	}
+
+	{ // from here on there should only be one object in the handover region to process
+		apriltag_detection_t *d;
+		zarray_get (detections, 0, &d);
+		std::cout << detection2str (d) << std::endl;
+
+		// find transformation of object in original image to the one in handover
+		cv::Mat H = find_transformation (d);
+		std::cout << homography2str (H) << std::endl;
+
+		// extract object from the scene
+		cv::Mat iH;
+		cv::invert (H, iH);
+		cv::Mat object = extract_object (handover, d->id, iH);
+
+		// extract grasp
+		Grasp grasp = find_grasp_region (object);
+		std::cout << grasp2str (grasp) << std::endl;
+
+		if (display_f)
 		{
-			apriltag_detection_t *d;
-			zarray_get (detections, i, &d);
-			std::cout << detection2str (d) << std::endl;
-
-			// find transformation of object in original image to the one in handover
-			cv::Mat ref = load_object_image (d->id);
-			cv::Mat trans = find_transformation (d, ref);
-			std::cout << homography2str (trans) << std::endl;
-
-			// invert the homography matrix and transform the handover to fit the object
-			cv::Mat itrans;
-			cv::invert (trans, itrans);
-			cv::warpPerspective (handover, handover, itrans, handover.size ());
-
-			// load the mask and extract only the object from the scene
-			// from it the occluded region will be the grasp region
-			cv::Mat mask = load_object_mask (d->id);
-			cv::Mat object;
-			handover.copyTo (object, mask);
-			Grasp grasp = find_grasp_region (object);
-			std::cout << grasp2str (grasp) << std::endl;
-
-			if (display_f)
-			{
-				draw_grasp (object, grasp);
-				cv::imshow ("opencv grasp", object);
-				wait ();
-			}
+			draw_grasp (object, grasp);
+			cv::imshow ("opencv grasp", object);
+			wait ();
 		}
 		ret = 0;
 	}
-	else
-		std::cout << "no tags detected" << std::endl;
 
+quit:
 	// destroy and exit
 	cv::destroyAllWindows ();
 	zarray_destroy (detections);
