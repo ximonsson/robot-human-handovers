@@ -47,7 +47,7 @@ typedef cv::RotatedRect Grasp;
 /**
  * grasp2str returns a string representation of the grasp region defined by the Grasp g.
  * The output is a one-line string in the format:
- *     X,Y,W,H,Angle
+ *     Cx,Cy,W,H,Angle
  */
 std::string grasp2str (Grasp g)
 {

@@ -13,8 +13,8 @@ include_directories (${OpenCV_INCLUDE_DIRS} /usr/local/include/apriltag)
 link_directories (${PROJECT_LIB_DIR})
 add_definitions (${OPENCV__DEFINITIONS})
 
-add_executable (extract_handover handover_extract)
-add_executable (extract_tagid tagid_extract)
+add_executable (extract_handover handover)
+add_executable (extract_tagid tagid)
 
 target_link_libraries (extract_handover ${OpenCV_LIBS} ${APRILTAG_LIBRARIES})
 target_link_libraries (extract_tagid ${OpenCV_LIBS} ${APRILTAG_LIBRARIES})
