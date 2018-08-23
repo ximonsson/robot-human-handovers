@@ -184,6 +184,9 @@ int detect (cv::Mat &frame)
 	return 0;
 }
 
+#define ROI_W 300
+#define ROI_H 300
+
 void visualize (libfreenect2::Frame *rgb, libfreenect2::Frame *depth, libfreenect2::Frame *registered)
 {
 	cv::Mat image_rgb;
@@ -194,6 +197,8 @@ void visualize (libfreenect2::Frame *rgb, libfreenect2::Frame *depth, libfreenec
 	{
 		detect (image_rgb);
 	}
+
+	cv::rectangle (image_rgb, cv::Point (image_rgb.cols / 2 - ROI_W / 2, image_rgb.rows / 2 - ROI_H / 2), cv::Point (image_rgb.cols / 2 + ROI_W / 2, image_rgb.rows / 2 + ROI_H / 2), cv::Scalar (0, 0, 255), 2);
 
 	cv::Mat reg;
 	cv::Mat (registered->height, registered->width, CV_8UC4, registered->data).copyTo (reg);
