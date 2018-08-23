@@ -1,17 +1,18 @@
 import numpy as np
 import cv2
 import os
+import sys
 
 
 ROI_W = 300
 ROI_H = 300
 
-"""
-Grasp region on an object.
-Represents a rotated angle.
-"""
-
 class Grasp:
+	"""
+	Grasp region on an object.
+	Represents a rotated angle.
+	"""
+
 	def __init__(self, x, y, w, h, a):
 		self.x = x
 		self.y = y
@@ -91,54 +92,45 @@ def store_data():
 		f.write("".join(data_backlog))
 
 
-sample_data = \
-		"""#data/recordings/eight/rgb/25.jpg
-17:(165.979,290.842)(157.228,264.49)(131.054,273.646)(139.61,299.697):(148.378,282.176)
--0.748461,-0.302265,328.017,0.508082,-0.834367,373.881,0.000777055,0.000204543,1,
-116.972,210.425,38.4291,13.6075,-77.1957
-"""
 
-DATA_TRAINING_DIR = "data/training"
+DATA_FILE = sys.argv[1]
 DATA_NLINES = 4
 quit = False
 # iterate over all files in directory of extracted data
-for filename in os.listdir(DATA_TRAINING_DIR):
-	if quit: # if the stop flag has been set
-		break
-	with open(os.path.join(DATA_TRAINING_DIR, filename), "r") as f:
+with open(DATA_FILE, "r") as f:
+	data = ""
+	i = 0
+	for line in f:
+		data += line
+		i += 1
+		if not i == DATA_NLINES: # continue reading until we have data for an entire handover
+			continue
+
+		# parse data and display it
+		# afterwards wait for keypress with command about what to do with the data
+		fp, tid, H, g = parse_data(data)
+		display(fp, tid, H, g)
+
+		while True:
+			k = cv2.waitKey(0)
+			if k == ord('q'):
+				quit = True
+				break
+			elif k == ord('s'):
+				data_valid.append(data)
+				break
+			elif k == ord('d'):
+				data_discard.append(data)
+				break
+			elif k == ord('a'):
+				data_backlog.append(data)
+				break
+
+		if quit:
+			break
+		# reset
 		data = ""
 		i = 0
-		for line in f:
-			data += line
-			i += 1
-			if not i == DATA_NLINES: # continue reading until we have data for an entire handover
-				continue
-
-			# parse data and display it
-			# afterwards wait for keypress with command about what to do with the data
-			fp, tid, H, g = parse_data(data)
-			display(fp, tid, H, g)
-
-			while True:
-				k = cv2.waitKey(0)
-				if k == ord('q'):
-					quit = True
-					break
-				elif k == ord('s'):
-					data_valid.append(data)
-					break
-				elif k == ord('d'):
-					data_discard.append(data)
-					break
-				elif k == ord('a'):
-					data_backlog.append(data)
-					break
-
-			if quit:
-				break
-			# reset
-			data = ""
-			i = 0
 
 cv2.destroyAllWindows()
 store_data()
