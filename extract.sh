@@ -11,12 +11,8 @@ function ex
 
 function progress
 {
-	DIR=$1
-	FRAME=$2
-	TOT=$3
-
-	PROGRESS=$(echo "scale=2; $FRAME/$TOT*100" | bc)
-	printf "\r> Processing [ $DIR ] ... $PROGRESS%%"
+	PROGRESS=$(echo "scale=2; $2/$3*100" | bc)
+	printf "\r> Processing [ $1 ] ... %.0f%%" $PROGRESS
 }
 
 # if an input argument was supplied only run the extraction on that file
@@ -36,7 +32,9 @@ then
 fi
 
 # loop over all recording directories
-for REC in $RECORDINGS/*
+#for REC in $RECORDINGS/*
+foo=("$RECORDINGS/one")
+for REC in ${foo[@]}
 do
 	IDS=() # item ids that we find in the frames
 	FRAMES=0 # total amount of frames with handovers in the recording
@@ -60,18 +58,14 @@ do
 			FRAMES=$((FRAMES + 1))
 		fi
 
-		# parse the output of the application
+		# parse ID from the output of the application
 		IFS=$'\n' read -rd '' -a LINES <<< $"$OUT"
-
-		# parse ID of the tag
 		IFS=':' read -ra TAG <<< "${LINES[0]}"
 		IDS+=("${TAG[0]}")
 
 		# write data to file
 		echo "#$FRAME" >> $DATAFILE
-		echo "${LINES[0]}" >> $DATAFILE
-		echo "${LINES[1]}" >> $DATAFILE
-		echo "${LINES[2]}" >> $DATAFILE
+		echo "$OUT" >> $DATAFILE
 	done
 
 	IDS=`printf "%s\n" ${IDS[@]} | sort -u`
