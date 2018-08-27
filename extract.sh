@@ -32,9 +32,7 @@ then
 fi
 
 # loop over all recording directories
-#for REC in $RECORDINGS/*
-foo=("$RECORDINGS/one")
-for REC in ${foo[@]}
+for REC in $RECORDINGS/*
 do
 	IDS=() # item ids that we find in the frames
 	FRAMES=0 # total amount of frames with handovers in the recording
