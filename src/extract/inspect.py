@@ -2,10 +2,13 @@ import numpy as np
 import cv2
 import os
 import sys
+import math
 
 
-ROI_W = 300
-ROI_H = 300
+ROI_W = 350
+ROI_H = 400
+ROI_X = -ROI_W / 2
+ROI_Y = -100
 
 class Grasp:
 	"""
@@ -57,18 +60,37 @@ def display(f, tid, H, g):
 	"""
 	# load item image
 	item = cv2.imread("data/objects/%d.jpg" % tid)
-	item = cv2.resize(item, (ROI_W, ROI_H))
 	item = cv2.flip(item, 1) # flip it because it is an image from the kinect
 	# draw the grasping region
 	box = cv2.boxPoints(g.box())
 	box = np.int0(box)
 	cv2.drawContours(item, [box], 0, (0, 0, 255))
 	# warp it to the same perspective as in the handover
-	item = cv2.warpPerspective(item, H, (item.shape[0], item.shape[1]))
+	#item = cv2.warpPerspective(item, H, (item.shape[0], item.shape[1]))
 
+    # Normalization to ensure that ||c1|| = 1
+	norm = np.sqrt(np.sum(H[:,0] ** 2))
+	H /= norm
+	c1 = H[:, 0]
+	c2 = H[:, 1]
+	c3 = np.cross(c1, c2)
+
+	# create rotation matrix
+	R = np.zeros((3, 3), dtype=np.float64)
+	for i in range(3):
+		R[i, :] = [c1[i], c2[i], c3[i]]
+	w, u, t = cv2.SVDecomp(R)
+	R = np.dot(u, t)
+
+	# calculate rotation in Z-axis and rotate the original image
+	# TODO fix to dynamic center relative to the center of the tag
+	thetaZ = math.atan2(R[1,0], R[0,0])
+	thetaZ = - thetaZ * 180 / math.pi
+	rot = cv2.getRotationMatrix2D((item.shape[0]/2, item.shape[1]/2), thetaZ, 1.0)
+	rotated = cv2.warpAffine(item, rot, (item.shape[0], item.shape[1]))
 	# display everything
 	cv2.imshow("opencv frame", cv2.flip(cv2.imread(f), 1))
-	cv2.imshow("opencv data", item)
+	cv2.imshow("opencv data", rotated)
 
 
 
