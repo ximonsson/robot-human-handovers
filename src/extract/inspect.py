@@ -3,6 +3,7 @@ import cv2
 import os
 import sys
 import math
+import json
 
 
 ROI_W = 350
@@ -10,12 +11,12 @@ ROI_H = 400
 ROI_X = -ROI_W / 2
 ROI_Y = -100
 
+
 class Grasp:
 	"""
 	Grasp region on an object.
 	Represents a rotated angle.
 	"""
-
 	def __init__(self, x, y, w, h, a):
 		self.x = x
 		self.y = y
@@ -28,6 +29,15 @@ class Grasp:
 
 	def box(self):
 		return (self.x, self.y), (self.w, self.h), self.a
+
+	def __dict__(self):
+		return {
+			"x": self.x,
+			"y": self.y,
+			"w": self.w,
+			"h": self.h,
+			"a": self.a,
+			}
 
 
 def parse_data(data):
@@ -68,7 +78,7 @@ def display(f, tid, H, g):
 	# warp it to the same perspective as in the handover
 	#item = cv2.warpPerspective(item, H, (item.shape[0], item.shape[1]))
 
-    # Normalization to ensure that ||c1|| = 1
+	# Normalization to ensure that ||c1|| = 1
 	norm = np.sqrt(np.sum(H[:,0] ** 2))
 	H /= norm
 	c1 = H[:, 0]
@@ -94,35 +104,58 @@ def display(f, tid, H, g):
 
 
 
-data_valid = [] # data that is assumed to be valid
-data_discard = [] # data to be discarded
-data_backlog = [] # data that is put in to a backlog to be checked over later again with different parameters maybe
+data_valid = {"data": []} # data that is assumed to be valid
+data_discard = {"data": []} # data to be discarded
+data_backlog = {"data": []} # data that is put in to a backlog to be checked over later again with different parameters maybe
+
+
+def append_data(data, filepath, tag_id, H, grasp):
+	data["data"].append(
+			{
+				"file": filepath,
+				"grasp": grasp.__dict__(),
+				"tag": {
+					"id": tag_id,
+					},
+				"H": H.tolist(),
+				}
+			)
+
 
 def store_data():
 	# filepaths to where to store the different data
-	DATA_FP_VALID = "data_valid"
-	DATA_FP_DISCARD = "data_discard"
-	DATA_FP_BACKLOG = "data_backlog"
+	DATA_FP_VALID = "data_valid.json"
+	DATA_FP_DISCARD = "data_discard.json"
+	DATA_FP_BACKLOG = "data_backlog.json"
 
 	with open(DATA_FP_VALID, "w") as f:
-		f.write("".join(data_valid))
+		json.dump(data_valid, f)
 
 	with open(DATA_FP_DISCARD, "w") as f:
-		f.write("".join(data_discard))
+		json.dump(data_discard, f)
 
 	with open(DATA_FP_BACKLOG, "w") as f:
-		f.write("".join(data_backlog))
-
+		json.dump(data_backlog, f)
 
 
 DATA_FILE = sys.argv[1]
 DATA_NLINES = 4
+
+# if we supplied at what entry we want to start
+start = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+n = start
+start *= 4
+
 quit = False
 # iterate over all files in directory of extracted data
 with open(DATA_FILE, "r") as f:
 	data = ""
 	i = 0
 	for line in f:
+		if start != 0:
+			start -= 1
+			continue
+
 		data += line
 		i += 1
 		if not i == DATA_NLINES: # continue reading until we have data for an entire handover
@@ -139,20 +172,22 @@ with open(DATA_FILE, "r") as f:
 				quit = True
 				break
 			elif k == ord('s'):
-				data_valid.append(data)
+				append_data(data_valid, fp, tid, H, g)
 				break
 			elif k == ord('d'):
-				data_discard.append(data)
+				append_data(data_discard, fp, tid, H, g)
 				break
 			elif k == ord('a'):
-				data_backlog.append(data)
+				append_data(data_backlog, fp, tid, H, g)
 				break
 
 		if quit:
 			break
-		# reset
+
+		n += 1
 		data = ""
 		i = 0
 
+print("finished at entry [%d]" % n)
 cv2.destroyAllWindows()
 store_data()
