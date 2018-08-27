@@ -123,82 +123,6 @@ Grasp find_grasp_region (cv::Mat &m)
 }
 
 /**
- * Directory containing object data images.
- */
-#define DATA_OBJECT_DIR "data/objects/"
-
-/**
- * Size of the Region Of Interest (ROI)
- */
-#define ROI_W 300
-#define ROI_H 300
-
-/**
- * load_object_image returns the reference image for the object.
- * The image is resized to the size of the region of interest for convenience.
- */
-cv::Mat load_object_image (int id)
-{
-	std::stringstream ss;
-	ss << DATA_OBJECT_DIR << id << ".jpg";
-	cv::Mat ref = cv::imread (ss.str ());
-	assert (ref.data != NULL); // make sure we have a reference image of the object stored to disk to work with
-	cv::resize (ref, ref, cv::Size (ROI_W, ROI_H), 0, 0, cv::INTER_NEAREST);
-	cv::flip (ref, ref, 1);
-	return ref;
-}
-
-/**
- * load_object_mask returns the mask for the object with ID id.
- * The mask is resized to the size of the ROI for convenience.
- */
-cv::Mat load_object_mask (int id)
-{
-	std::stringstream ss;
-	ss << DATA_OBJECT_DIR << id << "_mask.jpg";
-	cv::Mat mask = cv::imread (ss.str (), CV_LOAD_IMAGE_GRAYSCALE);
-	cv::flip (mask, mask, 1);
-	cv::resize (mask, mask, cv::Size (ROI_W, ROI_H), 0, 0, cv::INTER_NEAREST);
-	cv::threshold (mask, mask, 155, 255, cv::THRESH_BINARY); // must have done the masks wrong
-	return mask;
-}
-
-/**
- * extract_object will return a cv::Mat of the object in the frame masked out.
- * The mask of the object with the supplied ID is loaded from disk and then applied to a warped version of the
- * supplied frame to extract only the object in the scene.
- */
-cv::Mat extract_object (cv::Mat frame, int id, cv::Mat H)
-{
-	// load the mask for the object and resize if needed to the size of the frame
-	cv::Mat mask = load_object_mask (id);
-
-	// transform the scene to fit the aspect ratio of the mask
-	cv::Mat m;
-	cv::warpPerspective (frame, m, H, frame.size ());
-
-	// mask out the object
-	cv::Mat object;
-	m.copyTo (object, mask);
-	return object;
-}
-
-void init ()
-{
-	tf->black_border = 1;
-	apriltag_detector_add_family (td, tf);
-
-	// not sure what these settings do...
-	td->quad_decimate = 1.0;
-	td->quad_sigma    = 0.0;
-	td->nthreads      = 4;
-	td->debug         = 0;
-	td->refine_edges  = 1;
-	td->refine_decode = 0;
-	td->refine_pose   = 0;
-}
-
-/**
  * detection2str returns a string representation of a apriltag_detection_t pointed at by d.
  * The string is a one-line version of the detection in the following format:
  *     ID:(P0x,P0y)(P1x,P1y)(P2x,P2y)(P3x,P3y):(Cx,Cy)
@@ -239,6 +163,15 @@ zarray_t* detect (cv::Mat frame)
 }
 
 /**
+ * Parameters of the Region Of Interest (ROI)
+ * X,Y cordinates denote the upper left's corner's offset from the center of the image.
+ */
+#define ROI_W 350
+#define ROI_H 400
+#define ROI_X (-ROI_W >> 1)
+#define ROI_Y -100
+
+/**
  * detect_handover takes a frame with a scene and tries to detect the handover in it.
  * This function extracts a region of interest within the scene and tries to detect any objects within it. If
  * it does we count this as a handover moment.
@@ -246,13 +179,19 @@ zarray_t* detect (cv::Mat frame)
  *
  * Returns the ROI in the frame.
  */
-cv::Mat detect_handover (cv::Mat frame, zarray_t *&detections)
+zarray_t* detect_handover (cv::Mat frame)
 {
-	int roix = frame.cols / 2 - ROI_W / 2;
-	int roiy = frame.rows / 2 - ROI_H / 2;
-	cv::Mat handover_region = frame (cv::Range (roiy, roiy + ROI_H), cv::Range (roix, roix + ROI_W));
-	detections = detect (handover_region);
-	return handover_region;
+	int roix = frame.cols / 2 + ROI_X;
+	int roiy = frame.rows / 2 + ROI_Y;
+	cv::Rect roi (roix, roiy, ROI_W, ROI_H);
+
+	// mask out the handover region we are interested in
+	cv::Mat mask = cv::Mat::zeros (frame.rows, frame.cols, CV_8U);
+	cv::rectangle (mask, roi, 255, cv::FILLED);
+	cv::Mat detection_area;
+	frame.copyTo (detection_area, mask);
+
+	return detect (detection_area);
 }
 
 /**
@@ -307,6 +246,44 @@ void draw_detections (cv::Mat frame, zarray_t* detections)
 	}
 }
 
+#define OBJ_W 500
+#define OBJ_H 500
+
+/**
+ * Directory containing object data images.
+ */
+#define DATA_OBJECT_DIR "data/objects/"
+
+/**
+ * load_object_image returns the reference image for the object.
+ * The image is resized to the size of the region of interest for convenience.
+ */
+cv::Mat load_object_image (int id)
+{
+	std::stringstream ss;
+	ss << DATA_OBJECT_DIR << id << ".jpg";
+	cv::Mat ref = cv::imread (ss.str ());
+	assert (ref.data != NULL); // make sure we have a reference image of the object stored to disk to work with
+	//cv::resize (ref, ref, cv::Size (ROI_W, ROI_H), 0, 0, cv::INTER_NEAREST);
+	cv::flip (ref, ref, 1);
+	return ref;
+}
+
+/**
+ * load_object_mask returns the mask for the object with ID id.
+ * The mask is resized to the size of the ROI for convenience.
+ */
+cv::Mat load_object_mask (int id)
+{
+	std::stringstream ss;
+	ss << DATA_OBJECT_DIR << id << "_mask.jpg";
+	cv::Mat mask = cv::imread (ss.str (), CV_LOAD_IMAGE_GRAYSCALE);
+	cv::flip (mask, mask, 1);
+	//cv::resize (mask, mask, cv::Size (ROI_W, ROI_H), 0, 0, cv::INTER_NEAREST);
+	cv::threshold (mask, mask, 155, 255, cv::THRESH_BINARY); // must have done the masks wrong
+	return mask;
+}
+
 /**
  * find_transformation finds the transformation that has been applied to find the detection in a frame.
  * This is done by loading the reference image of the AprilTag ID, and then computing the homography between
@@ -341,8 +318,51 @@ cv::Mat find_transformation (apriltag_detection_t *d)
 	return cv::findHomography (src, dst);
 }
 
+/**
+ * extract_object will return a cv::Mat of the object in the frame masked out.
+ * The mask of the object with the supplied ID is loaded from disk and then warped before being applied
+ * to the supplied frame to extract only the object in the scene.
+ * The returned matrix has the same size as the mask (500x500)
+ */
+cv::Mat extract_object (cv::Mat f, apriltag_detection_t *d, cv::Mat &H)
+{
+	// extract a rectangle around the detected object of OBJ_W x OBJ_H
+	cv::Mat obj = f (cv::Range (d->c[1] - OBJ_H / 2, d->c[1] + OBJ_H / 2), cv::Range (d->c[0] - OBJ_W / 2, d->c[0] + OBJ_W / 2));
+
+	// detect again within this new image the tag from which will calculate the transformation
+	// NOTE maybe we can speed this up by just subtracting from the points in the supplied detection
+	zarray_t* detections = detect (obj);
+	apriltag_detection_t *detection;
+	zarray_get (detections, 0, &detection);
+	H = find_transformation (detection);
+	zarray_destroy (detections);
+
+	// load the mask for the object,
+	// transform the mask to fit the aspect ratio of the object
+	// mask out the object
+	cv::Mat mask = load_object_mask (d->id);
+	cv::warpPerspective (mask, mask, H, mask.size ());
+	cv::Mat object; obj.copyTo (object, mask);
+	return object;
+}
+
 char imfile[255] = {0};
 int display_f, pose_f, flip_f;
+
+void init ()
+{
+	tf->black_border = 1;
+	apriltag_detector_add_family (td, tf);
+
+	// not sure what these settings do...
+	td->quad_decimate = 1.0;
+	td->quad_sigma    = 0.0;
+	td->nthreads      = 4;
+	td->debug         = 0;
+	td->refine_edges  = 1;
+	td->refine_decode = 0;
+	td->refine_pose   = 0;
+}
 
 void parse_command_line (int argc, char **argv)
 {
@@ -384,15 +404,14 @@ int main (int argc, char **argv)
 		cv::flip (frame, frame, 1);
 
 	// detect tag in the image
-	zarray_t *detections;
-	cv::Mat handover = detect_handover (frame, detections);
 	// if we detect more than one object it is too confusing and we will abort
+	// else if there are none we abort also
+	zarray_t *detections = detect_handover (frame);
 	if (zarray_size (detections) > 1)
 	{
 		std::cerr << "Too many objects in handover region! Aborting..." << std::endl;
 		goto quit;
 	}
-	// else if there are none we abort also
 	else if (zarray_size (detections) == 0)
 	{
 		std::cerr << "No objects in handover region" << std::endl;
@@ -404,23 +423,21 @@ int main (int argc, char **argv)
 		zarray_get (detections, 0, &d);
 		std::cout << detection2str (d) << std::endl;
 
-		// find transformation of object in original image to the one in handover
-		cv::Mat H = find_transformation (d);
+		// get the object in the scene masked out
+		cv::Mat H;
+		cv::Mat obj = extract_object (frame, d, H);
 		std::cout << homography2str (H) << std::endl;
 
-		// extract object from the scene
-		cv::Mat iH;
-		cv::invert (H, iH);
-		cv::Mat object = extract_object (handover, d->id, iH);
-
-		// extract grasp
-		Grasp grasp = find_grasp_region (object);
+		// transform to same orientation in original image and extract grasp
+		cv::Mat iH; cv::invert (H, iH);
+		cv::warpPerspective (obj, obj, iH, obj.size ());
+		Grasp grasp = find_grasp_region (obj);
 		std::cout << grasp2str (grasp) << std::endl;
 
 		if (display_f)
 		{
-			draw_grasp (object, grasp);
-			cv::imshow ("opencv grasp", object);
+			draw_grasp (obj, grasp);
+			cv::imshow ("opencv handover", obj);
 			wait ();
 		}
 		ret = 0;
