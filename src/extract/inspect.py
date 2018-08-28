@@ -40,6 +40,37 @@ class Grasp:
 			}
 
 
+class Object:
+	def __init__(self, filename, tid, center, corners, im=None):
+		self.filename = filename
+		self.tid = tid
+		self.center = center
+		self.corners = corners
+		self.im = im
+
+	def __str__(self):
+		return "[%d] %s : %s : %s" % (self.tid, self.filename, self.center, self.corners)
+
+
+# load objects into database
+objects = dict()
+with open("data/objects/objects.db") as f:
+	for line in f:
+		tokens = line[:-1].split(":")
+		# parse center point
+		center = tuple(map(np.float32, tokens[3][1:-1].split(",")))
+		# parse corners
+		corners = tokens[2][1:-1].split(")(")
+		corners = list(map(lambda x: tuple(map(np.float32, x.split(","))), corners))
+		# add to dictionary of objects
+		objects[int(tokens[1])] = Object(
+				tokens[0],
+				int(tokens[1]),
+				center,
+				corners,
+				im=cv2.flip(cv2.imread(tokens[0]), 1),)
+
+
 def parse_data(data):
 	"""
 	Parse handover data connected to a frame.
@@ -69,12 +100,15 @@ def display(f, tid, H, g):
 	and the grasping region.
 	"""
 	# load item image
-	item = cv2.imread("data/objects/%d.jpg" % tid)
-	item = cv2.flip(item, 1) # flip it because it is an image from the kinect
+	#item = cv2.imread("data/objects/%d.jpg" % tid)
+	#item = cv2.flip(item, 1) # flip it because it is an image from the kinect
+	item = objects[tid]
+	im = np.copy(item.im)
+
 	# draw the grasping region
 	box = cv2.boxPoints(g.box())
 	box = np.int0(box)
-	cv2.drawContours(item, [box], 0, (0, 0, 255))
+	cv2.drawContours(im, [box], 0, (0, 0, 255))
 	# warp it to the same perspective as in the handover
 	#item = cv2.warpPerspective(item, H, (item.shape[0], item.shape[1]))
 
@@ -86,18 +120,18 @@ def display(f, tid, H, g):
 	c3 = np.cross(c1, c2)
 
 	# create rotation matrix
+	# calculate the rotation in Z-axis and rotate the original image
 	R = np.zeros((3, 3), dtype=np.float64)
 	for i in range(3):
 		R[i, :] = [c1[i], c2[i], c3[i]]
 	w, u, t = cv2.SVDecomp(R)
 	R = np.dot(u, t)
-
-	# calculate rotation in Z-axis and rotate the original image
-	# TODO fix to dynamic center relative to the center of the tag
-	thetaZ = math.atan2(R[1,0], R[0,0])
+	thetaZ = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
 	thetaZ = - thetaZ * 180 / math.pi
-	rot = cv2.getRotationMatrix2D((item.shape[0]/2, item.shape[1]/2), thetaZ, 1.0)
-	rotated = cv2.warpAffine(item, rot, (item.shape[0], item.shape[1]))
+	#rot = cv2.getRotationMatrix2D((item.shape[0]/2, item.shape[1]/2), thetaZ, 1.0)
+	rot = cv2.getRotationMatrix2D(item.center, thetaZ, 1.0)
+	rotated = cv2.warpAffine(im, rot, (im.shape[0], im.shape[1]))
+
 	# display everything
 	cv2.imshow("opencv frame", cv2.flip(cv2.imread(f), 1))
 	cv2.imshow("opencv data", rotated)

@@ -8,6 +8,74 @@
 apriltag_detector_t *td = apriltag_detector_create ();
 apriltag_family_t *tf = tag36h11_create ();
 
+
+typedef struct object
+{
+	int ID;
+	cv::Point2f center;
+	cv::Point2f corners[4];
+	std::string file;
+}
+object;
+
+static std::vector<object> objects;
+
+
+int load_object_database (const char *file)
+{
+	std::ifstream odb (file);
+	if (!odb.is_open ())
+		return -1;
+
+	std::string line;
+	while (getline (odb, line))
+	{
+		// split the line in tokens
+		std::string tokens[4];
+		size_t pos = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			size_t delim = line.find (":", pos);
+			tokens[i] = line.substr (pos, delim-pos);
+			pos = delim + 1;
+		}
+
+		// create a new object and push it to the vector
+		object o;
+		o.ID = std::stoi (tokens[1]);
+		o.file = tokens[0];
+
+		// parse size data
+		// first get the substring without the parentheses and then split on the comma
+		pos = tokens[3].find (")");
+		tokens[3] = tokens[3].substr (1, pos);
+		pos = tokens[3].find (",");
+		o.center = cv::Point2f (
+				std::stof (tokens[3].substr (0, pos)),
+				std::stof (tokens[3].substr (pos + 1)));
+
+		// parse the corners of the tag
+		pos = 1;
+		for (int i = 0; i < 4; i++)
+		{
+			size_t delim = tokens[2].find (")", pos);
+			std::string pointstr = tokens[2].substr (pos, delim-pos);
+			pos = delim + 2;
+
+			delim = pointstr.find (",");
+			o.corners[i] = cv::Point2f (
+					std::stof (pointstr.substr (0, delim)),
+					std::stof (pointstr.substr (delim + 1)));
+		}
+
+		objects.push_back (o);
+	}
+
+	odb.close ();
+	return 0;
+}
+
+
 void wait ()
 {
 	bool done = false;
@@ -293,6 +361,7 @@ cv::Mat load_object_mask (int id)
  */
 cv::Mat find_transformation (apriltag_detection_t *d)
 {
+	/*
 	// load the reference image and compute the homography from it
 	cv::Mat ref = load_object_image (d->id);
 
@@ -301,12 +370,27 @@ cv::Mat find_transformation (apriltag_detection_t *d)
 	zarray_t *detections = detect (ref);
 	apriltag_detection_t *refd;
 	zarray_get (detections, 0, &refd); // first detected tag - would be poor reference images otherwise
+	*/
+
+	object ref;
+	for (std::vector<object>::iterator it = objects.begin (); it != objects.end (); it++)
+	{
+		if ((*it).ID == d->id)
+		{
+			ref = *it;
+			break;
+		}
+	}
 
 	std::vector<cv::Point2f> src;
-	src.push_back (cv::Point2f (refd->p[0][0], refd->p[0][1]));
-	src.push_back (cv::Point2f (refd->p[1][0], refd->p[1][1]));
-	src.push_back (cv::Point2f (refd->p[2][0], refd->p[2][1]));
-	src.push_back (cv::Point2f (refd->p[3][0], refd->p[3][1]));
+	//src.push_back (cv::Point2f (refd->p[0][0], refd->p[0][1]));
+	//src.push_back (cv::Point2f (refd->p[1][0], refd->p[1][1]));
+	//src.push_back (cv::Point2f (refd->p[2][0], refd->p[2][1]));
+	//src.push_back (cv::Point2f (refd->p[3][0], refd->p[3][1]));
+	src.push_back (ref.corners[0]);
+	src.push_back (ref.corners[1]);
+	src.push_back (ref.corners[2]);
+	src.push_back (ref.corners[3]);
 
 	std::vector<cv::Point2f> dst;
 	dst.push_back (cv::Point2f (d->p[0][0], d->p[0][1]));
@@ -314,7 +398,7 @@ cv::Mat find_transformation (apriltag_detection_t *d)
 	dst.push_back (cv::Point2f (d->p[2][0], d->p[2][1]));
 	dst.push_back (cv::Point2f (d->p[3][0], d->p[3][1]));
 
-	zarray_destroy (detections);
+	//zarray_destroy (detections);
 	return cv::findHomography (src, dst);
 }
 
@@ -349,8 +433,12 @@ cv::Mat extract_object (cv::Mat f, apriltag_detection_t *d, cv::Mat &H)
 char imfile[255] = {0};
 int display_f, pose_f, flip_f;
 
-void init ()
+#define OBJECT_DATABASE_FILE "data/objects/objects.db"
+
+int init ()
 {
+	int ret = 0;
+
 	tf->black_border = 1;
 	apriltag_detector_add_family (td, tf);
 
@@ -362,6 +450,9 @@ void init ()
 	td->refine_edges  = 1;
 	td->refine_decode = 0;
 	td->refine_pose   = 0;
+
+	ret = load_object_database (OBJECT_DATABASE_FILE);
+	return ret;
 }
 
 void parse_command_line (int argc, char **argv)
