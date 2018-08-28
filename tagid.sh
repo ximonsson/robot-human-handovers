@@ -1,8 +1,14 @@
 DIR=$1
 BIN=bin/extract_tagid
+DST=objects.db
+
+if [ -f $DST ]
+then
+	rm $DST
+fi
 
 echo "Looping over RGB images in $DIR/rgb ... "
-for IM in $DIR/rgb/*.jpg
+for IM in $DIR/*.jpg
 do
 	# extract data
 	# if we didn't find any tag we continue to the next frame
@@ -18,4 +24,5 @@ do
 	ID="${TAG[0]}"
 
 	echo "$IM => $ID"
+	echo "$IM:$OUT" >> $DST
 done
