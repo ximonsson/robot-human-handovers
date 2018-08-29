@@ -1,3 +1,7 @@
+import numpy as np
+import cv2
+
+
 class Grasp:
 	"""
 	Grasp region on an object.
@@ -13,9 +17,6 @@ class Grasp:
 	def __str__(self):
 		return "(%f, %f): [%f x %f]: %f" % (self.x, self.y, self.w, self.h, self.a)
 
-	def box(self):
-		return (self.x, self.y), (self.w, self.h), self.a
-
 	def __dict__(self):
 		return {
 			"x": self.x,
@@ -25,3 +26,19 @@ class Grasp:
 			"a": self.a,
 			}
 
+	def box(self):
+		"""
+		Get OpenCV compatible data for the rotated rectangle.
+		"""
+		return (self.x, self.y), (self.w, self.h), self.a
+
+	def draw(self, im, color=(0, 0, 255)):
+		"""
+		Draw the grasping region on the image.
+		Returns a copy of the image with the rectangle drawn on it.
+		"""
+		im = np.copy(im)
+		box = cv2.boxPoints(self.box())
+		box = np.int0(box)
+		cv2.drawContours(im, [box], 0, color)
+		return im

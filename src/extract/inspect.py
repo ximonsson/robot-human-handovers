@@ -1,8 +1,6 @@
-import numpy as np
 import cv2
 import os
 import sys
-import math
 import json
 import handoverdata as hd
 from handoverdata.object import load_objects_database
@@ -24,61 +22,10 @@ def display(handover):
 	"""
 	# load item image
 	item = objects[handover.objectID]
-	im = np.copy(item.im)
-
-	# draw the grasping region
-	box = cv2.boxPoints(handover.grasp.box())
-	box = np.int0(box)
-	cv2.drawContours(im, [box], 0, (0, 0, 255))
-	# warp it to the same perspective as in the handover
-	#item = cv2.warpPerspective(item, handover.H, (item.shape[0], item.shape[1]))
-
-	H = np.copy(handover.H)
-	R = hd.rotation_matrix(H)
-	thetaZ = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
-	thetaZ = - thetaZ * 180 / math.pi
-	R = cv2.getRotationMatrix2D(item.center, thetaZ, 1.0)
-	rotated = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
-
+	im = handover.draw(item)
 	# display everything
 	cv2.imshow("opencv frame", handover.im)
-	cv2.imshow("opencv data", rotated)
-
-
-"""
-data_valid = {"data": []} # data that is assumed to be valid
-data_discard = {"data": []} # data to be discarded
-data_backlog = {"data": []} # data that is put in to a backlog to be checked over later again with different parameters maybe
-
-
-def append_data(data, filepath, tag_id, H, grasp):
-	data["data"].append(
-			{
-				"file": filepath,
-				"grasp": grasp.__dict__(),
-				"tag": {
-					"id": tag_id,
-					},
-				"H": H.tolist(),
-				}
-			)
-
-
-def store_data():
-	# filepaths to where to store the different data
-	DATA_FP_VALID = "data_valid.json"
-	DATA_FP_DISCARD = "data_discard.json"
-	DATA_FP_BACKLOG = "data_backlog.json"
-
-	with open(DATA_FP_VALID, "w") as f:
-		json.dump(data_valid, f)
-
-	with open(DATA_FP_DISCARD, "w") as f:
-		json.dump(data_discard, f)
-
-	with open(DATA_FP_BACKLOG, "w") as f:
-		json.dump(data_backlog, f)
-"""
+	cv2.imshow("opencv data", im)
 
 
 DATA_RAW_FILE = sys.argv[1]
