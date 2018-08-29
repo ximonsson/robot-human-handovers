@@ -4,6 +4,8 @@ import os
 import sys
 import math
 import json
+import handoverdata as hd
+from handoverdata.object import load_objects_database
 
 
 ROI_W = 350
@@ -12,132 +14,38 @@ ROI_X = -ROI_W / 2
 ROI_Y = -100
 
 
-class Grasp:
-	"""
-	Grasp region on an object.
-	Represents a rotated angle.
-	"""
-	def __init__(self, x, y, w, h, a):
-		self.x = x
-		self.y = y
-		self.w = w
-		self.h = h
-		self.a = a
-
-	def __str__(self):
-		return "(%f, %f): [%f x %f]: %f" % (self.x, self.y, self.w, self.h, self.a)
-
-	def box(self):
-		return (self.x, self.y), (self.w, self.h), self.a
-
-	def __dict__(self):
-		return {
-			"x": self.x,
-			"y": self.y,
-			"w": self.w,
-			"h": self.h,
-			"a": self.a,
-			}
+objects = load_objects_database("data/objects/objects.db")
 
 
-class Object:
-	def __init__(self, filename, tid, center, corners, im=None):
-		self.filename = filename
-		self.tid = tid
-		self.center = center
-		self.corners = corners
-		self.im = im
-
-	def __str__(self):
-		return "[%d] %s : %s : %s" % (self.tid, self.filename, self.center, self.corners)
-
-
-# load objects into database
-objects = dict()
-with open("data/objects/objects.db") as f:
-	for line in f:
-		tokens = line[:-1].split(":")
-		# parse center point
-		center = tuple(map(np.float32, tokens[3][1:-1].split(",")))
-		# parse corners
-		corners = tokens[2][1:-1].split(")(")
-		corners = list(map(lambda x: tuple(map(np.float32, x.split(","))), corners))
-		# add to dictionary of objects
-		objects[int(tokens[1])] = Object(
-				tokens[0],
-				int(tokens[1]),
-				center,
-				corners,
-				im=cv2.flip(cv2.imread(tokens[0]), 1),)
-
-
-def parse_data(data):
-	"""
-	Parse handover data connected to a frame.
-	Returns the filepath to frame, AprilTag ID, Homography matrix and Grasp.
-	"""
-	lines = data.split("\n")
-
-	# tag ID
-	tid = lines[1].split(":")[0]
-
-	# homograpy matrix
-	h = lines[2][:-1].split(",")
-	H = np.zeros((3, 3), np.float64)
-	for i in range(len(h)):
-		H[int(i/3)][i%3] = np.float64(h[i])
-
-	# grasp region
-	grasp_data = list(map(np.float64, lines[3].split(",")))
-	g = Grasp(grasp_data[0], grasp_data[1], grasp_data[2], grasp_data[3], grasp_data[4])
-
-	return lines[0][1:], int(tid), H, g
-
-
-def display(f, tid, H, g):
+def display(handover):
 	"""
 	Display the handover data in form of the object, it's orientation during the handover
 	and the grasping region.
 	"""
 	# load item image
-	#item = cv2.imread("data/objects/%d.jpg" % tid)
-	#item = cv2.flip(item, 1) # flip it because it is an image from the kinect
-	item = objects[tid]
+	item = objects[handover.objectID]
 	im = np.copy(item.im)
 
 	# draw the grasping region
-	box = cv2.boxPoints(g.box())
+	box = cv2.boxPoints(handover.grasp.box())
 	box = np.int0(box)
 	cv2.drawContours(im, [box], 0, (0, 0, 255))
 	# warp it to the same perspective as in the handover
-	#item = cv2.warpPerspective(item, H, (item.shape[0], item.shape[1]))
+	#item = cv2.warpPerspective(item, handover.H, (item.shape[0], item.shape[1]))
 
-	# Normalization to ensure that ||c1|| = 1
-	norm = np.sqrt(np.sum(H[:,0] ** 2))
-	H /= norm
-	c1 = H[:, 0]
-	c2 = H[:, 1]
-	c3 = np.cross(c1, c2)
-
-	# create rotation matrix
-	# calculate the rotation in Z-axis and rotate the original image
-	R = np.zeros((3, 3), dtype=np.float64)
-	for i in range(3):
-		R[i, :] = [c1[i], c2[i], c3[i]]
-	w, u, t = cv2.SVDecomp(R)
-	R = np.dot(u, t)
+	H = np.copy(handover.H)
+	R = hd.rotation_matrix(H)
 	thetaZ = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
 	thetaZ = - thetaZ * 180 / math.pi
-	#rot = cv2.getRotationMatrix2D((item.shape[0]/2, item.shape[1]/2), thetaZ, 1.0)
-	rot = cv2.getRotationMatrix2D(item.center, thetaZ, 1.0)
-	rotated = cv2.warpAffine(im, rot, (im.shape[0], im.shape[1]))
+	R = cv2.getRotationMatrix2D(item.center, thetaZ, 1.0)
+	rotated = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
 
 	# display everything
-	cv2.imshow("opencv frame", cv2.flip(cv2.imread(f), 1))
+	cv2.imshow("opencv frame", handover.im)
 	cv2.imshow("opencv data", rotated)
 
 
-
+"""
 data_valid = {"data": []} # data that is assumed to be valid
 data_discard = {"data": []} # data to be discarded
 data_backlog = {"data": []} # data that is put in to a backlog to be checked over later again with different parameters maybe
@@ -170,57 +78,72 @@ def store_data():
 
 	with open(DATA_FP_BACKLOG, "w") as f:
 		json.dump(data_backlog, f)
+"""
 
 
-DATA_FILE = sys.argv[1]
-DATA_NLINES = 4
+DATA_RAW_FILE = sys.argv[1]
+DATA_PROGRESS_FILE = "data/training/progress.json"
 
-# if we supplied at what entry we want to start
-start = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+data_valid = []
+data_discard = []
+data_backlog = []
+n = 0
+start = 0
+
+if os.path.isfile(DATA_PROGRESS_FILE):
+	with open(DATA_PROGRESS_FILE) as f:
+		data = json.load(f)
+		data_valid = data["valid"]
+		data_discard = data["discard"]
+		data_backlog = data["backlog"]
+		start = data["stopped"]
+
 n = start
-start *= 4
+start *= hd.DATA_NLINES
+
+
+def store_data():
+	with open(DATA_PROGRESS_FILE, 'w') as f:
+		data = {
+				"stopped": n,
+				"valid": data_valid,
+				"discard": data_discard,
+				"backlog": data_backlog, }
+		json.dump(data, f)
+
 
 quit = False
 # iterate over all files in directory of extracted data
-with open(DATA_FILE, "r") as f:
-	data = ""
-	i = 0
-	for line in f:
-		if start != 0:
-			start -= 1
-			continue
+with open(DATA_RAW_FILE, "r") as f:
+	# jump over lines until we get to the start index
+	for i in range(start):
+		f.readline()
 
-		data += line
-		i += 1
-		if not i == DATA_NLINES: # continue reading until we have data for an entire handover
-			continue
+	while not quit:
+		# read data for a handover and display
+		# wait for keypress about what to do with the data
+		handover = hd.read_data(f)
+		if handover is None:
+			break
 
-		# parse data and display it
-		# afterwards wait for keypress with command about what to do with the data
-		fp, tid, H, g = parse_data(data)
-		display(fp, tid, H, g)
-
+		display(handover)
 		while True:
 			k = cv2.waitKey(0)
 			if k == ord('q'):
 				quit = True
 				break
 			elif k == ord('s'):
-				append_data(data_valid, fp, tid, H, g)
+				data_valid.append(n)
 				break
 			elif k == ord('d'):
-				append_data(data_discard, fp, tid, H, g)
+				data_discard.append(n)
 				break
 			elif k == ord('a'):
-				append_data(data_backlog, fp, tid, H, g)
+				data_backlog.append(n)
 				break
 
-		if quit:
-			break
-
-		n += 1
-		data = ""
-		i = 0
+		if not quit:
+			n += 1
 
 print("finished at entry [%d]" % n)
 cv2.destroyAllWindows()
