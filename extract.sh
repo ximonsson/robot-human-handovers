@@ -1,5 +1,5 @@
 DATA=data
-RECORDINGS=$DATA/recordings
+RECORDINGS=$1
 TRAINING=$DATA/training
 BIN=./bin/extract_handover
 DATAFILE="$TRAINING/raw"
@@ -16,19 +16,16 @@ function progress
 }
 
 # if an input argument was supplied only run the extraction on that file
-if [ "$#" -gt 0 ]
+if [ "$#" -eq 0 ]
 then
-	ex $1
-	exit
+	>&2 echo "No directory containing recordings supplied. Aborting."
+	exit 1
 fi
 
 # create directory if it does not exist and remove all old training data
 if [ ! -d $TRAINING ]
 then
 	mkdir -p $TRAINING
-elif [ -f $DATAFILE ]
-then
-	rm $DATAFILE
 fi
 
 # loop over all recording directories
