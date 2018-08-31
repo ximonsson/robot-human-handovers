@@ -1,0 +1,2 @@
+export PYTHONPATH="$PYTHONPATH:src"
+export LD_LIBRAY_PATH=/usr/local/lib
