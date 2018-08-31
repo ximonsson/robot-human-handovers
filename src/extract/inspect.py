@@ -45,6 +45,11 @@ if os.path.isfile(DATA_PROGRESS_FILE):
 		data_backlog = data["backlog"]
 		start = data["stopped"]
 
+		print("Progress from last time:")
+		print(" > %d valid frames" % len(data_valid))
+		print(" > %d discarded frames" % len(data_discard))
+		print(" > %d backlogged frames" % len(data_backlog))
+
 n = start
 start *= hd.DATA_NLINES
 
