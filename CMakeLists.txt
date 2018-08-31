@@ -13,5 +13,5 @@ include_directories (${PROJECT_INCLUDE_DIR})
 link_directories (${PROJECT_LIB_DIR})
 
 #add_subdirectory (src/cluster)
-#add_subdirectory (src/rec)
+add_subdirectory (src/rec)
 add_subdirectory (src/extract)
