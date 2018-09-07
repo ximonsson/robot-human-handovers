@@ -4,7 +4,6 @@ Description: Functions to retrieve samples used for clustering from handover dat
 """
 import numpy as np
 from handoverdata.helpers import rotation_matrix
-#from sklearn.preprocessing import normalize
 import math
 
 
@@ -16,9 +15,8 @@ OBJECTS_DB_FILE = "data/objects/objects.db"
 # load objects into memory
 objects = None
 if objects is None:
-	from handoverdata.objects import load_objects_database
-	global objects
-	objects = load_objects_database()
+	from handoverdata.object import load_objects_database
+	objects = load_objects_database(OBJECTS_DB_FILE)
 
 
 def handover2sample(h):
@@ -49,10 +47,9 @@ def handover2sample(h):
 
 	# ratio between object area and grasp area
 	ga = h.grasp.w * h.grasp.h
+	r = ga / obj.area
 
-
-
-	sample = [z, d, u]
+	sample = [z, d, u[0], u[1], r]
 	return sample
 
 
@@ -61,12 +58,12 @@ def read_samples(f, indices):
 	Reads handover data with supplied indices from the file pointer and returns them in
 	the form of samples to be used.
 
-	:param f: file pointer to handover data
-	:param indices: handover indices in the file
-	:returns: samples for clustering
+	:param f: File object -  file pointer to handover data
+	:param indices: list - handover indices in the file
+	:returns: np.array - samples for clustering
 	"""
 	from handoverdata.data import read_at
-	samples = np.array(())
+	samples = []
 	for i, idx in enumerate(indices):
-		samples[i] = handover2sample(read_at(f, i))
-	return samples
+		samples.append(handover2sample(read_at(f, i)))
+	return np.array(samples)

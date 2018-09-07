@@ -27,6 +27,7 @@ class Object:
 		self.corners = corners
 		self.__image__ = im
 		self.__center__ = center
+		self.__area__ = None
 
 	def __str__(self):
 		data = [
@@ -73,6 +74,26 @@ class Object:
 			cy = int(M['m01']/M['m00'])
 			self.__center__ = (cx, cy)
 		return self.__center__
+
+	@property
+	def area(self):
+		"""
+		Get the area of the object
+		:returns: float
+		"""
+		if self.__area__ is None:
+			# load mask file
+			filename = self.filename.replace("%d" % self.tag_id, "%d_mask" % self.tag_id)
+			mask = cv2.imread(filename)
+
+			# find (largest) contour around the object
+			bw = cv2.cvtColor(mask, cv2.COLOR_BGRA2GRAY)
+			_, contours, _ = cv2.findContours(bw, 1, 2)
+			contours = sorted(contours, key=cv2.contourArea)
+			self.__area__ = cv2.contourArea(contours[-1])
+		return self.__area__
+
+
 
 
 def load_objects_database(filepath):
