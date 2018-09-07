@@ -361,17 +361,6 @@ cv::Mat load_object_mask (int id)
  */
 cv::Mat find_transformation (apriltag_detection_t *d)
 {
-	/*
-	// load the reference image and compute the homography from it
-	cv::Mat ref = load_object_image (d->id);
-
-	// detect the apriltag again in the reference image and then compute the homography from it
-	// to the detected tag in the scene
-	zarray_t *detections = detect (ref);
-	apriltag_detection_t *refd;
-	zarray_get (detections, 0, &refd); // first detected tag - would be poor reference images otherwise
-	*/
-
 	object ref;
 	for (std::vector<object>::iterator it = objects.begin (); it != objects.end (); it++)
 	{
@@ -383,10 +372,6 @@ cv::Mat find_transformation (apriltag_detection_t *d)
 	}
 
 	std::vector<cv::Point2f> src;
-	//src.push_back (cv::Point2f (refd->p[0][0], refd->p[0][1]));
-	//src.push_back (cv::Point2f (refd->p[1][0], refd->p[1][1]));
-	//src.push_back (cv::Point2f (refd->p[2][0], refd->p[2][1]));
-	//src.push_back (cv::Point2f (refd->p[3][0], refd->p[3][1]));
 	src.push_back (ref.corners[0]);
 	src.push_back (ref.corners[1]);
 	src.push_back (ref.corners[2]);
@@ -398,7 +383,6 @@ cv::Mat find_transformation (apriltag_detection_t *d)
 	dst.push_back (cv::Point2f (d->p[2][0], d->p[2][1]));
 	dst.push_back (cv::Point2f (d->p[3][0], d->p[3][1]));
 
-	//zarray_destroy (detections);
 	return cv::findHomography (src, dst);
 }
 
