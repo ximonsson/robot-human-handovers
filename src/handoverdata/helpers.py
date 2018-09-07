@@ -3,7 +3,10 @@ import numpy as np
 
 def rotation_matrix(H):
 	"""
-	Returns the rotation matrix from the homography matrix H
+	Get the rotation matrix from the homography matrix H
+
+	:params H: homography matrix
+	:returns: 3x3 euclidean rotation matrix
 	"""
 	H = np.copy(H)
 	# Normalization to ensure that ||c1|| = 1

@@ -22,12 +22,12 @@ class Handover:
 		Returns a new image with the data drawn onto it.
 		"""
 		# draw the grasping region
-		im = self.grasp.draw(item.im)
+		im = self.grasp.draw(item.image)
 
 		# warp it to the same perspective as in the handover
 		#item = cv2.warpPerspective(item, handover.H, (item.shape[0], item.shape[1]))
 		R = rotation_matrix(self.H)
 		thetaZ = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
 		thetaZ = - thetaZ * 180 / math.pi
-		R = cv2.getRotationMatrix2D(item.center, thetaZ, 1.0)
+		R = cv2.getRotationMatrix2D(item.tag_center, thetaZ, 1.0)
 		return cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))

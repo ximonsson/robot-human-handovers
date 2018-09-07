@@ -9,7 +9,9 @@ DATA_NLINES = 4
 def parse_data(data):
 	"""
 	Parse handover data connected to a frame.
-	Returns the filepath to frame, AprilTag ID, Homography matrix and Grasp.
+
+	:params data: lines read from file including handover data
+	:returns: Handover object with the data
 	"""
 	lines = data.split("\n")
 
@@ -33,6 +35,9 @@ def read_data(f):
 	"""
 	Reads data for one handover from the file pointer f.
 	Note that this advances the pointer with DATA_NLINES
+
+	:param f: file-pointer to datafile
+	:returns: Handover object
 	"""
 	data = ""
 	for i in range(DATA_NLINES):
@@ -41,3 +46,20 @@ def read_data(f):
 	if len(data.split("\n")) < DATA_NLINES:
 		return None
 	return parse_data(data)
+
+
+def read_at(f, i):
+	"""
+	Read data a index.
+	The file pointer is rewinded to the beginning of the data file and forwarded
+	to the handover data at index. When the function returns the file pointer points
+	to the data value after the supplied index.
+
+	:param f: file pointer to data file
+	:param i: handover index data
+	:returns: handover data at index i
+	"""
+	f.seek(0)
+	for _ in range(i * DATA_NLINES):
+		f.readline()
+	return read_data(f)
