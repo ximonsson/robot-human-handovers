@@ -25,7 +25,7 @@ def handover2sample(h):
 	One sample contains:
 		- Rotation in z-axis
 		- Distance between centers of object and grasp
-		- Direction from object center to the grasp center (unit vector of distance)
+		- Direction from object center to the grasp center (unit vector of distance), x and y
 		- Ratio between object area and grasp area
 
 	:param h: Handover object
