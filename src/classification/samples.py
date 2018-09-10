@@ -23,6 +23,7 @@ def handover2sample(h):
 	"""
 	Converts a Handover object to a sample used for clustering.
 	One sample contains:
+		- Object Tag ID
 		- Rotation in z-axis
 		- Distance between centers of object and grasp
 		- Direction from object center to the grasp center (unit vector of distance), x and y
@@ -49,7 +50,7 @@ def handover2sample(h):
 	ga = h.grasp.w * h.grasp.h
 	r = ga / obj.area
 
-	sample = [z, d, u[0], u[1], r]
+	sample = [h.objectID, z, d, u[0], u[1], r]
 	return sample
 
 

@@ -1,15 +1,16 @@
 import cv2
 import numpy as np
 import json
-from classification.samples import read_samples
+import sys
+from samples import read_samples
 
-with open("data/training/session1/progress.json") as f:
+directory = sys.argv[1]
+
+with open("%s/progress.json" % directory) as f:
 	data = json.load(f)
 
-with open("data/training/session1/raw") as f:
+with open("%s/raw" % directory) as f:
 	samples = read_samples(f, data["valid"])
 
 with open("samples.npy", "wb") as f:
 	np.save(f, samples)
-
-print(samples)
