@@ -1,31 +1,54 @@
 from sklearn import cluster as skcluster
 import numpy as np
 import sys
+import cv2
+from handoverdata.object import load_objects_database
+
 
 N_FEATURES = 4
 X_FEATURE = 1
 Y_FEATURE = 3
 Z_FEATURE = 4
 
+
 samples_file = sys.argv[1]
 n_clusters = int(sys.argv[2])
+objects = load_objects_database("data/objects/objects.db")
+
+
+def wait():
+	k = cv2.waitKey(0)
+	while k != ord('q'):
+		k = cv2.waitKey(0)
+
+
+def display_object(oid, label, centroid):
+	im = np.copy(objects[oid].image)
+	# rotate
+	R = cv2.getRotationMatrix2D(objects[oid].center, centroid[0], 1.0)
+	im = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
+	# write text
+	im = cv2.putText(im, "object: %d, label: %d" % (oid, label), (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
+	im = cv2.putText(im, "rotation: %d degrees" % centroid[0], (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
+	# display
+	cv2.imshow("opencv object centroid", im)
 
 
 def print_summary(k, samples):
 	print("*** Summary ***")
 	print("%d features and %d samples" % (samples.shape[1]-1, samples.shape[0]))
 
-	print("Cluster assignment:")
+	print("Cluster information:")
 	unique, counts = np.unique(k.labels_, return_counts=True)
 	d = dict(zip(unique, counts))
 	for label in d:
-		print(" > #%d => %d" % (label, d[label]))
+		print(" > Label #%d: %d samples >> Centroid %s" % (label, d[label], k.cluster_centers_[label]))
 
 	print("Object assignments:")
 	unique, counts = np.unique(samples[:, 0], return_counts=True)
 	d = dict(zip(unique, counts))
 	for tid in d:
-		print(" > Object ID #%d [ %d ]" % (tid, d[tid]))
+		print(" > Object #%d [%d samples]" % (tid, d[tid]))
 		c = dict()
 		for i, s in enumerate(samples):
 			if s[0] == tid:
@@ -33,8 +56,17 @@ def print_summary(k, samples):
 				if not l in c:
 					c[l] = 0
 				c[l] += 1
+		largest_label = 0
+		label_count = 0
 		for label in c:
-			print("    * [ %d ] => %d " % (label, c[label]))
+			if c[label] > label_count:
+				largest_label = label
+				label_count = c[label]
+			print("    * Label #%d => %d (%d%%) " % (label, c[label], c[label]/d[tid]*100))
+		display_object(tid, largest_label, k.cluster_centers_[largest_label])
+		wait()
+
+	cv2.destroyAllWindows()
 
 
 def plot(k, samples):
