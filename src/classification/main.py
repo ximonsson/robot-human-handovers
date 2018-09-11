@@ -5,15 +5,16 @@ import cv2
 from handoverdata.object import load_objects_database
 
 
-N_FEATURES = 4
-X_FEATURE = 1
-Y_FEATURE = 3
-Z_FEATURE = 4
+N_FEATURES = 7
+X_FEATURE = 0
+Y_FEATURE = 1
+Z_FEATURE = 2
 
 
 samples_file = sys.argv[1]
 n_clusters = int(sys.argv[2])
 objects = load_objects_database("data/objects/objects.db")
+
 
 
 def wait():
@@ -24,6 +25,7 @@ def wait():
 
 def display_object(oid, label, centroid):
 	im = np.copy(objects[oid].image)
+	# draw grasping region
 	# rotate
 	R = cv2.getRotationMatrix2D(objects[oid].center, centroid[0], 1.0)
 	im = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
@@ -83,10 +85,21 @@ def plot(k, samples):
 	plt.show()
 
 
+def samples2input(samples):
+	return samples[:, [1,2,3]]
+
+
 def cluster(samples):
-	k = skcluster.KMeans(n_clusters=n_clusters)
-	k.fit(samples[:, 1:1+N_FEATURES])
+	k = skcluster.KMeans(init="random", n_clusters=n_clusters)
+	k.fit(samples2input(samples))
 	return k
+
+
+def save(k):
+	with open("centroids.npy", "wb") as f:
+		np.save(f, k.cluster_centers_)
+	with open("labels.npy", "wb") as f:
+		np.save(f, k.labels_)
 
 
 with open(samples_file, "rb") as f:
@@ -94,3 +107,4 @@ with open(samples_file, "rb") as f:
 	k = cluster(samples)
 	print_summary(k, samples)
 	plot(k, samples)
+	#save(k)

@@ -3,6 +3,7 @@ File: samples.py
 Description: Functions to retrieve samples used for clustering from handover data.
 """
 import numpy as np
+import handoverdata as hd
 from handoverdata.helpers import rotation_matrix
 import math
 
@@ -24,10 +25,13 @@ def handover2sample(h):
 	Converts a Handover object to a sample used for clustering.
 	One sample contains:
 		- Object Tag ID
-		- Rotation in z-axis
+		- Rotation of object in z-axis
+		- Direction from object center to the grasp center expressed as an angle in degrees
 		- Distance between centers of object and grasp
-		- Direction from object center to the grasp center (unit vector of distance), x and y
 		- Ratio between object area and grasp area
+		- Rotation of the grasp in z-axis
+		- Width of grasp
+		- Height of grasp
 
 	:param h: Handover object
 	:returns: list of features
@@ -40,6 +44,7 @@ def handover2sample(h):
 
 	# direction from object center to grasp center
 	u = v / d
+	u = -math.atan(u[0]/u[1]) * 180 / math.pi
 
 	# rotation in Z-axis
 	R = rotation_matrix(h.H)
@@ -50,8 +55,14 @@ def handover2sample(h):
 	ga = h.grasp.w * h.grasp.h
 	r = ga / obj.area
 
-	sample = [h.objectID, z, d, u[0], u[1], r]
+	sample = [h.objectID, z, u, d, r, h.grasp.a, h.grasp.w, h.grasp.h]
 	return sample
+
+
+def sample2handover(sample):
+	g = hd.Grasp()
+	h = hd.Handover("", sample[0], g, np.array())
+	return h
 
 
 def read_samples(f, indices):
