@@ -9,6 +9,12 @@ class Handover:
 	Contains information about which file on disk
 	"""
 	def __init__(self, f, oid, g, h):
+		"""
+		:params f: string - filepath to frame with the handover
+		:params oid: integer - object ID of the object being handed over
+		:params g: Grasp object - grasp
+		:params h: np.array - Homography matrix of the transformation for the object from ground zero to as observed in the image.
+		"""
 		self.filename = f
 		self.objectID = oid
 		self.grasp = g
