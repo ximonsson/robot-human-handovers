@@ -22,7 +22,7 @@ softmax = tf.nn.softmax(m)
 with tf.Session() as s:
     # initialize and load variables
     s.run(tf.global_variables_initializer())
-    alexnet.load_weights("weights/bvlc_alexnet.npy", s, [])
+    alexnet.load_weights("data/weights/bvlc_alexnet.npy", s, [])
 
     # reshape the image as to be the correct input size for the network
     img = cv2.resize(image.astype(np.float32), (alexnet.IN_WIDTH, alexnet.IN_HEIGHT))
