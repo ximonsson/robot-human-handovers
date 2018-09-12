@@ -1,6 +1,7 @@
 import os
 import cv2
 import struct
+import numpy as np
 
 
 def load_data():
@@ -18,7 +19,10 @@ def augment_image(im, center=None, k=10):
 	:param k: integer - Number of outputs
 	:returns: list of images with length k with the outputed images
 	"""
-	pass
+	if center is None:
+		center = im.shape / 2
+		center = (center[0], center[1])
+	return []
 
 
 def __merge_depth__(image, depth):
@@ -30,9 +34,9 @@ def __merge_depth__(image, depth):
 		for v in struct.iter_unpack('f', data):
 			depth = np.append(depth, v[0])
 
-		depth.reshape(image.shape)
-		im = np.copy(image)
-		im[0, :, :] = depth
+		depth = depth.reshape((image.shape[0], image.shape[1]))
+		im = np.copy(image).astype(np.float32)
+		im[:, :, 0] = depth
 
 		return im
 
