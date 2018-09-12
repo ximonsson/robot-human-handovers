@@ -67,7 +67,7 @@ def augment(src, dst, k=10):
 		merged = __merge_depth__(im, os.path.join(dir_depth, filename))
 		out = augment_image(merged, k=k)
 		for i, image in enumerate(out):
-			cv2.imwrite(os.path.join(dst, "%s_%d")
+			cv2.imwrite(os.path.join(dst, "%s_%d"))
 			total += 1
 
 	return total
