@@ -3,6 +3,7 @@ import numpy as np
 import sys
 import cv2
 from handoverdata.object import load_objects_database
+import math
 
 
 N_FEATURES = 7
@@ -24,14 +25,39 @@ def wait():
 
 
 def display_object(oid, label, centroid):
-	im = np.copy(objects[oid].image)
+	obj = objects[oid]
+	im = np.copy(obj.image)
+	oc = obj.center
+
+	# draw center of grasp
+	a = math.radians(centroid[1])
+	gc = (oc[0] - centroid[2] * math.sin(a), oc[1] - centroid[2] * math.cos(a))
+	gc = tuple(map(int, gc))
+	im = cv2.line(im, oc, gc, (255, 0, 0), 2)
+
 	# draw grasping region
+	ga = obj.area * centroid[3]
+	r = int(np.sqrt(ga/math.pi))
+	im = cv2.circle(im, gc, r, (0, 0, 255), 1)
+
 	# rotate
-	R = cv2.getRotationMatrix2D(objects[oid].center, centroid[0], 1.0)
+	R = cv2.getRotationMatrix2D(oc, -centroid[0], 1.0)
 	im = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
 	# write text
-	im = cv2.putText(im, "object: %d, label: %d" % (oid, label), (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
-	im = cv2.putText(im, "rotation: %d degrees" % centroid[0], (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
+	im = cv2.putText(
+			im,
+			"object: %d, label: %d, rotation: %d degrees" % (oid, label, centroid[0]),
+			(20, 40),
+			cv2.FONT_HERSHEY_SIMPLEX,
+			0.5,
+			(255, 255, 255))
+	im = cv2.putText(
+			im,
+			"grasp center: %s, distance: %d, angle: %d" % (gc, centroid[2], centroid[1]),
+			(20, 60),
+			cv2.FONT_HERSHEY_SIMPLEX,
+			0.5,
+			(255, 255, 255))
 	# display
 	cv2.imshow("opencv object centroid", im)
 
@@ -85,13 +111,10 @@ def plot(k, samples):
 	plt.show()
 
 
-def samples2input(samples):
-	return samples[:, [1,2,3]]
-
-
 def cluster(samples):
+	X = samples[:, [1, 2, 3, 4]]
 	k = skcluster.KMeans(init="random", n_clusters=n_clusters)
-	k.fit(samples2input(samples))
+	k.fit(X)
 	return k
 
 
