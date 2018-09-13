@@ -2,6 +2,7 @@ import os
 import cv2
 import struct
 import numpy as np
+from math import ceil
 
 
 def load_data():
@@ -25,22 +26,24 @@ def augment_image(im, center=None, k=10):
 	return []
 
 
-def __merge_depth__(image, depth):
-	# read depth data from the file
-	# replace the blue channel in the image with the depth data and return the new image
-	with open(depth, "rb") as f:
+def __load_depth__(filename):
+	with open(filename, "rb") as f:
 		data = f.read()
-		depth = np.array([], dtype=np.float32)
-		for v in struct.iter_unpack('f', data):
-			depth = np.append(depth, v[0])
-
-		depth = depth.reshape((image.shape[0], image.shape[1]))
-		im = np.copy(image).astype(np.float32)
-		im[:, :, 0] = depth
-
-		return im
-
+		count = ceil(len(data) / np.dtype(np.float32).itemsize)
+		depth = np.zeros((count,), dtype=np.float32)
+		iterable = struct.iter_unpack('f', data)
+		for i, v in enumerate(iterable):
+			depth[i] = v[0]
+		return depth
 	return None
+
+
+def __merge_depth__(image, depth):
+	# replace the blue channel in the image with the depth data and return the new image
+	depth = depth.reshape((image.shape[0], image.shape[1]))
+	im = np.copy(image).astype(np.float32)
+	im[:, :, 0] = depth
+	return im
 
 
 def augment(src, dst, k=10):
@@ -68,10 +71,11 @@ def augment(src, dst, k=10):
 		# swap the blue channel in the image with the depth and then augment this image
 		# before storing to disk the newly created images
 		im = cv2.imread(os.path.join(dir_registered, f))
-		merged = __merge_depth__(im, os.path.join(dir_depth, filename))
+		depth = __load_depth__(os.path.join(dir_depth, filename))
+		merged = __merge_depth__(im, depth)
 		out = augment_image(merged, k=k)
 		for i, image in enumerate(out):
-			cv2.imwrite(os.path.join(dst, "%s_%d"))
+			cv2.imwrite(os.path.join(dst, "%s_%d.jpg"))
 			total += 1
 
 	return total
