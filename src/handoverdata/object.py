@@ -49,6 +49,24 @@ class Object:
 			self.__image__ = cv2.imread(self.filename)
 		return self.__image__
 
+	def __load_properties__(self):
+		# load mask file
+		filename = self.filename.replace("%d" % self.tag_id, "%d_mask" % self.tag_id)
+		mask = cv2.imread(filename)
+
+		# find (largest) contour around the object
+		bw = cv2.cvtColor(mask, cv2.COLOR_BGRA2GRAY)
+		_, contours, _ = cv2.findContours(bw, 1, 2)
+		contours = sorted(contours, key=cv2.contourArea)
+		cnt = countours[-1]
+
+		# calculate area and center
+		self.__area__ = cv2.contourArea(cnt)
+		M = cv2.moments(cnt)
+		cx = int(M['m10']/M['m00'])
+		cy = int(M['m01']/M['m00'])
+		self.__center__ = (cx, cy)
+
 	@property
 	def center(self):
 		"""
@@ -57,22 +75,8 @@ class Object:
 		Using the contour the center of mass is computed through it's moments.
 		:returns: tuple - 2D point
 		"""
-		if self.__center__ is None: # make sure we do not do all over again
-			# load mask file
-			filename = self.filename.replace("%d" % self.tag_id, "%d_mask" % self.tag_id)
-			mask = cv2.imread(filename)
-
-			# find (largest) contour around the object
-			bw = cv2.cvtColor(mask, cv2.COLOR_BGRA2GRAY)
-			_, contours, _ = cv2.findContours(bw, 1, 2)
-			contours = sorted(contours, key=cv2.contourArea)
-			cnt = contours[-1]
-
-			# computer center of mass from the moments of the contour
-			M = cv2.moments(cnt)
-			cx = int(M['m10']/M['m00'])
-			cy = int(M['m01']/M['m00'])
-			self.__center__ = (cx, cy)
+		if self.__center__ is None:
+			self.__load_properties__()
 		return self.__center__
 
 	@property
@@ -82,17 +86,8 @@ class Object:
 		:returns: float
 		"""
 		if self.__area__ is None:
-			# load mask file
-			filename = self.filename.replace("%d" % self.tag_id, "%d_mask" % self.tag_id)
-			mask = cv2.imread(filename)
-
-			# find (largest) contour around the object
-			bw = cv2.cvtColor(mask, cv2.COLOR_BGRA2GRAY)
-			_, contours, _ = cv2.findContours(bw, 1, 2)
-			contours = sorted(contours, key=cv2.contourArea)
-			self.__area__ = cv2.contourArea(contours[-1])
+			self.__load_properties__()
 		return self.__area__
-
 
 
 
