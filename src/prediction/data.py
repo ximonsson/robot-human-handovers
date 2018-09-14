@@ -3,31 +3,68 @@ import cv2
 import struct
 import numpy as np
 from math import ceil
+import alexnet
+import random
 
 
-def load_data():
-	return {}
+
+def __crop__(im, c, r, s):
+	# returns a random cropping of the image with center c and max radius away r
+	if type(c) != np.ndarray:
+		c = np.array(c)
+	c += random.randint(-r, r)
+	y1 = int(c[0]-s[0]/2)
+	y2 = int(c[0]+s[0]/2)
+	x1 = int(c[1]-s[1]/2)
+	x2 = int(c[1]+s[1]/2)
+	return im[y1:y2, x1:x2, :]
 
 
-def augment_image(im, center=None, k=10):
+def __rotate__(im, c, s):
+	# returns a random rotation of the image with center c
+	a = random.randint(1, 180)
+	R = cv2.getRotationMatrix2D(c, a, 1.0)
+	return cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
+
+
+def display(im):
+	cv2.imshow("debug", im)
+	while True:
+		k = cv2.waitKey(0)
+		if k == ord('q'):
+			break
+
+
+def augment_image(im, center=None, r=20, n=10, osize=(alexnet.IN_WIDTH, alexnet.IN_HEIGHT)):
 	"""
-	Augment an image a number of times using random cropping and rotation.
+	Augment an image a number of times using random cropping, rotation, flipping, etc.
 
 	:param im: np.array - Image loaded with cv2.imread to perform augmentation on.
 	:param center: tuple -
 			Center around which to perform augmentation, if no value is passed
 			the center of the image is chosen.
-	:param k: integer - Number of outputs
+	:param r: integer - radius around center in which to perform the augmentation
+	:param n: integer - Number of outputs
+	:param osize: tuple of integers -
+			Dimensions of the output images. Defaults to the size for the AlexNet network.
 	:returns: list of images with length k with the outputed images
 	"""
 	if center is None:
-		center = im.shape / 2
+		center = np.array(im.shape) / 2
 		center = (center[0], center[1])
-	return []
+
+	images = []
+	for _ in range(n):
+		rotated = __rotate__(im, center, osize)
+		for _ in range(n):
+			images.append(__crop__(rotated, center, r, osize))
+
+	return images
 
 
-def __load_depth__(filename):
-	with open(filename, "rb") as f:
+def __load_depth__(filepath):
+	# load depth channel from file with filepath and returns as a np.array of floats
+	with open(filepath, "rb") as f:
 		data = f.read()
 		count = ceil(len(data) / np.dtype(np.float32).itemsize)
 		depth = np.zeros((count,), dtype=np.float32)
@@ -46,7 +83,13 @@ def __merge_depth__(image, depth):
 	return im
 
 
-def augment(src, dst, k=10):
+def replace_with_depth(im, depth_filename):
+	depth = __load_depth__(depth_filename)
+	merged = __merge_depth__(im, depth)
+	return merged
+
+
+def augment_directory(src, dst, n=10):
 	"""
 	Augment the images in src directory and output them to dst directory by k times.
 	Data augmentation is done by random cropping and rotating the images, which are then
@@ -54,7 +97,7 @@ def augment(src, dst, k=10):
 
 	:param src: string - source directory containing images to augment.
 	:param dst: string - destination directory to store the outputed images.
-	:param k: integer - number of augmentations we should create per image.
+	:param n: integer - number of augmentations we should create per image.
 	:returns: integer - the total number of images created
 	"""
 	dir_registered = src + "/registered"
@@ -73,10 +116,9 @@ def augment(src, dst, k=10):
 		im = cv2.imread(os.path.join(dir_registered, f))
 		depth = __load_depth__(os.path.join(dir_depth, filename))
 		merged = __merge_depth__(im, depth)
-		out = augment_image(merged, k=k)
+		out = augment_image(merged, n=n)
 		for i, image in enumerate(out):
 			cv2.imwrite(os.path.join(dst, "%s_%d.jpg"))
 			total += 1
 
 	return total
-
