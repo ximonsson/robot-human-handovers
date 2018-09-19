@@ -154,6 +154,7 @@ def cluster(samples):
 
 def save(k, cluster_assignments, sample_assignments):
 	import pickle
+	import os
 	DIR = "data/clustering"
 	with open(os.path.join(DIR, "centroids.npy"), "wb") as f:
 		np.save(f, k.cluster_centers_)
