@@ -40,7 +40,7 @@ def augment_directory(src, dst, n=10, r=20):
 		for _ in range(prog_bar_len-int(prog/(100/prog_bar_len))):
 			prog_bar += "-"
 
-		print("\rAugmenting images found in '%s' to '%s': [%s] %d%%" % (src, dst, prog_bar, prog), end='', flush=True)
+		print("\rAugmenting images found in '%s': [%s] %d%%" % (src, prog_bar, prog), end='', flush=True)
 
 	for f in filenames:
 		# make sure the file is a jpeg file
@@ -87,14 +87,19 @@ def inspect_data(directory):
 
 
 # settings
-IMAGES_DIR = "data/training/images/cnn"
-DATASET_DIR = "data/training/images/dataset"
+IMAGES_DIR = "data/classification/originals"
+DATASET_DIR = "data/classification/augmenations"
 RADIUS = 40
 N_AUGMENTATIONS = 5
 
 if len(sys.argv) > 1 and sys.argv[1] == "--inspect":
 	inspect_data(DATASET_DIR)
 else:
-	augment_directory(IMAGES_DIR, DATASET_DIR, n=N_AUGMENTATIONS, r=RADIUS)
+	for name in os.listdir(IMAGES_DIR):
+		# only traverse directories and
+		# don't augment directories starting with 'new_', they are not part of the training set
+		if name.startswith("new_") or not os.path.isdir(os.path.join(IMAGES_DIR, name)):
+			continue
+		augment_directory(os.path.join(IMAGES_DIR, f), DATASET_DIR, n=N_AUGMENTATIONS, r=RADIUS)
 
 cv2.destroyAllWindows()

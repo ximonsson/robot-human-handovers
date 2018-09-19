@@ -1,8 +1,8 @@
 """
 File: data.py
 Description:
-		Functions for manipulating and augmenting data in need to train for object classification
-		by handover type.
+	Functions for manipulating and augmenting data in need to train for object classification
+	by handover type.
 """
 import cv2
 import struct
