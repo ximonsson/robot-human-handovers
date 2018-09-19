@@ -66,13 +66,8 @@ def print_summary(k, samples):
 	print("*** Summary ***")
 	print("%d features and %d samples" % (samples.shape[1]-1, samples.shape[0]))
 
-	print("Cluster information:")
-	unique, counts = np.unique(k.labels_, return_counts=True)
-	d = dict(zip(unique, counts))
-	for label in d:
-		print(" > Label #%d: %d samples >> Centroid %s" % (label, d[label], k.cluster_centers_[label]))
-
 	print("Object assignments:")
+	label_assignments = dict()
 	unique, counts = np.unique(samples[:, 0], return_counts=True)
 	d = dict(zip(unique, counts))
 	for tid in d:
@@ -91,8 +86,18 @@ def print_summary(k, samples):
 				largest_label = label
 				label_count = c[label]
 			print("    * Label #%d => %d (%d%%) " % (label, c[label], c[label]/d[tid]*100))
+		if largest_label not in label_assignments:
+			label_assignments[largest_label] = []
+		label_assignments[largest_label].append(tid)
 		display_object(tid, largest_label, k.cluster_centers_[largest_label])
 		wait()
+
+	print("Cluster information:")
+	unique, counts = np.unique(k.labels_, return_counts=True)
+	d = dict(zip(unique, counts))
+	for label in d:
+		print(" > Label #%d: %d samples >> Centroid %s" % (label, d[label], k.cluster_centers_[label]))
+		print("   Objects: {}".format(label_assignments[label]))
 
 	cv2.destroyAllWindows()
 
@@ -121,8 +126,8 @@ def cluster(samples):
 def save(k):
 	with open("centroids.npy", "wb") as f:
 		np.save(f, k.cluster_centers_)
-	with open("labels.npy", "wb") as f:
-		np.save(f, k.labels_)
+	#with open("labels.npy", "wb") as f:
+		#np.save(f, k.labels_)
 
 
 with open(samples_file, "rb") as f:
@@ -130,4 +135,4 @@ with open(samples_file, "rb") as f:
 	k = cluster(samples)
 	print_summary(k, samples)
 	plot(k, samples)
-	#save(k)
+	save(k)
