@@ -58,7 +58,7 @@ class Object:
 		bw = cv2.cvtColor(mask, cv2.COLOR_BGRA2GRAY)
 		_, contours, _ = cv2.findContours(bw, 1, 2)
 		contours = sorted(contours, key=cv2.contourArea)
-		cnt = countours[-1]
+		cnt = contours[-1]
 
 		# calculate area and center
 		self.__area__ = cv2.contourArea(cnt)
