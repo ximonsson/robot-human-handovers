@@ -7,11 +7,45 @@ Description:
 	By running the script with the '--inspect' flag the data that has been generated can instead be inspected to make
 	sure that it looks good for training.
 """
-import prediction.data
+import classification.data
 import sys
 import cv2
 import numpy as np
 import os
+import pickle
+
+
+obj_name2id = {
+		"ball":        None,
+		"bottle":      21,
+		"box":         16,
+		"brush":       22,
+		"can":         15,
+		"cutters":     17,
+		"glass":       20,
+		"hammer":      2,
+		"knife":       12,
+		"mug":         23,
+		"pen":         3,
+		"pitcher":     19,
+		"scalp":       4,
+		"scissors":    5,
+		"screwdriver": 14,
+		"tube":        18,
+		}
+
+with open("data/classification/clusters.pkl", "rb") as f:
+	clusters = pickle.load(f)
+
+
+def	cluster(oid):
+	"""
+	Return which cluster an object belongs to.
+	"""
+	for label in clusters:
+		if oid in clusters[label]:
+			return label
+	return None
 
 
 def augment_directory(src, dst, n=10, r=20):
@@ -25,11 +59,12 @@ def augment_directory(src, dst, n=10, r=20):
 	:param n: integer - number of augmentations we should create per image.
 	:param r: integer - radius around the center to perform augmentation.
 	"""
-
 	dir_registered = src + "/registered"
 	dir_depth = src + "/depth"
 	total = 0
 	filenames = os.listdir(dir_registered)
+	obj = os.path.split(src)[-1]
+	oid = obj_name2id[obj]
 
 	def print_progress():
 		prog = int(total / (len(filenames) * 3 * n * n) * 100)
@@ -39,7 +74,6 @@ def augment_directory(src, dst, n=10, r=20):
 			prog_bar += "#"
 		for _ in range(prog_bar_len-int(prog/(100/prog_bar_len))):
 			prog_bar += "-"
-
 		print("\rAugmenting images found in '%s': [%s] %d%%" % (src, prog_bar, prog), end='', flush=True)
 
 	for f in filenames:
@@ -52,14 +86,17 @@ def augment_directory(src, dst, n=10, r=20):
 		# swap the blue channel in the image with the depth and then augment this image
 		# before storing to disk the newly created images
 		im = cv2.imread(os.path.join(dir_registered, f))
-		merged = prediction.data.replace_with_depth(im, os.path.join(dir_depth, filename))
-		out = prediction.data.augment_image(merged, n=n, r=r)
+		merged = classification.data.replace_with_depth(im, os.path.join(dir_depth, filename))
+		out = classification.data.augment_image(merged, n=n, r=r)
 		for i, image in enumerate(out):
-			cv2.imwrite(os.path.join(dst, "%s_%d.jpg" % (filename, i)), image.astype(np.uint8))
+			#cv2.imwrite(os.path.join(dst, "%s_%d.jpg" % (filename, i)), image.astype(np.uint8))
+			filename = "{}_{}_{}__{}.npy".format(obj, oid, total, cluster(oid))
+			outfile = os.path.join(dst, filename)
+			np.save(outfile, image)
 			total += 1
 			print_progress()
 
-	print("\n==> %d images created" % total)
+	print(" ==> %d images created" % total)
 
 
 def inspect_data(directory):
@@ -70,8 +107,9 @@ def inspect_data(directory):
 	filenames = os.listdir(directory)
 	for f in filenames:
 		filepath = os.path.join(directory, f)
-		im = cv2.imread(filepath)
-		cv2.imshow("opencv", im)
+		#im = cv2.imread(filepath)
+		im = np.load(filepath)
+		cv2.imshow("opencv", im.astype(np.uint8))
 		while True:
 			k = cv2.waitKey(0)
 			if k == ord('d'):
@@ -88,18 +126,29 @@ def inspect_data(directory):
 
 # settings
 IMAGES_DIR = "data/classification/originals"
-DATASET_DIR = "data/classification/augmenations"
+DATASET_DIR = "data/classification/augmentations"
 RADIUS = 40
 N_AUGMENTATIONS = 5
 
 if len(sys.argv) > 1 and sys.argv[1] == "--inspect":
 	inspect_data(DATASET_DIR)
+elif len(sys.argv) > 2 and sys.argv[1] == "--foo":
+	d = "data/classification/originals/{}/depth".format(sys.argv[2])
+	for f in os.listdir(d):
+		print(os.path.join(d, f))
+		im = classification.data.__load_depth__(os.path.join(d, f))
+		im = im.reshape((424, 512))
+		cv2.imshow("opencv", im.astype(np.uint8))
+		while True:
+			k = cv2.waitKey(0)
+			if k == ord('s'):
+				break
 else:
 	for name in os.listdir(IMAGES_DIR):
 		# only traverse directories and
 		# don't augment directories starting with 'new_', they are not part of the training set
-		if name.startswith("new_") or not os.path.isdir(os.path.join(IMAGES_DIR, name)):
+		if name.startswith("new_") or not os.path.isdir(os.path.join(IMAGES_DIR, name)) or obj_name2id[name] is None:
 			continue
-		augment_directory(os.path.join(IMAGES_DIR, f), DATASET_DIR, n=N_AUGMENTATIONS, r=RADIUS)
+		augment_directory(os.path.join(IMAGES_DIR, name), DATASET_DIR, n=N_AUGMENTATIONS, r=RADIUS)
 
 cv2.destroyAllWindows()
