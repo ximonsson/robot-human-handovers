@@ -1,4 +1,3 @@
-import os
 import cv2
 import struct
 import numpy as np
@@ -22,17 +21,9 @@ def __crop__(im, c, r, s):
 
 def __rotate__(im, c, s):
 	# returns a random rotation of the image with center c
-	a = random.randint(1, 180)
+	a = random.randint(1, 359)
 	R = cv2.getRotationMatrix2D(c, a, 1.0)
 	return cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
-
-
-def display(im):
-	cv2.imshow("debug", im)
-	while True:
-		k = cv2.waitKey(0)
-		if k == ord('q'):
-			break
 
 
 def augment_image(im, center=None, r=20, n=10, osize=(alexnet.IN_WIDTH, alexnet.IN_HEIGHT)):
@@ -54,11 +45,16 @@ def augment_image(im, center=None, r=20, n=10, osize=(alexnet.IN_WIDTH, alexnet.
 		center = (center[0], center[1])
 
 	images = []
-	for _ in range(n):
-		rotated = __rotate__(im, center, osize)
+	def fn(im):
 		for _ in range(n):
-			images.append(__crop__(rotated, center, r, osize))
+			rotated = __rotate__(im, center, osize)
+			for _ in range(n):
+				images.append(__crop__(rotated, center, r, osize))
 
+	# augment on original image, flipped image on x-axis, and flipped image on y-axis
+	fn(im)
+	fn(cv2.flip(im, 0))
+	fn(cv2.flip(im, 1))
 	return images
 
 
@@ -84,41 +80,12 @@ def __merge_depth__(image, depth):
 
 
 def replace_with_depth(im, depth_filename):
+	"""
+	Replace the blue channel with the depth loaded from file on disk.
+	:params im: np.ndarray - original image
+	:params depth_filename: String - filepath on disk to file with binary depth image
+	:returns: np.ndarray - new image with replaced blue channel (first one)
+	"""
 	depth = __load_depth__(depth_filename)
 	merged = __merge_depth__(im, depth)
 	return merged
-
-
-def augment_directory(src, dst, n=10):
-	"""
-	Augment the images in src directory and output them to dst directory by k times.
-	Data augmentation is done by random cropping and rotating the images, which are then
-	stored in the image dimensions required by the AlexNet network.
-
-	:param src: string - source directory containing images to augment.
-	:param dst: string - destination directory to store the outputed images.
-	:param n: integer - number of augmentations we should create per image.
-	:returns: integer - the total number of images created
-	"""
-	dir_registered = src + "/registered"
-	dir_depth = src + "/depth"
-	total = 0
-
-	for f in os.listdir(dir_registered):
-		# make sure the file is a jpeg file
-		filename, ext = os.path.splitext(f)
-		if ext not in [".jpg", ".jpeg"]:
-			continue
-
-		# load registered image and depth image
-		# swap the blue channel in the image with the depth and then augment this image
-		# before storing to disk the newly created images
-		im = cv2.imread(os.path.join(dir_registered, f))
-		depth = __load_depth__(os.path.join(dir_depth, filename))
-		merged = __merge_depth__(im, depth)
-		out = augment_image(merged, n=n)
-		for i, image in enumerate(out):
-			cv2.imwrite(os.path.join(dst, "%s_%d.jpg"))
-			total += 1
-
-	return total
