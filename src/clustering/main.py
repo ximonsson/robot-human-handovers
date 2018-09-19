@@ -17,6 +17,14 @@ n_clusters = int(sys.argv[2])
 objects = load_objects_database("data/objects/objects.db")
 
 
+class Cluster:
+	def __init__(self, centroid, samples):
+		self.samples = samples
+		self.centroid = centroid
+
+	@property
+	def objects(self):
+		return list(set(self.samples[0, :]))
 
 def wait():
 	k = cv2.waitKey(0)
@@ -62,44 +70,65 @@ def display_object(oid, label, centroid):
 	cv2.imshow("opencv object centroid", im)
 
 
-def print_summary(k, samples):
-	print("*** Summary ***")
-	print("%d features and %d samples" % (samples.shape[1]-1, samples.shape[0]))
 
-	print("Object assignments:")
-	label_assignments = dict()
+def summarize(k, samples):
+	"""
+	Returns summary for the clustering in form of which objects were assigned to which cluster and how
+	many samples of each object were assigned to which cluster.
+	"""
+	cluster_assignments = dict()
+	sample_assignments = dict()
+
 	unique, counts = np.unique(samples[:, 0], return_counts=True)
-	d = dict(zip(unique, counts))
-	for tid in d:
-		print(" > Object #%d [%d samples]" % (tid, d[tid]))
-		c = dict()
+	sample_objects = dict(zip(unique, counts))
+	for oid in sample_objects:
+		# count the number of samples that belonged to each cluster for this object
+		sample_assignments[oid] = dict()
 		for i, s in enumerate(samples):
-			if s[0] == tid:
+			if s[0] == oid:
 				l = k.labels_[i]
-				if not l in c:
-					c[l] = 0
-				c[l] += 1
-		largest_label = 0
-		label_count = 0
-		for label in c:
-			if c[label] > label_count:
-				largest_label = label
-				label_count = c[label]
-			print("    * Label #%d => %d (%d%%) " % (label, c[label], c[label]/d[tid]*100))
-		if largest_label not in label_assignments:
-			label_assignments[largest_label] = []
-		label_assignments[largest_label].append(tid)
-		display_object(tid, largest_label, k.cluster_centers_[largest_label])
-		wait()
+				if not l in sample_assignments[oid]:
+					sample_assignments[oid][l] = 0
+				sample_assignments[oid][l] += 1
+		largest_label = max(sample_assignments[oid], key=sample_assignments[oid].get)
+		# add the object to the cluster which it has most belonging samples to
+		if largest_label not in cluster_assignments:
+			cluster_assignments[largest_label] = []
+		cluster_assignments[largest_label].append(oid)
+
+	return cluster_assignments, sample_assignments
+
+
+# visualize the clustering
+FLAG_VISUALIZE = False
+
+def print_summary(cluster_assignments, sample_assignments, k, samples):
+	print("*** Summary ***")
+	print("Object assignments:")
+	for oid in sample_assignments:
+		object_samples = sample_assignments[oid]
+		object_samples_total = list(samples[:, 0]).count(oid)
+		print(" > Object #{} [Label #{}: {} samples]".format(
+			oid,
+			max(object_samples, key=object_samples.get),
+			object_samples_total))
+		for label in object_samples:
+			print("   => Label #{}: {}% ({} samples)".format(
+				label,
+				int(object_samples[label]/object_samples_total*100),
+				object_samples[label]))
+		# visualize the grasp of the cluster on this object
+		if FLAG_VISUALIZE:
+			display_object(tid, largest_label, k.cluster_centers_[largest_label])
+			wait()
 
 	print("Cluster information:")
-	unique, counts = np.unique(k.labels_, return_counts=True)
-	d = dict(zip(unique, counts))
-	for label in d:
-		print(" > Label #%d: %d samples >> Centroid %s" % (label, d[label], k.cluster_centers_[label]))
-		print("   Objects: {}".format(label_assignments[label]))
+	for label in cluster_assignments:
+		print(" > Label #{} >> Centroid {}".format(
+			label,
+			k.cluster_centers_[label]))
+		print("   Objects: {}".format(cluster_assignments[label]))
 
-	cv2.destroyAllWindows()
 
 
 def plot(k, samples):
@@ -123,16 +152,26 @@ def cluster(samples):
 	return k
 
 
-def save(k):
-	with open("centroids.npy", "wb") as f:
+def save(k, cluster_assignments, sample_assignments):
+	import pickle
+	DIR = "data/clustering"
+	with open(os.path.join(DIR, "centroids.npy"), "wb") as f:
 		np.save(f, k.cluster_centers_)
-	#with open("labels.npy", "wb") as f:
-		#np.save(f, k.labels_)
+	with open(os.path.join(DIR, "labels.npy"), "wb") as f:
+		np.save(f, k.labels_)
+	with open(os.path.join(DIR, "clusters.pkl"), "wb") as f:
+		pickle.dump(cluster_assignments, f, pickle.HIGHEST_PROTOCOL)
 
+
+if "--visualize" in sys.argv:
+	FLAG_VISUALIZE = True
 
 with open(samples_file, "rb") as f:
 	samples = np.load(f)
 	k = cluster(samples)
-	print_summary(k, samples)
+	clusters, objects = summarize(k, samples)
+	print_summary(clusters, objects, k, samples)
 	plot(k, samples)
-	save(k)
+	save(k, clusters, objects)
+
+cv2.destroyAllWindows()
