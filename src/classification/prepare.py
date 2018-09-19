@@ -1,32 +1,18 @@
+"""
+File: prepare.py
+Description:
+	Prepares the data for training of the object classification.
+	Performs data augmentation of the original images of the objects and sets it up ready for training.
+
+	By running the script with the '--inspect' flag the data that has been generated can instead be inspected to make
+	sure that it looks good for training.
+"""
 import prediction.data
 import sys
 import cv2
 import numpy as np
 import os
 
-"""
-def wait():
-	while True:
-		k = cv2.waitKey(0)
-		if k == ord('q'):
-			break
-
-
-image_filename = "data/training/images/cnn/registered/0.jpg"
-depth_filename = "data/training/images/cnn/depth/0"
-
-image = cv2.imread(image_filename)
-image = prediction.data.replace_with_depth(image, depth_filename)
-images = prediction.data.augment_image(image, n=10)
-for im in images:
-	channels = [im[:, :, 0], im[:, :, 1], im[:, :, 2]]
-	channels = list(map(lambda x: x.astype(np.uint8), channels))
-	channels = cv2.hconcat(channels)
-	cv2.imshow("opencv", channels)
-	wait()
-
-cv2.destroyAllWindows()
-"""
 
 def augment_directory(src, dst, n=10, r=20):
 	"""
@@ -77,6 +63,9 @@ def augment_directory(src, dst, n=10, r=20):
 
 
 def inspect_data(directory):
+	"""
+	Inspect the created dataset for the training of the object classification.
+	"""
 	quit = False
 	filenames = os.listdir(directory)
 	for f in filenames:
