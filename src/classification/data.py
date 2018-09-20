@@ -98,6 +98,37 @@ def replace_with_depth(im, depth_filename):
 	return merged
 
 
+def datasets(src, objects, ratio):
+	"""
+	Create training and validation datasets.
+	Go through data files that are found in specified source directory and split by objects
+	according to ratio.
+
+	:param src: string - filepath to source directory with data
+	:param objects: array - list of names of objects that we are going to try to classify
+	:param ratio: float -
+			ratio between training and validation of the dataset as in the number
+			of objects. More specifically this value tells us what ratio of the objects to use
+			for training.
+	:returns: tuple -
+			training set and validation set each as an array of strings to filepaths for
+			images to use in each phase.
+	"""
+	import random
+
+	# list files in the source directory and shuffle them
+	datafiles = os.listdir(src)
+	random.shuffle(datafiles)
+	n = int(len(objects) * ratio)
+
+	# get images that correspond to the objects split between training and validation
+	get = lambda objects: [os.path.join(src, f) for f in datafiles if any(map(f.startswith, objects))]
+	training = get(objects[:n])
+	validation = get(objects[n:])
+
+	return training, validation
+
+
 def batches(data, size, imdim, outputs):
 	"""
 	Creates a generator to iterate over the batches of the given dataset yielding a batch
@@ -115,7 +146,6 @@ def batches(data, size, imdim, outputs):
 		x = np.ndarray(dim)
 		y = np.zeros((size, outputs))
 		for j in range(size):
-			print(data[i])
 			name, _ = os.path.splitext(os.path.basename(data[i]))
 			cluster = np.int(name.split("_")[-1])
 			x[j] = np.load(data[i])

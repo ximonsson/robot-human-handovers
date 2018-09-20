@@ -3,6 +3,17 @@ import tensorflow as tf
 import alexnet
 import data
 import random
+from datetime import datetime
+
+def progressbar(done, total):
+	progress = done / total
+	bar = ""
+	bar_len = 30
+	for _ in range(int(bar_len * progress)):
+		bar += "#"
+	for _ in range(bar_len-int(bar_len * progress)):
+		bar += "-"
+	return "[{}] {}% Done".format(bar, int(progress * 100))
 
 
 DATA = "data/classification/images/"
@@ -24,13 +35,27 @@ y = tf.placeholder(tf.float32, [None, outputs])
 keep_prob = tf.placeholder_with_default(1.0, shape=())
 
 # load dataset
-# randomize files and split between training data and validation data
-datafiles = os.listdir(DATA)
-datafiles = random.shuffle(datafiles)
-datafiles = list(map(lambda x: os.path.join(DATA, x), datafiles))
-n = np.floor(len(datafiles)/DATA_RATIO)
-training_data = datafiles[:n]
-validation_data = datafiles[n:]
+objects = [
+		#"ball",
+		"bottle",
+		"box",
+		"brush",
+		"can",
+		"cutters",
+		"glass",
+		"hammer",
+		"knife",
+		"mug",
+		"pen",
+		"pitcher",
+		"scalpel",
+		"scissors",
+		"screwdriver",
+		#"tube",
+		]
+training_data, validation_data = data.datasets(DATA, objects, DATA_RATIO)
+training_data = training_data[:batch_size*10]
+validation_data = validation_data[:batch_size*2]
 
 # create network
 m = alexnet.model(x, keep_prob, classes=outputs)
@@ -60,12 +85,29 @@ with tf.Session() as s:
 	# for each epoch fit the model to the training set and
 	# calculate accuracy over the validation set
 	for i in range(epochs):
-		print("{} Epoch #{}".format(datetime.now(), i))
+		print("{} Epoch #{}".format(datetime.now(), i+1))
+		batch = 0
 		for X, Y in data.batches(training_data, batch_size, [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH], outputs):
 			s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-dropout})
+			batch += 1
+			print("\rTraining: {}".format(progressbar(batch, len(training_data)/batch_size)), flush=True, end="")
 
+		print()
+		batch = 0
 		acc = 0
 		for X, Y in data.batches(validation_data, batch_size, [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH], outputs):
 			acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
-		acc /= np.floor(len(validation_data)/batch_size)
-		print("{} Accuracy: {:.4f}%".format(datetime.now(), acc)
+			batch += 1
+			print(
+					"\rValidating: {} => Accuracy {:.4f}%".format(
+						progressbar(
+							batch,
+							len(validation_data)/batch_size),
+						acc/batch*100),
+					flush=True,
+					end="")
+
+		acc /= batch
+		print()
+		print("{} Accuracy: {:.4f}%".format(datetime.now(), acc))
+		print()
