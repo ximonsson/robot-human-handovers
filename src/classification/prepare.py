@@ -90,7 +90,7 @@ def augment_directory(src, dst, n=10, r=20):
 		out = classification.data.augment_image(merged, n=n, r=r)
 		for i, image in enumerate(out):
 			#cv2.imwrite(os.path.join(dst, "%s_%d.jpg" % (filename, i)), image.astype(np.uint8))
-			filename = "{}_{}_{}__{}.npy".format(obj, oid, total, cluster(oid))
+			filename = "{}_{}_{}_{}.npy".format(obj, oid, total, cluster(oid))
 			outfile = os.path.join(dst, filename)
 			np.save(outfile, image)
 			total += 1
@@ -126,7 +126,7 @@ def inspect_data(directory):
 
 # settings
 IMAGES_DIR = "data/classification/originals"
-DATASET_DIR = "data/classification/augmentations"
+DATASET_DIR = "data/classification/images"
 RADIUS = 40
 N_AUGMENTATIONS = 5
 

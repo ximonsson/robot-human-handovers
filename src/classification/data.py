@@ -10,6 +10,7 @@ import numpy as np
 from math import ceil
 import alexnet
 import random
+import os
 
 
 
@@ -95,3 +96,29 @@ def replace_with_depth(im, depth_filename):
 	depth = __load_depth__(depth_filename)
 	merged = __merge_depth__(im, depth)
 	return merged
+
+
+def batches(data, size, imdim, outputs):
+	"""
+	Creates a generator to iterate over the batches of the given dataset yielding a batch
+	of input data and the expected output.
+
+	:param data: array - list of strings with filepaths to image files for the training
+	:param size: integer - size of each batch
+	:param imdim: array - dimensions of the images in the dataset
+	:param outputs: integer - number of outputs of the network
+	"""
+	i = 0
+	dim = [size]
+	dim.extend(imdim)
+	for _ in range(np.int(np.floor(len(data)/size))):
+		x = np.ndarray(dim)
+		y = np.zeros((size, outputs))
+		for j in range(size):
+			print(data[i])
+			name, _ = os.path.splitext(os.path.basename(data[i]))
+			cluster = np.int(name.split("_")[-1])
+			x[j] = np.load(data[i])
+			y[j][cluster] = 1
+			i += 1
+		yield x, y
