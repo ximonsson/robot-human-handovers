@@ -118,13 +118,19 @@ def datasets(src, objects, ratio):
 
 	# list files in the source directory and shuffle them
 	datafiles = os.listdir(src)
+	datafiles = [os.path.join(src, f) for f in datafiles if any(map(f.startswith, objects))]
 	random.shuffle(datafiles)
-	n = int(len(objects) * ratio)
+
+	datafiles = datafiles[:40] # TODO remove this
+
+	n = int(len(datafiles) * ratio)
+	training = datafiles[:n]
+	validation = datafiles[n:]
 
 	# get images that correspond to the objects split between training and validation
-	get = lambda objects: [os.path.join(src, f) for f in datafiles if any(map(f.startswith, objects))]
-	training = get(objects[:n])
-	validation = get(objects[n:])
+	#get = lambda objects: [os.path.join(src, f) for f in datafiles if any(map(f.startswith, objects))]
+	#training = get(objects[:n])
+	#validation = get(objects[n:])
 
 	return training, validation
 
@@ -142,7 +148,7 @@ def batches(data, size, imdim, outputs):
 	i = 0
 	dim = [size]
 	dim.extend(imdim)
-	for _ in range(np.int(np.floor(len(data)/size))):
+	for b in range(np.int(np.floor(len(data)/size))):
 		x = np.ndarray(dim)
 		y = np.zeros((size, outputs))
 		for j in range(size):
@@ -151,4 +157,4 @@ def batches(data, size, imdim, outputs):
 			x[j] = np.load(data[i])
 			y[j][cluster] = 1
 			i += 1
-		yield x, y
+		yield b, x, y
