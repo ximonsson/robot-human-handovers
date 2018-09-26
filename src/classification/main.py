@@ -17,7 +17,7 @@ def progressbar(done, total):
 
 
 DATA = "data/classification/images/"
-DATA_RATIO = 0.75
+DATA_RATIO = 0.8
 
 # learning parameters
 learning_rate = 0.001
@@ -57,7 +57,7 @@ objects = [
 N = 11
 training_objects = objects[:N]
 test_objects = objects[N:]
-test_data, _ = data.datasets(DATA, test_objects, 1.0)
+test_data, _ = data.datasets(DATA, test_objects, 1.0, size=50)
 
 # create network
 # create the original alexnet model and add a new fully connected layer to output the grasping class
@@ -100,7 +100,7 @@ with tf.Session() as s:
 	alexnet.load_weights("data/weights/bvlc_alexnet.npy", s, train_layers)
 
 	# split dataset
-	training_data, validation_data = data.datasets(DATA, training_objects, DATA_RATIO)
+	training_data, validation_data = data.datasets(DATA, training_objects, DATA_RATIO, size=50)
 
 	# for each epoch fit the model to the training set and
 	# calculate accuracy over the validation set
