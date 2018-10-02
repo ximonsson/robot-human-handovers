@@ -3,6 +3,8 @@
 \usepackage{graphicx} % figures
 \usepackage{csquotes} % Recommended by biblatex
 \usepackage{biblatex}
+\usepackage{mathtools}
+\addbibresource{references-extra.bib}
 \addbibresource{references.bib} % The file containing our references, in BibTeX format
 
 
@@ -46,22 +48,17 @@
 \chapter{Introduction}
 \input{tex/intro.tex}
 
-
-\chapter{Related Work}
+\chapter{Related work}
 \input{tex/related-work.tex}
-
 
 \chapter{Methodology}
 \input{tex/methods.tex}
 
-
-\chapter{Results}
-
-
-\chapter{Discussion}
-
+\chapter{Results and discussion}
+\input{tex/results.tex}
 
 \chapter{Conclusion and future work}
+\input{tex/conclusion.tex}
 
 
 \printbibliography[heading=bibintoc] % Print the bibliography (and make it appear in the table of contents)
