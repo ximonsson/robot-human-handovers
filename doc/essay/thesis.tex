@@ -4,9 +4,9 @@
 \usepackage{csquotes} % Recommended by biblatex
 \usepackage{biblatex}
 \usepackage{mathtools}
+\usepackage{listings}
 \addbibresource{references-extra.bib}
 \addbibresource{references.bib} % The file containing our references, in BibTeX format
-
 
 \title{Robot-human handovers learning of novel objects through unsupervised learning}
 \alttitle{Inlärning av robot till människa överlämningar genom unsupervised learning}
@@ -18,18 +18,14 @@
 \school{School of Electrical Engineering and Computer Science}
 \date{\today}
 
-
 \begin{document}
 
-% Frontmatter includes the titlepage, abstracts and table-of-contents
-\frontmatter
-
+\frontmatter % Frontmatter includes the titlepage, abstracts and table-of-contents
 \titlepage
 
 \begin{abstract}
 	english abstract
 \end{abstract}
-
 
 \begin{otherlanguage}{swedish}
 	\begin{abstract}
@@ -37,13 +33,9 @@
 	\end{abstract}
 \end{otherlanguage}
 
-
 \tableofcontents
 
-
-% Mainmatter is where the actual contents of the thesis goes
-\mainmatter
-
+\mainmatter % Mainmatter is where the actual contents of the thesis goes
 
 \chapter{Introduction}
 \input{tex/intro.tex}
@@ -57,14 +49,12 @@
 \chapter{Results and discussion}
 \input{tex/results.tex}
 
-\chapter{Conclusion and future work}
+\chapter{Conclusions and future work}
 \input{tex/conclusion.tex}
-
 
 \printbibliography[heading=bibintoc] % Print the bibliography (and make it appear in the table of contents)
 
 \appendix
-
 \chapter{Unnecessary Appended Material}
 
 \end{document}

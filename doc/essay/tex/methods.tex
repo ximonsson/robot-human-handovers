@@ -21,11 +21,21 @@ After observing a number of handovers betweens humans, a first step is to try an
 
 For the purpose of categorizing the handover samples we will be using the \emph{k-means} algorithm. K-means is an algorithm that attempts to classify a number of observations into \emph{k} number of clusters. The algorithm starts by creating \emph{k} number of centroids for each cluster and assigning our samples to the centroid within shortest distance. The algorithm iteratively then updates the centroids to become the mean of the samples assigned to it, and then re-assigns all samples depending on the new centroids. This is repeated either a fixed number of times or until the algorithm converges minimizing the sum of squares within the clusters. A challenge that presents itself using clustering algorithms is choosing what features are to be used for the purpose and how many clusters should we create. We will be using \emph{Principle component analysis} (PCA) to evaluate which features that are to be used to define each cluster. Ideally we use the smallest number of features possible, but also the ones that create the most distinct clusters, which PCA will help us with. Before using techniques such as PCA to minimize the amount of features that are needed to cluster we will try to define what features matter in a handover and deduct them from the data we have, as well as trying to redefine some features in a more compressed matter.
 
-As we mentioned we are able to extract the homography matrix the grasping region expressed as a rotated rectange from the recorded data. From these we can derive a number of features that might be of interest to classify a handover. A homography matrix \(H\) is a 3x3 matrix with a total of nine values which creates quite a few features if we would try and cluster on it. Instead we can use it to calculate a rotation of the object, as we are only working with two-dimensional data we will use the rotation on the z-axis using the following formula:
+As we mentioned we are able to extract the homography matrix the grasping region expressed as a rotated rectange from the recorded data. From these we can derive a number of features that might be of interest to classify a handover. A homography matrix \(H\) is a 3x3 matrix with a total of nine values which creates quite a few features if we would try and cluster on it. Instead we can use it to calculate a rotation of the object, we discard the translation information in the matrix as we are only interested in the end pose of the object. As we are only working with two-dimensional data we will use the rotation on the z-axis. Using the homography we can calculate a rotation matrix from which we can derive the angle. Using the following Python, code with the help of the OpenCV library we compute a rotation matrix \(R\) (taken from \parencite{OpenCVHomographyDemo}). Using the rotation matrix we can compute the angle \(\theta_Z\) as \(\theta_Z = \arctan(R_{1,0} / R_{0,0})\).
 
-\[
-	H * foo = rotation
-\]
+\begin{lstlisting}[language=Python]
+norm = np.sqrt(np.sum(H[:,0] ** 2))
+H /= norm
+c1 = H[:, 0]
+c2 = H[:, 1]
+c3 = np.cross(c1, c2)
+
+R = np.zeros((3, 3), dtype=np.float64)
+for i in range(3):
+	R[i, :] = [c1[i], c2[i], c3[i]]
+w, u, t = cv2.SVDecomp(R)
+return np.dot(u, t)
+\end{lstlisting}
 
 Next we can compute a center of mass for the object using it's contour's moments, easily extracted from it's binary mask. The following formula gives us the center.
 
@@ -56,19 +66,29 @@ With these features we define for a robot how to grasp an object and present it 
 
 
 
-
 \section{Prediction of handover class}
+
+Our aim is in the end for, given an image of an object, have a robot be able to predict a grasp. In our case we will have it predict a class of handovers which are the result of the previous clustering. For novel objects we will instead output the class of the object among the training set that it resembles the most. For this purpose we will be training a \emph{Convolutional Neural Network} (\texttt{CNN}), to recieve images and output classes.
 
 \subsection{Collection of data}
 
-Kinect2: pictures of each object from different angles.
+The goal is to have the robot to learn from the handovers between humans that it has observed. We will therefor use the objects that were used for recording handovers as our dataset for this purpose as well.
 
-data augmentation: flipping, random cropping and rotation.
+Using a Kinect v2 camera, pictures with both color and depth data, were taken of all objects from different angles. Data augmentation was later performed on the resulting images to enlargen the dataset by using flipping, random cropping and random rotations of the images.
+
 
 \subsection{Classification of objects}
 
-results from clustering used to classify each object.
+\subsubsection{AlexNet network}
 
-Blue channel replaced with the depth channel
+A challenging part with all ANNs is to define their architecture. Changes to the number of layers and their sizes can play a significant role on the outcome of the results. Within object classification there have been a number of architectures proposed that have achieved good results, one of these is the \texttt{AlexNet} network.
 
-CNN: copied the AlexNet model and applying pretrained weights.
+\emph{Insert some text talking about the AlexNet model here and it's result}.
+
+\subsubsection{Training and testing}
+
+We will be using the AlexNet as a source of inspiration for our network, with some minor tweaking as to fit our purpose. Note that the original design of the architecture was intended to be run in parallel on two GPUs, but as a first modification we will re-design it to be run sequentially on one.
+
+Even though their potential for performing very well, one issue with ANNs is that they often require a lot of data to do so. The amount of data we have been able to gather by taking images of the objects are unfortunately not enough for a network as large as the AlexNet network. Fortunately for us there are pre-trained weights to be found that we can use as to increase our chances, for example we can use the ones found at \parencite{AlexNetImplWeights} where we can also base our implementation of the AlexNet architecture using the Python library \texttt{tensorflow}.
+
+Next step is to finetune the pre-trained weights to better fit our own data. More precisely we will train it to output one of the labels created through the clustering instead one the one thousand classes it was originally trained for. As input data we will be taking inspiration from \parencite{Redmon2014} and to this with our own images but with the blue color channel replaced with the depth image.
