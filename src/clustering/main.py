@@ -17,22 +17,13 @@ n_clusters = int(sys.argv[2])
 objects = load_objects_database("data/objects/objects.db")
 
 
-class Cluster:
-	def __init__(self, centroid, samples):
-		self.samples = samples
-		self.centroid = centroid
-
-	@property
-	def objects(self):
-		return list(set(self.samples[0, :]))
-
 def wait():
 	k = cv2.waitKey(0)
 	while k != ord('q'):
 		k = cv2.waitKey(0)
 
 
-def display_object(oid, label, centroid):
+def draw(oid, label, centroid):
 	obj = objects[oid]
 	im = np.copy(obj.image)
 	oc = obj.center
@@ -51,6 +42,11 @@ def display_object(oid, label, centroid):
 	# rotate
 	R = cv2.getRotationMatrix2D(oc, -centroid[0], 1.0)
 	im = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
+	return im
+
+
+def display_object(oid, label, centroid):
+	im = draw(oid, label, centroid)
 	# write text
 	im = cv2.putText(
 			im,
@@ -68,7 +64,6 @@ def display_object(oid, label, centroid):
 			(255, 255, 255))
 	# display
 	cv2.imshow("opencv object centroid", im)
-
 
 
 def summarize(k, samples):
@@ -108,9 +103,10 @@ def print_summary(cluster_assignments, sample_assignments, k, samples):
 	for oid in sample_assignments:
 		object_samples = sample_assignments[oid]
 		object_samples_total = list(samples[:, 0]).count(oid)
+		largest_label = max(object_samples, key=object_samples.get)
 		print(" > Object #{} [Label #{}: {} samples]".format(
 			oid,
-			max(object_samples, key=object_samples.get),
+			largest_label,
 			object_samples_total))
 		for label in object_samples:
 			print("   => Label #{}: {}% ({} samples)".format(
@@ -119,8 +115,10 @@ def print_summary(cluster_assignments, sample_assignments, k, samples):
 				object_samples[label]))
 		# visualize the grasp of the cluster on this object
 		if FLAG_VISUALIZE:
-			display_object(tid, largest_label, k.cluster_centers_[largest_label])
+			display_object(oid, largest_label, k.cluster_centers_[largest_label])
 			wait()
+		im = draw(oid, largest_label, k.cluster_centers_[largest_label])
+		cv2.imwrite("results/clustering/{}_handover.jpg".format(oid), im)
 
 	print("Cluster information:")
 	for label in cluster_assignments:
@@ -128,7 +126,6 @@ def print_summary(cluster_assignments, sample_assignments, k, samples):
 			label,
 			k.cluster_centers_[label]))
 		print("   Objects: {}".format(cluster_assignments[label]))
-
 
 
 def plot(k, samples):
@@ -170,9 +167,9 @@ if "--visualize" in sys.argv:
 with open(samples_file, "rb") as f:
 	samples = np.load(f)
 	k = cluster(samples)
-	clusters, objects = summarize(k, samples)
-	print_summary(clusters, objects, k, samples)
+	clusters, object_assignments = summarize(k, samples)
+	print_summary(clusters, object_assignments, k, samples)
 	plot(k, samples)
-	save(k, clusters, objects)
+	save(k, clusters, object_assignments)
 
 cv2.destroyAllWindows()
