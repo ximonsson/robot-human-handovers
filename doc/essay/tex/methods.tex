@@ -6,14 +6,13 @@ Seeing how we do not have any labels for the handovers, but still want to train 
 
 \subsection{Collection of data}
 
-For this purpose a number of voluteers were asked to be recorded while handing over a set of objects between each other, using a \emph{Kinect v2}. Even though the camera used supports depth images, only two-dimensional data will be used in these part, i.e we will only use the color images recorded. A total of 11 people who already knew each other from before volunteered (including myself) for this task.  Pairs of volunteers were permutted to try and make givers adapt to different recievers. 15 objects were used in the recordings including: \emph{kitchen knife, hammer, screwdriver, brush, pen, scissors, bottle, cup, pitcher, glass, ball, tube, box, can, scalpel}. Instructions for handing over the objects were given prior to recordings as to make sure participants gave the object in a manner that the reciever can used the object straight away, for example give the hammer handle first in a manner that the next person can start hammering directly without requiring a switch of grip after recieving, or a cup is to handed handle first so the person can start drinking right away. For objects that might contain liquids the participants were asked to imagine that these objects were filled while handing them over between each other. Also as to make sure the dataset did not contain too much deviations considering the grasp some instructions were given concerning region were to grasp, for example that the giver grasps the bottle in the top half. The regions were chosen by myself with in mind for optimization for the reciever when given the object.
+For this purpose a number of voluteers were asked to be recorded while handing over a set of objects between each other, using a \emph{Kinect v2} the \textcite{libfreenect2} software library. Even though the camera used supports depth images, only two-dimensional data will be used in these part, i.e we will only use the color images recorded. A total of 11 people who already knew each other from before volunteered (including myself) for this task.  Pairs of volunteers were permutted to try and make givers adapt to different recievers. 15 objects were used in the recordings including: \emph{kitchen knife, hammer, screwdriver, brush, pen, scissors, bottle, cup, pitcher, glass, ball, tube, box, can, scalpel}. Instructions for handing over the objects were given prior to recordings as to make sure participants gave the object in a manner that the reciever can used the object straight away, for example give the hammer handle first in a manner that the next person can start hammering directly without requiring a switch of grip after recieving, or a cup is to handed handle first so the person can start drinking right away. For objects that might contain liquids the participants were asked to imagine that these objects were filled while handing them over between each other. Also as to make sure the dataset did not contain too much deviations considering the grasp some instructions were given concerning region were to grasp, for example that the giver grasps the bottle in the top half. The regions were chosen by myself with in mind for optimization for the reciever when given the object.
 
 In order to extract data from the recorded frames about the objects we need to detect the objects themselves. Object detection is a very difficult part of computer vision and there are many different methods, where some are more robust than others, to do so. To help with this part to make data extraction easier we will be using AprilTags. AprilTags can be compared to QR-codes that are printed out on small papers and fastened onto the objects. With the help of their software library we can easily track the objects in the recorded material by getting the position of the four corners of the tag, and its center, which enables us to estimate such things as pose of the object. More can be learned about AprilTags at \textcite{AprilTags}.
 
 For each object we first create a reference image with its ground truth and from this image we also generate a binary mask. With the help of the AprilTags we can compute a Homography matrix that would warp the tag (and object) in the reference image to the one located in the frame with the detected object. The binary mask of the image is transformed using the computed Homography matrix and applied over the scene to extract only the entire object itself, and with this we can estimate the grasping region. The image of the found object is segmentated by color, skin color more precisely in this case, and a contour expressed as rotated rectangle is calculated around the largest region found which represents our grasping region. Skin color is a quick way of segmentating and finding grasp region as the color of skin is quite different from the colors of the objects, but the method is not too robust in covering many different people as the color can vary quite a lot from person to person. The setting for skin color had to therefore be tweaked manually depending on the participant.
 
 One recording session consists from one pair of volunteers, the giver has handed over all objects in the set to the reciever. During the recording the application is continuously recording, creating a large number frames that are not of interest. In this project we only interest ourselves for the actual moment that the giver holds out the object ready for the reciever to take it, which requires some post-processing of the frames. A first step is to create a Region of Interest (ROI) which we will concentrate on searching for objects. Our ROI is arbitrarely set to the middle of the frame and large enough to see the entire object. When a tag is detected within the the ROI we flag this frame a handover moment and store the features of the handover. This is unfortunately not enough because we might be flagging frames where the reciever is holding the object after taking it, or maybe both are holding it but the system detects the reciever's hand as the largest grasping region. The methods explained above might also be incorrect as the grasping region was incorrectly detected. Manual filtering was later applied to images that were flagged as handover moments and to make sure they were correct ones and that the data extracted was correct.
-
 
 \subsection{Clustering by features}
 
@@ -37,7 +36,7 @@ w, u, t = cv2.SVDecomp(R)
 return np.dot(u, t)
 \end{lstlisting}
 
-Next we can compute a center of mass for the object using it's contour's moments, easily extracted from it's binary mask. The following formula gives us the center.
+Next we can compute a center of mass for the object using it's contour's moments, easily extracted from it's binary mask. The following formula gives us the center. \textcolor{red}{write about moments and correct formula for center}
 
 \[
 	center = \frac{M_x}{M}, \frac{M_y}{M}
@@ -45,7 +44,7 @@ Next we can compute a center of mass for the object using it's contour's moments
 
 We can then extract the distance between center of mass of the object and the center of the grasping region as a feature. It also enables us to create a unit vector from the center of mass of the object towards the grasping region. A vector in two dimensions would be expressed with two values, but we can summarize this in one value by instead calculating the angle using \(\tan(\theta) = \sqrt{x^2 + y^2}\). Lastly we can compute the ratio of the area covered by the grasp by the area of the object \(A = \frac{area(Grasp)}{area(Object}\).
 
-To summarize we can extract the following features:
+To summarize we can extract the following features: \textcolor{red}{make the below lists better}
 \begin{itemize}
 	\item Rotation of object in z-axis, extracted from the homography matrix of the AprilTag.
 	\item Distance between center of mass of the object and the center of the grasping region.
@@ -65,7 +64,6 @@ On top of these we still have:
 With these features we define for a robot how to grasp an object and present it to a human for a handover. More on the role of the features for clustering will be presented in the results and discussion section.
 
 
-
 \section{Prediction of handover class}
 
 Our aim is in the end for, given an image of an object, have a robot be able to predict a grasp. In our case we will have it predict a class of handovers which are the result of the previous clustering. For novel objects we will instead output the class of the object among the training set that it resembles the most. For this purpose we will be training a \emph{Convolutional Neural Network} (\texttt{CNN}), to recieve images and output classes.
@@ -76,14 +74,13 @@ The goal is to have the robot to learn from the handovers between humans that it
 
 Using a Kinect v2 camera, pictures with both color and depth data, were taken of all objects from different angles. Data augmentation was later performed on the resulting images to enlargen the dataset by using flipping, random cropping and random rotations of the images.
 
-
 \subsection{Classification of objects}
 
 \subsubsection{AlexNet network}
 
 A challenging part with all ANNs is to define their architecture. Changes to the number of layers and their sizes can play a significant role on the outcome of the results. Within object classification there have been a number of architectures proposed that have achieved good results, one of these is the \texttt{AlexNet} network.
 
-\emph{Insert some text talking about the AlexNet model here and it's result}.
+\textcolor{red}{Insert some text talking about the AlexNet model here and it's result}.
 
 \subsubsection{Training and testing}
 
