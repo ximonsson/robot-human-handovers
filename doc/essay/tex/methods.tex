@@ -10,7 +10,21 @@ For this purpose a number of voluteers were asked to be recorded while handing o
 
 In order to extract data from the recorded frames about the objects we need to detect the objects themselves. Object detection is a very difficult part of computer vision and there are many different methods, where some are more robust than others, to do so. To help with this part to make data extraction easier we will be using AprilTags. AprilTags can be compared to QR-codes that are printed out on small papers and fastened onto the objects. With the help of their software library we can easily track the objects in the recorded material by getting the position of the four corners of the tag, and its center, which enables us to estimate such things as pose of the object. More can be learned about AprilTags at \textcite{AprilTags}.
 
-For each object we first create a reference image with its ground truth and from this image we also generate a binary mask. With the help of the AprilTags we can compute a Homography matrix that would warp the tag (and object) in the reference image to the one located in the frame with the detected object. The binary mask of the image is transformed using the computed Homography matrix and applied over the scene to extract only the entire object itself, and with this we can estimate the grasping region. The image of the found object is segmentated by color, skin color more precisely in this case, and a contour expressed as rotated rectangle is calculated around the largest region found which represents our grasping region. Skin color is a quick way of segmentating and finding grasp region as the color of skin is quite different from the colors of the objects, but the method is not too robust in covering many different people as the color can vary quite a lot from person to person. The setting for skin color had to therefore be tweaked manually depending on the participant.
+For each object we first create a reference image with its ground truth and from this image we also generate a binary mask. Figure \ref{fig:objects_montage} shows the reference images created and figure \ref{fig:masks_montage} show their binary masks. With the help of the AprilTags we can compute a Homography matrix that would warp the tag (and object) in the reference image to the one located in the frame with the detected object. The binary mask of the image is transformed using the computed Homography matrix and applied over the scene to extract only the entire object itself, and with this we can estimate the grasping region. The image of the found object is segmentated by color, skin color more precisely in this case, and a contour expressed as rotated rectangle is calculated around the largest region found which represents our grasping region. Skin color is a quick way of segmentating and finding grasp region as the color of skin is quite different from the colors of the objects, but the method is not too robust in covering many different people as the color can vary quite a lot from person to person. The setting for skin color had to therefore be tweaked manually depending on the participant.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{img/methods/objects.jpg}
+	\caption{Ground truth images of the objects used with an AprilTag fastened to them}
+	\label{fig:objects_montage}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{img/methods/masks.jpg}
+	\caption{Binary mask of each object}
+	\label{fig:masks_montage}
+\end{figure}
 
 One recording session consists from one pair of volunteers, the giver has handed over all objects in the set to the reciever. During the recording the application is continuously recording, creating a large number frames that are not of interest. In this project we only interest ourselves for the actual moment that the giver holds out the object ready for the reciever to take it, which requires some post-processing of the frames. A first step is to create a Region of Interest (ROI) which we will concentrate on searching for objects. Our ROI is arbitrarely set to the middle of the frame and large enough to see the entire object. When a tag is detected within the the ROI we flag this frame a handover moment and store the features of the handover. This is unfortunately not enough because we might be flagging frames where the reciever is holding the object after taking it, or maybe both are holding it but the system detects the reciever's hand as the largest grasping region. The methods explained above might also be incorrect as the grasping region was incorrectly detected. Manual filtering was later applied to images that were flagged as handover moments and to make sure they were correct ones and that the data extracted was correct.
 
@@ -81,6 +95,14 @@ Using a Kinect v2 camera, pictures with both color and depth data, were taken of
 A challenging part with all ANNs is to define their architecture. Changes to the number of layers and their sizes can play a significant role on the outcome of the results. Within object classification there have been a number of architectures proposed that have achieved good results, one of these is the \texttt{AlexNet} network.
 
 \textcolor{red}{Insert some text talking about the AlexNet model here and it's result}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{img/methods/alexnet_original.png}
+	\caption{AlexNet architecture}
+	\label{fig:alexnet_orig}
+\end{figure}
+
 
 \subsubsection{Training and testing}
 
