@@ -226,6 +226,8 @@ void run ()
 
 	while (true)
 	{
+		// listen for key events, if exit key was hit exit the main loop
+		// else wait for a new frame from the camera
 		if (handle_key () != 0)
 		{
 			break;
@@ -241,19 +243,19 @@ void run ()
 		libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
 
 		registration->apply (rgb, depth, &undistorted, &registered);
-		visualize (rgb, depth, &registered);
+		visualize (rgb, &undistorted, &registered);
 
 		// take a snapshot
 		if (flags & SNAPSHOT)
 		{
-			store_frame (output_dir, rgb, depth, &registered);
+			store_frame (output_dir, rgb, &undistorted, &registered);
 			flags &= ~SNAPSHOT;
 		}
 
 		// recording
 		if (flags & REC)
 		{
-			store_frame (output_dir, rgb, depth, &registered);
+			store_frame (output_dir, rgb, &undistorted, &registered);
 		}
 
 		listener.release (frames);
