@@ -193,18 +193,46 @@ void visualize (libfreenect2::Frame *rgb, libfreenect2::Frame *depth, libfreenec
 	cv::Mat (rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo (image_rgb);
 	cv::resize (image_rgb, image_rgb, cv::Size (1280, 720));
 	cv::flip (image_rgb, image_rgb, 1);
+
 	if (flags & DETECT)
 	{
 		detect (image_rgb);
 	}
 
-	cv::rectangle (image_rgb, cv::Point (image_rgb.cols / 2 - ROI_W / 2, image_rgb.rows / 2 - ROI_H / 2), cv::Point (image_rgb.cols / 2 + ROI_W / 2, image_rgb.rows / 2 + ROI_H / 2), cv::Scalar (0, 0, 255), 2);
+	// draw a rectangle around ROI to guide
+	cv::rectangle (
+			image_rgb,
+			cv::Point (image_rgb.cols / 2 - ROI_W / 2, image_rgb.rows / 2 - ROI_H / 2),
+			cv::Point (image_rgb.cols / 2 + ROI_W / 2, image_rgb.rows / 2 + ROI_H / 2),
+			cv::Scalar (0, 0, 255), 2);
 
 	cv::Mat reg;
 	cv::Mat (registered->height, registered->width, CV_8UC4, registered->data).copyTo (reg);
 
-	cv::imshow ("rgb", image_rgb);
-	cv::imshow ("registered", reg);
+	// depth image
+	// draw a crosshair in the center to help guide
+	cv::Mat d;
+	cv::Mat (depth->height, depth->width, CV_32FC1, depth->data).copyTo(d);
+	cv::normalize (d, d, 1.0, 0.0, cv::NORM_INF);
+	///*
+	cv::cvtColor (d, d, cv::COLOR_GRAY2BGRA);
+	cv::line (
+			d,
+			cv::Point (depth->width / 2, depth->height / 2 - 8),
+			cv::Point (depth->width / 2, depth->height / 2 + 8),
+			cv::Scalar (0, 0, 255),
+			2);
+	cv::line (
+			d,
+			cv::Point (depth->width / 2 - 8, depth->height / 2),
+			cv::Point (depth->width / 2 + 8, depth->height / 2),
+			cv::Scalar (0, 0, 255),
+			2);
+	//*/
+
+	//cv::imshow ("rgb", image_rgb);
+	//cv::imshow ("registered", reg);
+	cv::imshow ("opencv depth", d);
 }
 
 void run ()
