@@ -8,9 +8,10 @@ import tensorflow as tf
 import numpy as np
 
 
-IN_WIDTH  = 227
-IN_HEIGHT = 227
-IN_DEPTH  = 3
+IN_WIDTH    = 227
+IN_HEIGHT   = 227
+IN_DEPTH    = 3
+OUT_CLASSES = 1000
 
 
 def __conv__(x, fh, fw, co, sy, sx, name, padding="VALID", group=1):
@@ -75,7 +76,7 @@ def __fc__(x, ci, co, name, relu=True):
         return activation
 
 
-def model(x, dropout, classes=1000):
+def model(x, dropout, classes=OUT_CLASSES):
     """
     model creates a new model with all the layers as defined by AlexNet.
     See https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks

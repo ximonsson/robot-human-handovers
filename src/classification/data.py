@@ -98,6 +98,53 @@ def replace_with_depth(im, depth_filename):
 	return merged
 
 
+def datasets(src, objects, ratio, size=-1):
+	"""
+	Create training and validation datasets.
+	Go through data files that are found in specified source directory and split by objects
+	according to ratio.
+
+	:param src: string - filepath to source directory with data
+	:param objects: array - list of names of objects that we want included in the dataset
+	:param ratio: float -
+			ratio between training and validation of the dataset as in the number
+			of objects. More specifically this value tells us what ratio of the objects to use
+			for training.
+	:param size: integer -
+			length of the total dataset training+validation.
+			Note that this might not be entirely respected because it needs to be balanced between
+			the objects and therefor if size is not dividable by len(objects) there might
+			be a couple fewer files.
+	:returns: tuple -
+			training set and validation set each as an array of strings to filepaths for
+			images to use in each phase.
+	"""
+	import random
+
+	# list files in the source directory
+	# sort out the files that belong to the supplied list of objects
+	# balance the dataset among the objects according to the required size if any
+	# and last shuffle everything
+
+	datafiles = os.listdir(src)
+	datafiles = [os.path.join(src, f) for f in datafiles if any(map(f.startswith, objects))]
+
+	# balancing is done by grouping object datafiles in a dict mapped by the object name to
+	# a list of files
+	# slice for each object either by the smallest length of data files for an object or
+	# by the requested output size divided by the number of objects
+
+	object_files = {o: [f for f in datafiles if f.startswith(o)] for o in objects}
+	n = int(size/len(objects)) if size != -1 else min(map(len, object_files.values()))
+	object_files = {o: files[:n] for o, files in object_files.items()}
+	datafiles = sum(object_files.values(), [])
+
+	random.shuffle(datafiles)
+
+	n = int(len(datafiles) * ratio)
+	return datafiles[:n], datafiles[n:]
+
+
 def batches(data, size, imdim, outputs):
 	"""
 	Creates a generator to iterate over the batches of the given dataset yielding a batch
@@ -111,14 +158,13 @@ def batches(data, size, imdim, outputs):
 	i = 0
 	dim = [size]
 	dim.extend(imdim)
-	for _ in range(np.int(np.floor(len(data)/size))):
+	for b in range(np.int(np.floor(len(data)/size))):
 		x = np.ndarray(dim)
 		y = np.zeros((size, outputs))
 		for j in range(size):
-			print(data[i])
 			name, _ = os.path.splitext(os.path.basename(data[i]))
 			cluster = np.int(name.split("_")[-1])
 			x[j] = np.load(data[i])
 			y[j][cluster] = 1
 			i += 1
-		yield x, y
+		yield b, x, y

@@ -204,7 +204,8 @@ void visualize (libfreenect2::Frame *rgb, libfreenect2::Frame *depth, libfreenec
 			image_rgb,
 			cv::Point (image_rgb.cols / 2 - ROI_W / 2, image_rgb.rows / 2 - ROI_H / 2),
 			cv::Point (image_rgb.cols / 2 + ROI_W / 2, image_rgb.rows / 2 + ROI_H / 2),
-			cv::Scalar (0, 0, 255), 2);
+			cv::Scalar (0, 0, 255),
+			2);
 
 	cv::Mat reg;
 	cv::Mat (registered->height, registered->width, CV_8UC4, registered->data).copyTo (reg);
@@ -254,6 +255,8 @@ void run ()
 
 	while (true)
 	{
+		// listen for key events, if exit key was hit exit the main loop
+		// else wait for a new frame from the camera
 		if (handle_key () != 0)
 		{
 			break;
@@ -269,19 +272,19 @@ void run ()
 		libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
 
 		registration->apply (rgb, depth, &undistorted, &registered);
-		visualize (rgb, depth, &registered);
+		visualize (rgb, &undistorted, &registered);
 
 		// take a snapshot
 		if (flags & SNAPSHOT)
 		{
-			store_frame (output_dir, rgb, depth, &registered);
+			store_frame (output_dir, rgb, &undistorted, &registered);
 			flags &= ~SNAPSHOT;
 		}
 
 		// recording
 		if (flags & REC)
 		{
-			store_frame (output_dir, rgb, depth, &registered);
+			store_frame (output_dir, rgb, &undistorted, &registered);
 		}
 
 		listener.release (frames);

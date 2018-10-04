@@ -17,7 +17,6 @@ def rotation_matrix(H):
 	c3 = np.cross(c1, c2)
 
 	# create rotation matrix
-	# calculate the rotation in Z-axis and rotate the original image
 	R = np.zeros((3, 3), dtype=np.float64)
 	for i in range(3):
 		R[i, :] = [c1[i], c2[i], c3[i]]
