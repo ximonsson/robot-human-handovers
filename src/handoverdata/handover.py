@@ -36,4 +36,9 @@ class Handover:
 		thetaZ = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
 		thetaZ = - thetaZ * 180 / math.pi
 		R = cv2.getRotationMatrix2D(item.tag_center, thetaZ, 1.0)
-		return cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
+		im = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
+
+		# write text with information about the handover
+		im = cv2.putText("rotation: %d degrees" % thetaZ, (15, 15), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255))
+
+		return im
