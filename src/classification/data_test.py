@@ -2,13 +2,21 @@ import cv2
 import numpy as np
 
 
-COLOR_IMAGE = "data/objects/registered/0.jpg"
-DEPTH_IMAGE = "data/objects/depth/0"
-
-
 def test_merging():
 	import data
-	rgb = np.array([[[1, 2, 3], [1, 2, 3], [1, 2, 3]], [[1, 2, 3], [1, 2, 3], [1, 2, 3]], [[1, 2, 3], [1, 2, 3], [1, 2, 3]]])
+	rgb = np.array([
+		[
+			[1, 2, 3],
+			[1, 2, 3],
+			[1, 2, 3]],
+		[
+			[1, 2, 3],
+			[1, 2, 3],
+			[1, 2, 3]],
+		[
+			[1, 2, 3],
+			[1, 2, 3],
+			[1, 2, 3]]])
 	depth = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
 	out = data.__merge_depth__(rgb, depth)
 	assert np.array_equiv(out[:, :, 0], depth.reshape(3, 3))
@@ -35,6 +43,11 @@ def test_loading_depth(filename):
 	return d
 
 
+
+COLOR_IMAGE = "data/objects/registered/0.jpg"
+DEPTH_IMAGE = "data/objects/depth/0"
+
 test_merging()
 test_loading_depth(DEPTH_IMAGE)
 test_loading_merging(COLOR_IMAGE, DEPTH_IMAGE)
+print("All tests passed")

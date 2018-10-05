@@ -82,6 +82,7 @@ def __merge_depth__(image, depth):
 	# replace the blue channel in the image with the depth data and return the new image
 	depth = depth.reshape((image.shape[0], image.shape[1]))
 	im = np.copy(image).astype(np.float32)
+	cv2.normalize(im, im, alpha=1.0, beta=0.0, norm_type=cv2.NORM_INF)
 	im[:, :, 0] = depth
 	return im
 
@@ -94,6 +95,7 @@ def replace_with_depth(im, depth_filename):
 	:returns: np.ndarray - new image with replaced blue channel (first one)
 	"""
 	depth = __load_depth__(depth_filename)
+	cv2.normalize(depth, depth, alpha=1.0, beta=0.0, norm_type=cv2.NORM_INF)
 	merged = __merge_depth__(im, depth)
 	return merged
 
@@ -127,7 +129,7 @@ def datasets(src, objects, ratio, size=-1):
 	# and last shuffle everything
 
 	datafiles = os.listdir(src)
-	datafiles = [os.path.join(src, f) for f in datafiles if any(map(f.startswith, objects))]
+	random.shuffle(datafiles)
 
 	# balancing is done by grouping object datafiles in a dict mapped by the object name to
 	# a list of files
@@ -137,8 +139,9 @@ def datasets(src, objects, ratio, size=-1):
 	object_files = {o: [f for f in datafiles if f.startswith(o)] for o in objects}
 	n = int(size/len(objects)) if size != -1 else min(map(len, object_files.values()))
 	object_files = {o: files[:n] for o, files in object_files.items()}
-	datafiles = sum(object_files.values(), [])
 
+	datafiles = sum(object_files.values(), [])
+	datafiles = [os.path.join(src, f) for f in datafiles if any(map(f.startswith, objects))]
 	random.shuffle(datafiles)
 
 	n = int(len(datafiles) * ratio)
@@ -158,7 +161,7 @@ def batches(data, size, imdim, outputs):
 	i = 0
 	dim = [size]
 	dim.extend(imdim)
-	for b in range(np.int(np.floor(len(data)/size))):
+	for b in range(int(len(data)/size)):
 		x = np.ndarray(dim)
 		y = np.zeros((size, outputs))
 		for j in range(size):

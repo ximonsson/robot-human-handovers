@@ -38,7 +38,7 @@ with open("data/classification/clusters.pkl", "rb") as f:
 	clusters = pickle.load(f)
 
 
-def	cluster(oid):
+def	object_cluster(oid):
 	"""
 	Return which cluster an object belongs to.
 	"""
@@ -89,8 +89,7 @@ def augment_directory(src, dst, n=10, r=20):
 		merged = classification.data.replace_with_depth(im, os.path.join(dir_depth, filename))
 		out = classification.data.augment_image(merged, n=n, r=r)
 		for i, image in enumerate(out):
-			#cv2.imwrite(os.path.join(dst, "%s_%d.jpg" % (filename, i)), image.astype(np.uint8))
-			filename = "{}_{}_{}_{}.npy".format(obj, oid, total, cluster(oid))
+			filename = "{}_{}_{}_{}.npy".format(obj, oid, total, object_cluster(oid))
 			outfile = os.path.join(dst, filename)
 			np.save(outfile, image)
 			total += 1
@@ -107,7 +106,6 @@ def inspect_data(directory):
 	filenames = os.listdir(directory)
 	for f in filenames:
 		filepath = os.path.join(directory, f)
-		#im = cv2.imread(filepath)
 		im = np.load(filepath)
 		cv2.imshow("opencv", im.astype(np.uint8))
 		while True:
@@ -132,17 +130,6 @@ N_AUGMENTATIONS = 5
 
 if len(sys.argv) > 1 and sys.argv[1] == "--inspect":
 	inspect_data(DATASET_DIR)
-elif len(sys.argv) > 2 and sys.argv[1] == "--foo":
-	d = "data/classification/originals/{}/depth".format(sys.argv[2])
-	for f in os.listdir(d):
-		print(os.path.join(d, f))
-		im = classification.data.__load_depth__(os.path.join(d, f))
-		im = im.reshape((424, 512))
-		cv2.imshow("opencv", im.astype(np.uint8))
-		while True:
-			k = cv2.waitKey(0)
-			if k == ord('s'):
-				break
 else:
 	for name in os.listdir(IMAGES_DIR):
 		# only traverse directories and
