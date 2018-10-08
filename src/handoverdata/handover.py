@@ -13,7 +13,9 @@ class Handover:
 		:params f: string - filepath to frame with the handover
 		:params oid: integer - object ID of the object being handed over
 		:params g: Grasp object - grasp
-		:params h: np.array - Homography matrix of the transformation for the object from ground zero to as observed in the image.
+		:params h: np.array -
+			Homography matrix of the transformation for the object from ground
+			zero to as observed in the image.
 		"""
 		self.filename = f
 		self.objectID = oid
@@ -39,6 +41,12 @@ class Handover:
 		im = cv2.warpAffine(im, R, (im.shape[0], im.shape[1]))
 
 		# write text with information about the handover
-		im = cv2.putText("rotation: %d degrees" % thetaZ, (15, 15), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255))
+		im = cv2.putText(
+				im,
+				"rotation: {} degrees".format(thetaZ),
+				(15, 15),
+				cv2.FONT_HERSHEY_SIMPLEX,
+				0.5,
+				(255, 255, 255))
 
 		return im
