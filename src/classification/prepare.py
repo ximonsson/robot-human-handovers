@@ -25,7 +25,7 @@ obj_name2id = {
 		"glass":       20,
 		"hammer":       2,
 		"knife":       12,
-		"mug":         23,
+		"cup":         23,
 		"pen":          3,
 		"pitcher":     19,
 		"scalpel":      4,
@@ -67,7 +67,7 @@ def augment_directory(src, dst, n=10, r=20):
 	oid = obj_name2id[obj]
 
 	def print_progress():
-		prog = int(total / (len(filenames) * 3 * n * n) * 100)
+		prog = int(total / (len(filenames) * 3 * (n * n + n + 1)) * 100)
 		prog_bar = ""
 		prog_bar_len = 15
 		for _ in range(int(prog/(100/prog_bar_len))):
@@ -107,7 +107,7 @@ def inspect_data(directory):
 	for f in filenames:
 		filepath = os.path.join(directory, f)
 		im = np.load(filepath)
-		cv2.imshow("opencv", im.astype(np.uint8))
+		cv2.imshow("opencv", im)
 		while True:
 			k = cv2.waitKey(0)
 			if k == ord('d'):
@@ -125,8 +125,8 @@ def inspect_data(directory):
 # settings
 IMAGES_DIR = "data/classification/originals"
 DATASET_DIR = "data/classification/images"
-RADIUS = 40
-N_AUGMENTATIONS = 5
+RADIUS = 5
+N_AUGMENTATIONS = 2
 
 if len(sys.argv) > 1 and sys.argv[1] == "--inspect":
 	inspect_data(DATASET_DIR)

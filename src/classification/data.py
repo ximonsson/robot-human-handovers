@@ -14,15 +14,15 @@ import os
 
 
 
-def __crop__(im, c, r, s):
+def __crop__(im, center, radius, size):
 	# returns a random cropping of the image with center c and max radius away r
-	if type(c) != np.ndarray:
-		c = np.array(c)
-	c += random.randint(-r, r)
-	y1 = int(c[0]-s[0]/2)
-	y2 = int(c[0]+s[0]/2)
-	x1 = int(c[1]-s[1]/2)
-	x2 = int(c[1]+s[1]/2)
+	c = np.copy(center)
+	c[0] += random.randint(-radius, radius)
+	c[1] += random.randint(-radius, radius)
+	y1 = int(c[0]-size[0]/2)
+	y2 = int(c[0]+size[0]/2)
+	x1 = int(c[1]-size[1]/2)
+	x2 = int(c[1]+size[1]/2)
 	return im[y1:y2, x1:x2, :]
 
 
@@ -45,23 +45,25 @@ def augment_image(im, center=None, r=20, n=10, osize=(alexnet.IN_WIDTH, alexnet.
 	:param n: integer - Number of outputs
 	:param osize: tuple of integers -
 			Dimensions of the output images. Defaults to the size for the AlexNet network.
-	:returns: list of images with length k with the outputed images
+	:returns: list of images of length 3 * (n^2 + n + 1) with the outputed images
 	"""
 	if center is None:
 		center = np.array(im.shape) / 2
 		center = (center[0], center[1])
 
 	images = []
-	def fn(im):
+	def __augment__(im):
+		images.append(__crop__(im, center, 0, osize))
 		for _ in range(n):
 			rotated = __rotate__(im, center, osize)
+			images.append(__crop__(rotated, center, 0, osize))
 			for _ in range(n):
 				images.append(__crop__(rotated, center, r, osize))
 
 	# augment on original image, flipped image on x-axis, and flipped image on y-axis
-	fn(im)
-	fn(cv2.flip(im, 0))
-	fn(cv2.flip(im, 1))
+	__augment__(im)
+	__augment__(cv2.flip(im, 0))
+	__augment__(cv2.flip(im, 1))
 	return images
 
 
