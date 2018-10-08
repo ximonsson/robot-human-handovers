@@ -171,7 +171,7 @@ def load_weights(path, session, train_layers):
 		with tf.variable_scope(layer, reuse=True):
 			# Assign weights/biases to their corresponding tf variable
 			for data in weights[layer]:
-				w = tf.get_variable("weights")
-				session.run(w.assign(weights[layer][0]), trainable=trainable)
-				b = tf.get_variable('biases')
-				session.run(b.assign(weights[layer][1]), trainable=trainable)
+				w = tf.get_variable("weights", trainable=trainable)
+				session.run(w.assign(weights[layer][0]))
+				b = tf.get_variable('biases', trainable=trainable)
+				session.run(b.assign(weights[layer][1]))

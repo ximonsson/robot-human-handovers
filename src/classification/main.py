@@ -21,13 +21,13 @@ DATA_RATIO = 0.8
 
 # learning parameters
 learning_rate = 0.001
-epochs = 5
+epochs = 3
 batch_size = 10
 
 # network parameters
 dropout = 0.5
 outputs = 2
-train_layers = ["conv5", "fc8"]
+train_layers = ["fc8"]
 
 # tensorflow variables, x input, y output and dropout
 x = tf.placeholder(tf.float32, [batch_size, alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH])
@@ -57,16 +57,16 @@ objects = [
 N = 11
 training_objects = objects[:N]
 test_objects = objects[N:]
-test_data, _ = data.datasets(DATA, test_objects, 1.0, size=50)
 
 # create network
-# create the original alexnet model and add a new fully connected layer to output the grasping class
-m = alexnet.model(x, keep_prob)
-m = tf.nn.softmax(m)
+# create the original alexnet model and add a new fully connected layer to output the
+# grasping class
+m = alexnet.model(x, keep_prob, classes=alexnet.OUT_CLASSES)
+m = tf.nn.relu(m)
 with tf.variable_scope("grasp_class") as scope:
-	weights = tf.get_variable('weights', shape=[alexnet.OUT_CLASSES, outputs], trainable=True)
-	biases = tf.get_variable('biases', shape=[outputs], trainable=True)
-	m = tf.nn.xw_plus_b(m, weights, biases, name=scope.name)
+	w = tf.get_variable('weights', shape=[alexnet.OUT_CLASSES, outputs], trainable=True)
+	b = tf.get_variable('biases', shape=[outputs], trainable=True)
+	m = tf.nn.xw_plus_b(m, w, b, name=scope.name)
 
 # calculate loss
 with tf.name_scope("loss"):
@@ -100,7 +100,8 @@ with tf.Session() as s:
 	alexnet.load_weights("data/weights/bvlc_alexnet.npy", s, train_layers)
 
 	# split dataset
-	training_data, validation_data = data.datasets(DATA, training_objects, DATA_RATIO, size=50)
+	training_data, validation_data = data.datasets(DATA, training_objects, DATA_RATIO, size=200)
+	test_data, _ = data.datasets(DATA, test_objects, 1.0, size=40)
 
 	# for each epoch fit the model to the training set and
 	# calculate accuracy over the validation set
@@ -112,7 +113,12 @@ with tf.Session() as s:
 		print("Training...", end="", flush=True)
 		for batch, X, Y in data.batches(training_data, batch_size, INPUT_DIMENSIONS, outputs):
 			s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-dropout})
-			print("\rTraining: {}".format(progressbar(batch+1, len(training_data)/batch_size)), flush=True, end="")
+			print(
+					"\r{:15} {}".format(
+						"Training:",
+						progressbar(batch+1, int(len(training_data)/batch_size))),
+					flush=True,
+					end="")
 		print()
 
 		# validate
@@ -123,8 +129,9 @@ with tf.Session() as s:
 			acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
 			acc /= b
 			print(
-					"\rValidating: {} => Accuracy {:.4f}%".format(
-						progressbar(b, len(validation_data)/batch_size),
+					"\r{:15} {} => Accuracy {:.4f}%".format(
+						"Validating:",
+						progressbar(b, int(len(validation_data)/batch_size)),
 						acc*100),
 					flush=True,
 					end="")
@@ -138,8 +145,9 @@ with tf.Session() as s:
 		acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
 		acc /= b
 		print(
-				"\rTesting: {} => Accuracy {:.4f}%".format(
-					progressbar(b, len(test_data)/batch_size),
+				"\r{:15} {} => Accuracy {:.4f}%".format(
+					"Testing:",
+					progressbar(b, int(len(test_data)/batch_size)),
 					acc*100),
 				flush=True,
 				end="")
