@@ -11,7 +11,7 @@ import numpy as np
 IN_WIDTH    = 227
 IN_HEIGHT   = 227
 IN_DEPTH    = 3
-OUT_CLASSES = 1000
+OUTPUTS     = 1000
 
 
 def __conv__(x, fh, fw, co, sy, sx, name, padding="VALID", group=1):
@@ -76,7 +76,7 @@ def __fc__(x, ci, co, name, relu=True):
 		return activation
 
 
-def model(x, dropout, classes=OUT_CLASSES):
+def model(x, dropout, classes=OUTPUTS):
 	"""
 	model creates a new model with all the layers as defined by AlexNet.
 	See https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks
@@ -166,12 +166,10 @@ def load_weights(path, session, train_layers):
 	# Loop over all layer names stored in the weights dict
 	weights = np.load(path, encoding='bytes').item()
 	for layer in weights:
-		#if layer not in skip_layer:
 		trainable = layer in train_layers
 		with tf.variable_scope(layer, reuse=True):
 			# Assign weights/biases to their corresponding tf variable
-			for data in weights[layer]:
-				w = tf.get_variable("weights", trainable=trainable)
-				session.run(w.assign(weights[layer][0]))
-				b = tf.get_variable('biases', trainable=trainable)
-				session.run(b.assign(weights[layer][1]))
+			w = tf.get_variable("weights", trainable=trainable)
+			session.run(w.assign(weights[layer][0]))
+			b = tf.get_variable('biases', trainable=trainable)
+			session.run(b.assign(weights[layer][1]))
