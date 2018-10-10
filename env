@@ -1,2 +1,9 @@
-export PYTHONPATH="$PYTHONPATH:src"
-export LD_LIBRAY_PATH=/usr/local/lib
+if ! echo $PYTHONPATH | grep -q ":src"
+then
+	export PYTHONPATH="$PYTHONPATH:src"
+fi
+
+if ! echo $LD_LIBRARY_PATH | grep -q ":/usr/local/lib"
+then
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib"
+fi
