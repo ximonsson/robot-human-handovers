@@ -395,7 +395,9 @@ cv::Mat find_transformation (apriltag_detection_t *d)
 cv::Mat extract_object (cv::Mat f, apriltag_detection_t *d, cv::Mat &H)
 {
 	// extract a rectangle around the detected object of OBJ_W x OBJ_H
-	cv::Mat obj = f (cv::Range (d->c[1] - OBJ_H / 2, d->c[1] + OBJ_H / 2), cv::Range (d->c[0] - OBJ_W / 2, d->c[0] + OBJ_W / 2));
+	cv::Mat obj = f (
+			cv::Range (d->c[1] - OBJ_H / 2, d->c[1] + OBJ_H / 2),
+			cv::Range (d->c[0] - OBJ_W / 2, d->c[0] + OBJ_W / 2));
 
 	// detect again within this new image the tag from which will calculate the transformation
 	// NOTE maybe we can speed this up by just subtracting from the points in the supplied detection
