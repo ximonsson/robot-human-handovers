@@ -32,7 +32,7 @@ class Grasp:
 		"""
 		return (self.x, self.y), (self.w, self.h), self.a
 
-	def draw(self, im, color=(0, 0, 255)):
+	def draw(self, im, color=(0, 0, 255), thickness=1):
 		"""
 		Draw the grasping region on the image.
 		Returns a copy of the image with the rectangle drawn on it.
@@ -40,5 +40,5 @@ class Grasp:
 		im = np.copy(im)
 		box = cv2.boxPoints(self.box())
 		box = np.int0(box)
-		cv2.drawContours(im, [box], 0, color)
+		cv2.drawContours(im, [box], 0, color, thickness)
 		return im
