@@ -28,6 +28,7 @@ class Object:
 		self.__image__ = im
 		self.__center__ = center
 		self.__area__ = None
+		self.__mask__ = None
 
 	def __str__(self):
 		data = [
@@ -49,13 +50,24 @@ class Object:
 			self.__image__ = cv2.imread(self.filename)
 		return self.__image__
 
+	@property
+	def mask(self):
+		"""
+		Returns the mask of the object
+		:returns: np.array - binary image
+		"""
+		if self.__mask__ is None:
+			self.__load_properties__()
+		return self.__mask__
+
+
 	def __load_properties__(self):
 		# load mask file
 		filename = self.filename.replace("%d" % self.tag_id, "%d_mask" % self.tag_id)
-		mask = cv2.imread(filename)
+		self.__mask__ = cv2.flip(cv2.imread(filename), 1)
 
 		# find (largest) contour around the object
-		bw = cv2.cvtColor(mask, cv2.COLOR_BGRA2GRAY)
+		bw = cv2.cvtColor(self.__mask__, cv2.COLOR_BGRA2GRAY)
 		_, contours, _ = cv2.findContours(bw, 1, 2)
 		contours = sorted(contours, key=cv2.contourArea)
 		cnt = contours[-1]
