@@ -1,6 +1,7 @@
-if ! echo $PYTHONPATH | grep -q ":./src"
+PYTHONSRC="`pwd`/src"
+if ! echo $PYTHONPATH | grep -q "$PYTHONSRC"
 then
-	export PYTHONPATH="$PYTHONPATH:./src"
+	export PYTHONPATH="$PYTHONPATH:$PYTHONSRC"
 fi
 
 if ! echo $LD_LIBRARY_PATH | grep -q ":/usr/local/lib"
