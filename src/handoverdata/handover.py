@@ -8,20 +8,22 @@ class Handover:
 	Handover data.
 	Contains information about which file on disk
 	"""
-	def __init__(self, f, oid, g, h):
+	def __init__(self, f, tag, g, h):
 		"""
 		:params f: string - filepath to frame with the handover
-		:params oid: integer - object ID of the object being handed over
+		:params tag: tuple - object ID of the object being handed over
 		:params g: Grasp object - grasp
 		:params h: np.array -
 			Homography matrix of the transformation for the object from ground
 			zero to as observed in the image.
 		"""
 		self.filename = f
-		self.objectID = oid
+		self.objectID = tag.id # needs to be here for compability
+		self.tag = tag
 		self.grasp = g
 		self.H = h
 		self.im = cv2.flip(cv2.imread(f), 1)
+		self.tag
 
 	def draw(self, item):
 		"""
@@ -33,7 +35,7 @@ class Handover:
 		im = self.grasp.draw(item.image)
 
 		# warp it to the same perspective as in the handover
-		#item = cv2.warpPerspective(item, handover.H, (item.shape[0], item.shape[1]))
+		#item = cv2.warpPerspective(item, self.H, (item.shape[0], item.shape[1]))
 		R = rotation_matrix(self.H)
 		thetaZ = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
 		thetaZ = - thetaZ * 180 / math.pi

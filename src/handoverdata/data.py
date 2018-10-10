@@ -1,5 +1,6 @@
-from handoverdata.grasp import Grasp
-from handoverdata.handover import Handover
+from .grasp import Grasp
+from .handover import Handover
+from .tag import TagDetection
 import numpy as np
 
 
@@ -16,7 +17,13 @@ def parse_data(data):
 	lines = data.split("\n")
 
 	# tag ID
-	tid = lines[1].split(":")[0]
+	tag_data = lines[1].split(":")
+	tid = tag_data[0]
+	corners = []
+	for c in tag_data[1][1:-1].split(")("):
+		corner = eval("({})".format(c))
+		corners.append(tuple(map(int, corner)))
+	detection = TagDetection(int(tid), corners, tuple(map(int, eval(tag_data[2]))))
 
 	# homograpy matrix
 	h = lines[2][:-1].split(",")
@@ -28,7 +35,7 @@ def parse_data(data):
 	grasp_data = list(map(np.float64, lines[3].split(",")))
 	g = Grasp(grasp_data[0], grasp_data[1], grasp_data[2], grasp_data[3], grasp_data[4])
 
-	return Handover(lines[0][1:], int(tid), g, H)
+	return Handover(lines[0][1:], detection, g, H)
 
 
 def read_data(f):
