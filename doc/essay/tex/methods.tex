@@ -28,6 +28,49 @@ For each object we manually first create a reference image with its ground truth
 
 One recording session consists from one pair of volunteers, the giver has handed over all objects in the set to the reciever. During the recording the application is continuously recording, creating a large number frames that are not of interest. In this project we only interest ourselves for the actual moment that the giver holds out the object ready for the reciever to take it, which requires some post-processing of the frames. A first step is to create a Region of Interest (ROI) which we will concentrate on searching for objects. Our ROI is arbitrarely set to the middle of the frame and large enough to see the entire object. When a tag is detected within the the ROI we flag this frame a handover moment and store the features of the handover. This is unfortunately not enough because we might be flagging frames where the reciever is holding the object after taking it, or maybe both are holding it but the system detects the reciever's hand as the largest grasping region. The methods explained above might also be incorrect as the grasping region was incorrectly detected. Manual filtering was later applied to images that were flagged as handover moments and to make sure they were correct ones and that the data extracted was correct.
 
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{img/methods/handovers/bottle_frame.jpg}
+	\caption{}
+	\label{fig:handover_bottle}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.5\textwidth]{img/methods/handovers/bottle_masked.jpg}
+	\caption{}
+	\label{fig:handover_bottle_masked}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{img/methods/handovers/hammer_frame.jpg}
+	\caption{}
+	\label{fig:handover_hammer}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.5\textwidth]{img/methods/handovers/hammer_masked.jpg}
+	\caption{}
+	\label{fig:handover_hammer_masked}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{img/methods/handovers/incorr_frame.jpg}
+	\caption{}
+	\label{fig:handover_incorr}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.5\textwidth]{img/methods/handovers/incorr_mask.jpg}
+	\caption{}
+	\label{fig:handover_incorr_masked}
+\end{figure}
+
+
 \subsection{Clustering by handover features}
 
 After observing a number of handovers betweens humans, a first step is to try and categorise these handovers into different classes that can be applied for the objects. As we do not have any labels, or even unsure how many different categories of handovers we have recorded, we will attempt at clustering using an unsupervised learning algorithm by the features that we have extracted from the recorded material.
