@@ -15,7 +15,7 @@ objects = load_objects_database(OBJECT_DB)
 with open("data/raw") as f:
 	n = 0
 	for val in prog["valid"]:
-		handover = hd.data.read_at(f, val)
+		handover = hd.read_at(f, val)
 		obj = objects[handover.tag.id]
 
 		print(handover.tag)
