@@ -7,7 +7,7 @@ Description:
 	By running the script with the '--inspect' flag the data that has been generated can instead be inspected to make
 	sure that it looks good for training.
 """
-import classification.data
+import .data
 import sys
 import cv2
 import numpy as np
@@ -122,19 +122,35 @@ def inspect_data(directory):
 			break
 
 
-# settings
-IMAGES_DIR = "data/classification/originals"
-DATASET_DIR = "data/classification/images"
-RADIUS = 5
-N_AUGMENTATIONS = 2
+def find_arg(key, default=None):
+	"""
+	Find argument with key in the supplied command line arguments.
+	In case not found it returns a default value.
+	"""
+	key = "--{}=".format(key)
+	if any(map(lambda s: s.startswith(key), sys.argv)):
+		arg = next(arg for arg in sys.argv if s.startswith(key))
+		IMAGES_DIR = arg.split("=")[1]
+	return default
+
+
+# parse command line arguments for settings
+IMAGES_DIR = find_arg("source", "data/classification/originals")
+DATASET_DIR = find_arg("destination", "data/classification/images")
+N_AUGMENTATIONS = int(find_arg("augmentations", "2"))
+RADIUS = int(find_arg("radius", "5"))
+
 
 if len(sys.argv) > 1 and sys.argv[1] == "--inspect":
+	# we are only inspecting the dataset and maybe not keeping all of it
 	inspect_data(DATASET_DIR)
 else:
 	for name in os.listdir(IMAGES_DIR):
 		# only traverse directories and
 		# don't augment directories starting with 'new_', they are not part of the training set
-		if name.startswith("new_") or not os.path.isdir(os.path.join(IMAGES_DIR, name)) or obj_name2id[name] is None:
+		if name.startswith("new_") or \
+				not os.path.isdir(os.path.join(IMAGES_DIR, name)) or \
+				obj_name2id[name] is None:
 			continue
 		augment_directory(os.path.join(IMAGES_DIR, name), DATASET_DIR, n=N_AUGMENTATIONS, r=RADIUS)
 

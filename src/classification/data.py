@@ -8,7 +8,7 @@ import cv2
 import struct
 import numpy as np
 from math import ceil
-import alexnet
+import classification.alexnet as alexnet
 import random
 import os
 

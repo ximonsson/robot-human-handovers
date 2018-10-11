@@ -1,11 +1,27 @@
+"""
+File: __main__.py
+Description:
+		Run classification training, validation and testing.
+
+		Takes a number of objects and splits their images between training and validation.
+		The remaining objects are used for testing to see at which accuracy the network
+		can predict handover class for foreign objects.
+
+		Training loss and accuracy, and validation accuracy are exported for inspection through
+		tensorboard.
+"""
 import numpy as np
 import tensorflow as tf
-import alexnet
-import data
 import random
 from datetime import datetime
-from classification.utils import progressbar, print_step
+import classification.alexnet as alexnet
+from .data import datasets, batches
+from .utils import progressbar, print_step
 
+
+# Prepare data for training, validation and testing.
+#	Training and validation sets share objects but have their images split between them.
+#	Test data are new objects that are not part of the training phase.
 
 DATA = "data/classification/images/"
 DATA_RATIO = 0.8
@@ -36,14 +52,17 @@ training_objects = objects[:N]
 test_objects = objects[N:]
 
 # split dataset
-training_data, validation_data = data.datasets(DATA, training_objects, DATA_RATIO)
-test_data, _ = data.datasets(DATA, test_objects, 1.0)
+training_data, validation_data = datasets(DATA, training_objects, DATA_RATIO)
+test_data, _ = datasets(DATA, test_objects, 1.0)
 
 print("Training on {} images, validating on {} images, and testing on {}".format(
 	len(training_data),
 	len(validation_data),
 	len(test_data)))
 
+
+# create network
+# create the original alexnet model and add a new fully connected layer to output the
 
 # learning parameters
 LEARNING_RATE = 0.001
@@ -59,9 +78,6 @@ train_layers = ["fc6", "fc7", "fc8"]
 x = tf.placeholder(tf.float32, [BATCH_SIZE, alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH])
 y = tf.placeholder(tf.float32, [None, OUTPUTS])
 keep_prob = tf.placeholder_with_default(1.0, shape=())
-
-# create network
-# create the original alexnet model and add a new fully connected layer to output the
 # grasping class
 m = alexnet.model(x, keep_prob, classes=alexnet.OUTPUTS)
 #"""
@@ -120,7 +136,7 @@ with tf.Session() as s:
 
 		# run training operation on each batch and then summarize
 		print("Training...", end="", flush=True)
-		for batch, X, Y in data.batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+		for batch, X, Y in batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 			s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})
 			summary = s.run(summary_op, feed_dict={x: X, y: Y, keep_prob: 1.0})
 			train_writer.add_summary(summary, step)
@@ -130,10 +146,14 @@ with tf.Session() as s:
 		# validate and write summary of the accuracy
 		acc = 0
 		print("\nValidating...", end="", flush=True)
-		for batch, X, Y in data.batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+		for batch, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 			b = batch + 1
 			acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
-			print_step("{:15} {} => Accuracy {:.4f}%", "Validating:", progressbar(b, n_validation_batches_per_epoch), acc/b*100)
+			print_step(
+					"{:15} {} => Accuracy {:.4f}%",
+					"Validating:",
+					progressbar(b, n_validation_batches_per_epoch),
+					acc/b*100)
 		print("\n{} Validation Accuracy: {:.4f}%\n".format(datetime.now(), acc/b*100))
 		summary_val_acc = tf.Summary()
 		summary_val_acc.value.add(tag="validation_accuracy", simple_value=acc/b*100)
@@ -142,8 +162,12 @@ with tf.Session() as s:
 	# test accuracy
 	print("Testing...", end="", flush=True)
 	acc = 0
-	for batch, X, Y in data.batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+	for batch, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 		b = batch+1
 		acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
-		print_step("{:15} {} => Accuracy {:.4f}%", "Testing:", progressbar(b, int(len(test_data)/BATCH_SIZE)), acc/b*100)
+		print_step(
+				"{:15} {} => Accuracy {:.4f}%",
+				"Testing:",
+				progressbar(b, int(len(test_data)/BATCH_SIZE)),
+				acc/b*100)
 	print("\n{} Test Accuracy: {:.4f}%".format(datetime.now(), acc/b*100))
