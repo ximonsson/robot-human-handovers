@@ -1,3 +1,30 @@
+"""
+File: inspect.py
+Description:
+	Run this file to look at the data extracted from a run of the main binary program
+	that goes through a recording session and outputs data to a raw file.
+
+	For each frame that had a detected handover in it the frame and the object are
+	visualized in separate windows. The object has been transformed to match it's position
+	in the frame.
+
+	Different keys are available:
+		- 's' will mark the frame as valid
+		- 'd' will mark the frame as invalid
+		- 'a' will append the frame to a backlog so it might be looked again later
+		- 'q' quit the application prematurely
+
+	All progress is stored to data/progress.json. If the application is quit early before
+	going through all the data the progress is stored to this file, and next time the application
+	is launched it starts from where it ended last time with the previous data saved.
+
+	The progress.json file will in the end contain three lists with indices of frames from the
+	raw data file:
+		- 'valid' frames
+		- 'invalid' frames
+		- 'backlog' frames
+	Later processing can then used the correct frames.
+"""
 import cv2
 import os
 import sys
@@ -11,8 +38,10 @@ ROI_H = 400
 ROI_X = -ROI_W / 2
 ROI_Y = -100
 
+OBJECT_DB = "data/objects/objects.db"
 
-objects = load_objects_database("data/objects/objects.db")
+
+objects = load_objects_database(OBJECT_DB)
 
 
 def display(handover):
@@ -29,7 +58,7 @@ def display(handover):
 
 
 DATA_RAW_FILE = sys.argv[1]
-DATA_PROGRESS_FILE = "data/training/progress.json"
+DATA_PROGRESS_FILE = "data/progress.json"
 
 data_valid = []
 data_discard = []
