@@ -1,7 +1,10 @@
 '''
 Implementation of the AlexNet model taken from:
-	https://kratzert.github.io/2017/02/24/finetuning-alexnet-with-tensorflow.html
 	http://www.cs.toronto.edu/~guerzhoy/tf_alexnet/
+	https://kratzert.github.io/2017/02/24/finetuning-alexnet-with-tensorflow.html
+
+NOTE that the original version of the AlexNet was designed for two GPUs, this will
+output a sequential version of the network that has similar functionality.
 '''
 
 import tensorflow as tf
@@ -76,7 +79,7 @@ def __fc__(x, ci, co, name, relu=True):
 		return activation
 
 
-def model(x, dropout, classes=OUTPUTS):
+def network(x, dropout, classes=OUTPUTS):
 	"""
 	model creates a new model with all the layers as defined by AlexNet.
 	See https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks

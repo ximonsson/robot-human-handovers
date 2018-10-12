@@ -90,7 +90,7 @@ y = tf.placeholder(tf.float32, [None, OUTPUTS])
 keep_prob = tf.placeholder_with_default(1.0, shape=())
 
 # create network
-m = alexnet.model(x, keep_prob, classes=alexnet.OUTPUTS)
+m = alexnet.network(x, keep_prob, classes=alexnet.OUTPUTS)
 #"""
 m = tf.nn.relu(m)
 with tf.variable_scope("grasp_class") as scope:
