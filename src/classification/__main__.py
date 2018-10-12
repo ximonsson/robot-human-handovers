@@ -71,7 +71,7 @@ print("Testing on ({} images):\n{}\n".format(
 	))
 
 
-# create network
+# Create network
 # create the original alexnet model and add a new fully connected layer to output the
 
 # learning parameters
@@ -102,7 +102,6 @@ with tf.variable_scope("grasp_class") as scope:
 # calculate loss
 with tf.name_scope("loss"):
 	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=m, labels=y))
-tf.summary.scalar("cross_entropy", loss)
 
 # training operation applying optimizer function
 with tf.name_scope("train"):
@@ -113,7 +112,6 @@ with tf.name_scope("train"):
 with tf.name_scope("accuracy"):
 	correct_pred = tf.equal(tf.argmax(m, 1), tf.argmax(y, 1))
 	accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-tf.summary.scalar("accuracy", accuracy)
 
 # testing accuracy
 #with tf.name_scope("testing"):
@@ -123,12 +121,21 @@ tf.summary.scalar("accuracy", accuracy)
 #tf.summary.scalar("test_accuracy", test_accuracy)
 
 
+# Setup logging
+
+tf.summary.scalar("cross_entropy", loss)
+tf.summary.scalar("accuracy", accuracy)
 summary_op = tf.summary.merge_all()
+
+LOGDIR = "results/classification/"
+LOGDIR_SUFFIX = find_arg("logdir-suffix", "")
+LOGDIR_TRAIN = "{}/train{}".format(LOGDIR, LOGDIR_SUFFIX)
+LOGDIR_TRAIN = "{}/validation{}".format(LOGDIR, LOGDIR_SUFFIX)
 
 with tf.Session() as s:
 	# create writers for summary
-	train_writer = tf.summary.FileWriter("results/classification/train_6", s.graph)
-	validation_writer = tf.summary.FileWriter("results/classification/validation_6")
+	train_writer = tf.summary.FileWriter(LOGDIR_TRAING, s.graph)
+	validation_writer = tf.summary.FileWriter(LOGDIR_VALIDATION)
 
 	# initialize and load weights
 	s.run(tf.global_variables_initializer())
