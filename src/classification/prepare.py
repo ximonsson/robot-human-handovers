@@ -7,7 +7,8 @@ Description:
 	By running the script with the '--inspect' flag the data that has been generated can instead be inspected to make
 	sure that it looks good for training.
 """
-import .data
+from classification.data import augment_image, replace_with_depth
+from classification.utils import find_arg
 import sys
 import cv2
 import numpy as np
@@ -86,8 +87,8 @@ def augment_directory(src, dst, n=10, r=20):
 		# swap the blue channel in the image with the depth and then augment this image
 		# before storing to disk the newly created images
 		im = cv2.imread(os.path.join(dir_registered, f))
-		merged = classification.data.replace_with_depth(im, os.path.join(dir_depth, filename))
-		out = classification.data.augment_image(merged, n=n, r=r)
+		merged = replace_with_depth(im, os.path.join(dir_depth, filename))
+		out = augment_image(merged, n=n, r=r)
 		for i, image in enumerate(out):
 			filename = "{}_{}_{}_{}.npy".format(obj, oid, total, object_cluster(oid))
 			outfile = os.path.join(dst, filename)
@@ -122,18 +123,6 @@ def inspect_data(directory):
 			break
 
 
-def find_arg(key, default=None):
-	"""
-	Find argument with key in the supplied command line arguments.
-	In case not found it returns a default value.
-	"""
-	key = "--{}=".format(key)
-	if any(map(lambda s: s.startswith(key), sys.argv)):
-		arg = next(arg for arg in sys.argv if s.startswith(key))
-		IMAGES_DIR = arg.split("=")[1]
-	return default
-
-
 # parse command line arguments for settings
 IMAGES_DIR = find_arg("source", "data/classification/originals")
 DATASET_DIR = find_arg("destination", "data/classification/images")
@@ -141,7 +130,7 @@ N_AUGMENTATIONS = int(find_arg("augmentations", "2"))
 RADIUS = int(find_arg("radius", "5"))
 
 
-if len(sys.argv) > 1 and sys.argv[1] == "--inspect":
+if any(map(lambda arg: arg=="--inspect", sys.argv)):
 	# we are only inspecting the dataset and maybe not keeping all of it
 	inspect_data(DATASET_DIR)
 else:

@@ -10,20 +10,21 @@ Description:
 		Training loss and accuracy, and validation accuracy are exported for inspection through
 		tensorboard.
 """
+import os
 import numpy as np
 import tensorflow as tf
 import random
 from datetime import datetime
 import classification.alexnet as alexnet
 from .data import datasets, batches
-from .utils import progressbar, print_step
+from .utils import progressbar, print_step, find_arg
 
 
 # Prepare data for training, validation and testing.
 #	Training and validation sets share objects but have their images split between them.
 #	Test data are new objects that are not part of the training phase.
 
-DATA = "data/classification/images/"
+DATA = find_arg("data", "data/classification/images/")
 DATA_RATIO = 0.8
 INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 
@@ -55,19 +56,28 @@ test_objects = objects[N:]
 training_data, validation_data = datasets(DATA, training_objects, DATA_RATIO)
 test_data, _ = datasets(DATA, test_objects, 1.0)
 
-print("Training on {} images, validating on {} images, and testing on {}".format(
+# the below is just an ugly way of printing what objects we are training, validating and testing.
+# it is just to make sure everything is correct and it is separate objects for testing.
+print("> Training and validating on ({} images training, {} images validation):\n{}\n".format(
 	len(training_data),
 	len(validation_data),
-	len(test_data)))
+	"\n".join(set(
+		list(map(lambda x: os.path.basename(x).split("_")[0], training_data)) + \
+				list(map(lambda x: os.path.basename(x).split("_")[0], validation_data)))),
+	))
+print("Testing on ({} images):\n{}\n".format(
+	len(test_data),
+	"\n".join(set(map(lambda x: os.path.basename(x).split("_")[0], test_data))),
+	))
 
 
 # create network
 # create the original alexnet model and add a new fully connected layer to output the
 
 # learning parameters
-LEARNING_RATE = 0.001
-EPOCHS = 5
-BATCH_SIZE = 64
+LEARNING_RATE = float(find_arg("learning-rate", "0.001"))
+EPOCHS = int(find_arg("epochs", "10"))
+BATCH_SIZE = int(find_arg("batch-size", "64"))
 
 # network parameters
 DROPOUT = 0.5
@@ -78,7 +88,8 @@ train_layers = ["fc6", "fc7", "fc8"]
 x = tf.placeholder(tf.float32, [BATCH_SIZE, alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH])
 y = tf.placeholder(tf.float32, [None, OUTPUTS])
 keep_prob = tf.placeholder_with_default(1.0, shape=())
-# grasping class
+
+# create network
 m = alexnet.model(x, keep_prob, classes=alexnet.OUTPUTS)
 #"""
 m = tf.nn.relu(m)
@@ -154,13 +165,13 @@ with tf.Session() as s:
 					"Validating:",
 					progressbar(b, n_validation_batches_per_epoch),
 					acc/b*100)
-		print("\n{} Validation Accuracy: {:.4f}%\n".format(datetime.now(), acc/b*100))
+		print("\n{} Validation Accuracy: {:.4f}%".format(datetime.now(), acc/b*100))
 		summary_val_acc = tf.Summary()
 		summary_val_acc.value.add(tag="validation_accuracy", simple_value=acc/b*100)
 		validation_writer.add_summary(summary_val_acc, step)
 
 	# test accuracy
-	print("Testing...", end="", flush=True)
+	print("\nTesting...", end="", flush=True)
 	acc = 0
 	for batch, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 		b = batch+1
