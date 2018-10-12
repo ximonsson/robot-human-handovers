@@ -130,11 +130,11 @@ summary_op = tf.summary.merge_all()
 LOGDIR = "results/classification/"
 LOGDIR_SUFFIX = find_arg("logdir-suffix", "")
 LOGDIR_TRAIN = "{}/train{}".format(LOGDIR, LOGDIR_SUFFIX)
-LOGDIR_TRAIN = "{}/validation{}".format(LOGDIR, LOGDIR_SUFFIX)
+LOGDIR_VALIDATION = "{}/validation{}".format(LOGDIR, LOGDIR_SUFFIX)
 
 with tf.Session() as s:
 	# create writers for summary
-	train_writer = tf.summary.FileWriter(LOGDIR_TRAING, s.graph)
+	train_writer = tf.summary.FileWriter(LOGDIR_TRAIN, s.graph)
 	validation_writer = tf.summary.FileWriter(LOGDIR_VALIDATION)
 
 	# initialize and load weights
