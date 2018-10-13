@@ -32,7 +32,16 @@ A very important feature as to insure the success of a handover, is the grasping
 \end{figure}
 
 % rule based algorithms vs machine learning
-\textcolor{red}{write about machine learning and ANNs. give background about CNNs and their use within computer vision using object classification as an example and mention the work in AlexNet}
+\textcolor{red}{Write introduction to machine learning algorithms, and introduce ANNs.}
+
+Convolutional Neural Networks (CNN) is a class of ANNs with a certain special architecture that have shown great promise within computer vision for tasks such as object detection and object classification. \emph{\textcolor{red}{Write about CNNs and how they work}}. The perfomance of all types of ANNs is linked to their architecture. Changing the number of layers or their sizes can result in large fluctuations in performance, for the better or the worse. Some architectures become overtime more well-known for their success at certain tasks. One of them, named AlexNet, is the one published by \textcite{Krizhevsky2012} which achieved great results at the \textcite{ImageNet} image classification challenge ILSVRC-2012. In their work they credit the performance of their neural network to it's deep structure of many layers, showing that by only removing one of the convolutional layers it's performance would decrease of about 2\%. Figure \ref{fig:alexnet_orig} illustrates the network architecture of AlexNet.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{img/methods/alexnet_original.png}
+	\caption{AlexNet architecture}
+	\label{fig:alexnet_orig}
+\end{figure}
 
 Machine learned models are becoming more and more frequently used because of their high performance, they require less human intervention, as well as it has become increasingly easy to collect and represent data in a more versatile way. The works in \parencite{Aleotti2012} \parencite{Suay2015} \parencite{Kim2004} all report good results for handovers between robots and humans, but are supported by rule-based algorithms. Rule-based algorithms can present some limits of adaptation to a wider spectrum of scenarios than those thought of when the algorithm was created, they can as well become error prone because of human factors. \parencite{Redmon2014} \parencite{Lenz2015} \parencite{Jiang2011} \parencite{Huebner2008a} are examples of work that instead use the advantages of machine learned models to achieve good results, avoiding dictating the rules for grasping and handovers themselves. One disadvantage does nonetheless persist with these method, which is the fact that their datasets for training require the time consuming task of manually labeling.
 

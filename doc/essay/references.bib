@@ -121,6 +121,36 @@ pages = {771--776},
 title = {{Comfortable robot to human object hand-over}},
 year = {2012}
 }
+@inproceedings{Lee2009,
+abstract = {There has been much interest in unsupervised learning of hierarchical generative models such as deep belief networks. Scaling such models to full-sized, high-dimensional images remains a difficult problem. To address this problem, we present the convolutional deep belief network, a hierarchical generative model which scales to realistic image sizes. This model is translation-invariant and supports efficient bottom-up and top-down probabilistic inference. Key to our approach is probabilistic max-pooling, a novel technique which shrinks the representations of higher layers in a probabilistically sound way. Our experiments show that the algorithm learns useful high-level visual features, such as object parts, from unlabeled images of objects and natural scenes. We demonstrate excellent performance on several visual recognition tasks and show that our model can perform hierarchical (bottom-up and top-down) inference over full-sized images.},
+archivePrefix = {arXiv},
+arxivId = {arXiv:1301.3605v3},
+author = {Lee, Honglak and Grosse, Roger and Ranganath, Rajesh and Ng, Andrew Y.},
+booktitle = {Proceedings of the 26th Annual International Conference on Machine Learning - ICML '09},
+doi = {10.1145/1553374.1553453},
+eprint = {arXiv:1301.3605v3},
+file = {:home/ximon/school/thesis/doc/ref/DeepBelief.pdf:pdf},
+isbn = {9781605585161},
+issn = {02643294},
+pmid = {20957573},
+title = {{Convolutional deep belief networks for scalable unsupervised learning of hierarchical representations}},
+year = {2009}
+}
+@article{Turaga2010,
+abstract = {Many image segmentation algorithms first generate an affinity graph and then partition it. We present a machine learning approach to computing an affinity graph using a convolutional network (CN) trained using ground truth provided by human experts. The CN affinity graph can be paired with any standard partitioning algorithm and improves segmentation accuracy significantly compared to standard hand-designed affinity functions. We apply our algorithm to the challenging 3D segmentation problem of reconstructing neuronal processes from volumetric electron microscopy (EM) and show that we are able to learn a good affinity graph directly from the raw EM images. Further, we show that our affinity graph improves the segmentation accuracy of both simple and sophisticated graph partitioning algorithms. In contrast to previous work, we do not rely on prior knowledge in the form of hand-designed image features or image preprocessing. Thus, we expect our algorithm to generalize effectively to arbitrary image types.},
+author = {Turaga, Srinivas C. and Murray, Joseph F. and Jain, Viren and Roth, Fabian and Helmstaedter, Moritz and Briggman, Kevin and Denk, Winfried and {Sebastian Seung}, H.},
+doi = {10.1162/neco.2009.10-08-881},
+file = {:home/ximon/school/thesis/doc/ref/neco.2009.10-08-881.pdf:pdf},
+isbn = {1530-888X (Electronic)$\backslash$r0899-7667 (Linking)},
+issn = {08997667},
+journal = {Neural Computation},
+number = {2},
+pages = {511--538},
+pmid = {19922289},
+title = {{Convolutional networks can learn to generate affinity graphs for image segmentation}},
+volume = {22},
+year = {2010}
+}
 @article{Lenz2015,
 abstract = {We consider the problem of detecting robotic grasps in an RGB-D view of a scene containing objects. In this work, we apply a deep learning approach to solve this problem, which avoids time-consuming hand-design of features. This presents two main challenges. First, we need to evaluate a huge number of candidate grasps. In order to make detection fast, as well as robust, we present a two-step cascaded structure with two deep networks, where the top detections from the first are re-evaluated by the second. The first network has fewer features, is faster to run, and can effectively prune out unlikely candidate grasps. The second, with more features, is slower but has to run only on the top few detections. Second, we need to handle multimodal inputs well, for which we present a method to apply structured regularization on the weights based on multimodal group regularization. We demonstrate that our method outperforms the previous state-of-the-art methods in robotic grasp detection, and can be used to successfully execute grasps on two different robotic platforms.},
 archivePrefix = {arXiv},
@@ -463,8 +493,39 @@ url = {http://www.humanrobotinteraction.org/journal/index.php/HRI/article/view/1
 volume = {2},
 year = {2013}
 }
+@article{Radford2015,
+abstract = {In recent years, supervised learning with convolutional networks (CNNs) has seen huge adoption in computer vision applications. Comparatively, unsupervised learning with CNNs has received less attention. In this work we hope to help bridge the gap between the success of CNNs for supervised learning and unsupervised learning. We introduce a class of CNNs called deep convolutional generative adversarial networks (DCGANs), that have certain architectural constraints, and demonstrate that they are a strong candidate for unsupervised learning. Training on various image datasets, we show convincing evidence that our deep convolutional adversarial pair learns a hierarchy of representations from object parts to scenes in both the generator and discriminator. Additionally, we use the learned features for novel tasks - demonstrating their applicability as general image representations.},
+archivePrefix = {arXiv},
+arxivId = {1511.06434},
+author = {Radford, Alec and Metz, Luke and Chintala, Soumith},
+doi = {10.1051/0004-6361/201527329},
+eprint = {1511.06434},
+file = {:home/ximon/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Radford, Metz, Chintala - 2015 - Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks.pdf:pdf},
+isbn = {2004012439},
+issn = {0004-6361},
+pages = {1--16},
+pmid = {23459267},
+title = {{Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks}},
+url = {http://arxiv.org/abs/1511.06434},
+year = {2015}
+}
 @article{Morales,
 author = {Morales, A and Chinellato, E and Sanz, P J and Fagg, A H and Pobil, A P},
 file = {:home/ximon/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Morales et al. - Unknown - Vision based planar grasp synthesis and reliability assessment for a multifinger robot hand a learning appro.pdf:pdf},
 title = {{Vision based planar grasp synthesis and reliability assessment for a multifinger robot hand : a learning approach}}
+}
+@inproceedings{Jarrett2009,
+abstract = {In many recent object recognition systems, feature extraction stages are generally composed of a filter bank, a non-linear transformation, and some sort of feature pooling layer. Most systems use only one stage of feature extraction in which the filters are hard-wired, or two stages where the filters in one or both stages are learned in supervised or unsupervised mode. This paper addresses three questions: 1. How does the non-linearities that follow the filter banks influence the recognition accuracy? 2. does learning the filter banks in an unsupervised or supervised manner improve the performance over random filters or hardwired filters? 3. Is there any advantage to using an architecture with two stages of feature extraction, rather than one? We show that using non-linearities that include rectification and local contrast normalization is the single most important ingredient for good accuracy on object recognition benchmarks. We show that two stages of feature extraction yield better accuracy than one. Most surprisingly, we show that a two-stage system with random filters can yield almost 63{\%} recognition rate on Caltech-101, provided that the proper non-linearities and pooling layers are used. Finally, we show that with supervised refinement, the system achieves state-of-the-art performance on NORB dataset (5.6{\%}) and unsupervised pre-training followed by supervised refinement produces good accuracy on Caltech-101 ({\&}gt; 65{\%}), and the lowest known error rate on the undistorted, unprocessed MNIST dataset (0.53{\%}).},
+archivePrefix = {arXiv},
+arxivId = {1602.05473},
+author = {Jarrett, Kevin and Kavukcuoglu, Koray and Ranzato, Marc'Aurelio and LeCun, Yann},
+booktitle = {Proceedings of the IEEE International Conference on Computer Vision},
+doi = {10.1109/ICCV.2009.5459469},
+eprint = {1602.05473},
+file = {:home/ximon/school/thesis/doc/ref/05459469.pdf:pdf},
+isbn = {9781424444205},
+issn = {1550-5499},
+pmid = {25719670},
+title = {{What is the best multi-stage architecture for object recognition?}},
+year = {2009}
 }
