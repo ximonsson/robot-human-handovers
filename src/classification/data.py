@@ -142,6 +142,8 @@ def datasets(src, objects, ratio, size=-1):
 	n = int(size/len(objects)) if size != -1 else min(map(len, object_files.values()))
 	object_files = {o: files[:n] for o, files in object_files.items()}
 
+	# TODO balance the objects between the validation and test sets
+
 	datafiles = sum(object_files.values(), [])
 	datafiles = [os.path.join(src, f) for f in datafiles if any(map(f.startswith, objects))]
 	random.shuffle(datafiles)

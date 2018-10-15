@@ -90,18 +90,16 @@ y = tf.placeholder(tf.float32, [None, OUTPUTS])
 keep_prob = tf.placeholder_with_default(1.0, shape=())
 
 # create network
-m = alexnet.network(x, keep_prob, classes=alexnet.OUTPUTS)
-#"""
-m = tf.nn.relu(m)
+net = alexnet.network(x, keep_prob, classes=alexnet.OUTPUTS)
+net = tf.nn.relu(net)
 with tf.variable_scope("grasp_class") as scope:
 	w = tf.get_variable('weights', shape=[alexnet.OUTPUTS, OUTPUTS], trainable=True)
 	b = tf.get_variable('biases', shape=[OUTPUTS], trainable=True)
-	m = tf.nn.xw_plus_b(m, w, b, name=scope.name)
-#"""
+	net = tf.nn.xw_plus_b(net, w, b, name=scope.name)
 
 # calculate loss
 with tf.name_scope("loss"):
-	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=m, labels=y))
+	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=net, labels=y))
 
 # training operation applying optimizer function
 with tf.name_scope("train"):
@@ -110,12 +108,12 @@ with tf.name_scope("train"):
 
 # accuracy of the model
 with tf.name_scope("accuracy"):
-	correct_pred = tf.equal(tf.argmax(m, 1), tf.argmax(y, 1))
+	correct_pred = tf.equal(tf.argmax(net, 1), tf.argmax(y, 1))
 	accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # testing accuracy
 #with tf.name_scope("testing"):
-	#classifier = tf.nn.softmax(m) # for testing output
+	#classifier = tf.nn.softmax(net) # for testing output
 	#test = tf.equal(tf.argmax(classifier, 1), tf.argmax(y, 1))
 	#test_accuracy = tf.reduce_mean(tf.cast(test, tf.float32))
 #tf.summary.scalar("test_accuracy", test_accuracy)
