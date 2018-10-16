@@ -9,6 +9,14 @@ Description:
 
 		Training loss and accuracy, and validation accuracy are exported for inspection through
 		tensorboard.
+
+		Valid command line options are:
+			- batch-size: integer
+			- learning-rate: float
+			- epochs: integer
+			- data: string - filepath to directory containing data
+			- logdir-suffix: string -
+				suffix to add to the log directory to differentiate different runs
 """
 import os
 import numpy as np
@@ -149,6 +157,9 @@ with tf.Session() as s:
 	step = 0
 	for epoch in range(EPOCHS):
 		print("{} Epoch #{}".format(datetime.now(), epoch+1))
+
+		# shuffle the data
+		random.shuffle(training_data), random.shuffle(validation_data)
 
 		# run training operation on each batch and then summarize
 		print("Training...", end="", flush=True)
