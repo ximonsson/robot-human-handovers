@@ -53,6 +53,9 @@ For this purpose a number of voluteers were asked to be recorded while handing o
 
 \subsection{Extracting features}
 
+% TODO write more about image moments
+% TODO write about homography
+
 \subsubsection{Orientation of the object}
 
 The first set of features that we will extract from the recorded material will be around the orientation of the object when being handed over, i.e. the transformation from it's ground truth to the observed position. Before any work is done with the recorded material, for each object we manually create a reference image representing it's ground truth position. The orientation of the ground truth was chosen to be the object's orientation while in comon resting position (e.g for a bottle, standing up). For those objects that are layed down, their orientation was chosen to be with their head upwards. From these image we also generate binary masks that will be used to mask out the object after detection. Figure \ref{fig:objects_montage} shows the reference images created and figure \ref{fig:masks_montage} shows their binary masks. These images were created using the image manipulation software GIMP.
@@ -73,7 +76,7 @@ The first set of features that we will extract from the recorded material will b
 
 One of our biggest challenges with the project is to actually detect the object in each frame. This is a very non-trivial task and there is much research around methods for object detection. To help us with this part of the project and make sure that the data we extract is accurate, we will be taking help of AprilTags. With the help of their software library we easily identify the four corners of the tags in a frame and by this way locating the object. Using the OpenCV library and their \texttt{findHomography} function, we can compute the homography matrix that transforms the four corners of the tag in the reference image to the corners of the tag found in the frame. A homography matrix \(H\) is a 3x3 matrix with a total of nine values which creates quite a few features if we would try and cluster on it. Also it contains data on how to translate the object in three-dimensional space, which in our case is irrelevant as we are only interested in a way of defining the orientation of the object and are only working with two-dimensional data.
 
-Alternatively we can calculate a rotation of the object and represent it's orientation with instead only one feature. As we are only working with two-dimensional data we will only interest ourselves for the rotation on the z-axis. From the homography we can calculate a rotation matrix from which we can later derive the searched angle. Using the Python code presented in \ref{lst:rotation_matrix} based on the OpenCV library, we compute a 3x3 rotation matrix \(R\). Using the rotation matrix we can compute the angle \(\theta_Z\) as \(\theta_Z = \arctan(R_{1,0} / R_{0,0})\). In this case the rotation will be around the center of the tag because it is from which we calculated the homography matrix.
+Alternatively we can calculate a rotation of the object and represent it's orientation with instead only one feature. As we are only working with two-dimensional data we will only interest ourselves for the rotation on the z-axis. From the homography we can calculate a rotation matrix from which we can later derive the searched angle. Using the Python code presented in \ref{lst:rotation_matrix} based on the OpenCV library, we compute a 3x3 rotation matrix \(R\). Using the rotation matrix we can compute the angle \(\theta_R\) as \(\theta_R = \arctan(R_{1,0} / R_{0,0})\). In this case the rotation will be around the center of the tag because it is from which we calculated the homography matrix.
 
 The previous homography matrix can though still be used to transform the binary mask of the object, and then be applied on the frame as to mask out only the object. From this we can afterwards retrieve a grasp region of the object.
 
@@ -104,13 +107,13 @@ Skin color is a quick way of segmentating and finding grasp region as the color 
 
 A rotated rectangle is composed of three different parameters: width, height and angle. Another possible feature we can extract is the ratio between area of grasp region and area of object. Using the binary image of the object we can compute it's area \(A_{object}\) with the help of OpenCV by using \texttt{findContours} and \texttt{contourArea}. The area of the rotated angle is simply \(A_{grasp} = width \times height\) and the ratio between them becomes \(A_{ratio} = \frac{A_{grasp}}{A_{object}} \).
 
-The last features that we can extract are the distance between centers of the grasp region \(O_{grasp}\) and center of mass of the object \(O_{object}\). The center of mass can be computed using the image moments of the binary image. The following formula gives us the center. \textcolor{red}{write about moments and correct formula for center}
+The last features that we can extract are: the distance \(\Delta\) as the L2 norm between centers of the grasp region \(O_{grasp}\) and center of mass of the object \(O_{object}\), and the direction between these centers. The center of mass can be computed using the image moments of the binary image. Moments are retrieved with the help of the \texttt{moments} function, part of the OpenCV library, then the following formula gives us the center:
 
 \[
-	O_{object} = \frac{M_x}{M}, \frac{M_y}{M}
+	O_{object} = \frac{M_y}{M}, \frac{M_x}{M}
 \]
 
-We can then extract the distance between center of mass of the object and the center of the grasping region as a feature. It also enables us to create a unit vector from the center of mass of the object towards the grasping region. A vector in two dimensions would be expressed with two values, but we can summarize this in one value by instead calculating the angle using \(\tan(\theta) = \sqrt{x^2 + y^2}\). Lastly we can compute the ratio of the area covered by the grasp by the area of the object \(A = \frac{area(Grasp)}{area(Object}\).
+We can then extract the distance between center of mass of the object and the center of the grasping region as a feature. It also enables us to create a unit vector from the center of mass of the object towards the grasping region. A vector in two dimensions would be expressed with two values, but we can summarize this in one value by instead calculating the angle on the z-axis by using \(\tan(\theta_G) = \sqrt{x^2 + y^2}\).
 
 To summarize we can extract the following features:
 \begin{itemize}
