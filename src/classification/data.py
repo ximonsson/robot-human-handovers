@@ -131,7 +131,7 @@ def datasets(src, objects, ratio, size=-1):
 	# and last shuffle everything
 
 	datafiles = os.listdir(src)
-	random.shuffle(datafiles)
+	#random.shuffle(datafiles)
 
 	# balancing is done by grouping object datafiles in a dict mapped by the object name to
 	# a list of files
@@ -142,14 +142,15 @@ def datasets(src, objects, ratio, size=-1):
 	n = int(size/len(objects)) if size != -1 else min(map(len, object_files.values()))
 	object_files = {o: files[:n] for o, files in object_files.items()}
 
-	# TODO balance the objects between the validation and test sets
+	n = int(n * ratio)
 
-	datafiles = sum(object_files.values(), [])
-	datafiles = [os.path.join(src, f) for f in datafiles if any(map(f.startswith, objects))]
-	random.shuffle(datafiles)
+	training_files = {o: files[:n] for o, files in object_files.items()}
+	training_files = [os.path.join(src, f) for f in sum(training_files.values(), [])]
 
-	n = int(len(datafiles) * ratio)
-	return datafiles[:n], datafiles[n:]
+	validation_files = {o: files[n:] for o, files in object_files.items()}
+	validation_files = [os.path.join(src, f) for f in sum(validation_files.values(), [])]
+
+	return training_files, validation_files
 
 
 def batches(data, size, imdim, outputs):
