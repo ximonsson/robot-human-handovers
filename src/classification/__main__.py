@@ -28,57 +28,6 @@ from .data import datasets, batches
 from .utils import progressbar, print_step, find_arg
 
 
-# Prepare data for training, validation and testing.
-#	Training and validation sets share objects but have their images split between them.
-#	Test data are new objects that are not part of the training phase.
-
-DATA = find_arg("data", "data/classification/images/")
-DATA_RATIO = 0.8
-INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
-
-# load dataset
-objects = [
-		#"ball",
-		"bottle",
-		"box",
-		"cutters",
-		"glass",
-		"knife",
-		"scissors",
-		"brush",
-		"scalpel",
-		"can",
-		"screwdriver",
-		"pitcher",
-		"hammer",
-		"pen",
-		"cup",
-		#"tube",
-		]
-
-N = 12
-training_objects = objects[:N]
-test_objects = objects[N:]
-
-# split dataset
-training_data, validation_data = datasets(DATA, training_objects, DATA_RATIO)
-test_data, _ = datasets(DATA, test_objects, 1.0)
-
-# the below is just an ugly way of printing what objects we are training, validating and testing.
-# it is just to make sure everything is correct and it is separate objects for testing.
-print("> Training and validating on ({} images training, {} images validation):\n{}\n".format(
-	len(training_data),
-	len(validation_data),
-	"\n".join(set(
-		list(map(lambda x: os.path.basename(x).split("_")[0], training_data)) + \
-				list(map(lambda x: os.path.basename(x).split("_")[0], validation_data)))),
-	))
-print("Testing on ({} images):\n{}\n".format(
-	len(test_data),
-	"\n".join(set(map(lambda x: os.path.basename(x).split("_")[0], test_data))),
-	))
-
-
 # Create network
 # create the original alexnet model and add a new fully connected layer to output the
 
@@ -86,6 +35,7 @@ print("Testing on ({} images):\n{}\n".format(
 LEARNING_RATE = float(find_arg("learning-rate", "0.001"))
 EPOCHS = int(find_arg("epochs", "10"))
 BATCH_SIZE = int(find_arg("batch-size", "64"))
+K = int(find_arg("k", "5"))
 
 # network parameters
 DROPOUT = 0.5
@@ -120,12 +70,11 @@ with tf.name_scope("accuracy"):
 	accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # testing accuracy
-#with tf.name_scope("testing"):
-	#classifier = tf.nn.softmax(net) # for testing output
-	#test = tf.equal(tf.argmax(classifier, 1), tf.argmax(y, 1))
-	#test_accuracy = tf.reduce_mean(tf.cast(test, tf.float32))
+with tf.name_scope("testing"):
+	classifier = tf.nn.softmax(net) # for testing output
+	test = tf.equal(tf.argmax(classifier, 1), tf.argmax(y, 1))
+	test_accuracy = tf.reduce_mean(tf.cast(test, tf.float32))
 #tf.summary.scalar("test_accuracy", test_accuracy)
-
 
 # Setup logging
 
@@ -137,6 +86,46 @@ LOGDIR = "results/classification/"
 LOGDIR_SUFFIX = find_arg("logdir-suffix", "")
 LOGDIR_TRAIN = "{}/train{}".format(LOGDIR, LOGDIR_SUFFIX)
 LOGDIR_VALIDATION = "{}/validation{}".format(LOGDIR, LOGDIR_SUFFIX)
+
+# Prepare data for training, validation and testing.
+#	Training and validation sets share objects but have their images split between them.
+#	Test data are new objects that are not part of the training phase.
+
+DATA = find_arg("data", "data/classification/images/")
+DATA_RATIO = 0.8
+INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
+
+# load dataset
+objects = [
+		#"ball",
+		"bottle",
+		"box",
+		"cutters",
+		"glass",
+		"knife",
+		"scissors",
+		"brush",
+		"scalpel",
+		"can",
+		"screwdriver",
+		"pitcher",
+		"hammer",
+		"pen",
+		"cup",
+		#"tube",
+		]
+
+N = 10
+training_objects = objects[:N]
+test_objects = objects[N:]
+
+# split dataset
+training_sets = datasets(DATA, training_objects, K)
+test_data = datasets(DATA, test_objects, 1)[0]
+
+print("Training on {}".format(training_objects))
+print("Testing on {}".format(test_objects))
+
 
 with tf.Session() as s:
 	# create writers for summary
@@ -151,47 +140,53 @@ with tf.Session() as s:
 	# calculate accuracy over the validation set
 	# after we have run each epoch we test the model on the test set
 
-	n_train_batches_per_epoch = int(len(training_data)/BATCH_SIZE)
-	n_validation_batches_per_epoch = int(len(validation_data)/BATCH_SIZE)
-
 	step = 0
-	for epoch in range(EPOCHS):
-		print("{} Epoch #{}".format(datetime.now(), epoch+1))
 
-		# shuffle the data
-		random.shuffle(training_data), random.shuffle(validation_data)
+	for k in range(K):
+		print("*** K={} ***".format(k+1))
+		training_data = sum(training_sets[:k] + training_sets[k+1:], [])
+		validation_data = training_sets[k]
 
-		# run training operation on each batch and then summarize
-		print("Training...", end="", flush=True)
-		for batch, X, Y in batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-			s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})
-			summary = s.run(summary_op, feed_dict={x: X, y: Y, keep_prob: 1.0})
-			train_writer.add_summary(summary, step)
-			print_step("{:15} {}", "Training:", progressbar(batch+1, n_train_batches_per_epoch))
-			step += 1
+		n_train_batches_per_epoch = int(len(training_data)/BATCH_SIZE)
+		n_validation_batches_per_epoch = int(len(validation_data)/BATCH_SIZE)
 
-		# validate and write summary of the accuracy
-		acc = 0
-		print("\nValidating...", end="", flush=True)
-		for batch, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-			b = batch + 1
-			acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
-			print_step(
-					"{:15} {} => Accuracy {:.4f}%",
-					"Validating:",
-					progressbar(b, n_validation_batches_per_epoch),
-					acc/b*100)
-		print("\n{} Validation Accuracy: {:.4f}%".format(datetime.now(), acc/b*100))
-		summary_val_acc = tf.Summary()
-		summary_val_acc.value.add(tag="validation_accuracy", simple_value=acc/b*100)
-		validation_writer.add_summary(summary_val_acc, step)
+		for epoch in range(EPOCHS):
+			print("{} Epoch #{}".format(datetime.now(), epoch+1))
+
+			# shuffle the data
+			random.shuffle(training_data)
+
+			# run training operation on each batch and then summarize
+			print("Training...", end="", flush=True)
+			for batch, X, Y in batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+				s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})
+				summary = s.run(summary_op, feed_dict={x: X, y: Y, keep_prob: 1.0})
+				train_writer.add_summary(summary, step)
+				print_step("{:15} {}", "Training:", progressbar(batch+1, n_train_batches_per_epoch))
+				step += 1
+
+			# validate and write summary of the accuracy
+			acc = 0
+			print("\nValidating...", end="", flush=True)
+			for batch, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+				b = batch + 1
+				acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+				print_step(
+						"{:15} {} => Accuracy {:.4f}%",
+						"Validating:",
+						progressbar(b, n_validation_batches_per_epoch),
+						acc/b*100)
+			print("\n{} Validation Accuracy: {:.4f}%".format(datetime.now(), acc/b*100))
+			summary_val_acc = tf.Summary()
+			summary_val_acc.value.add(tag="validation_accuracy", simple_value=acc/b*100)
+			validation_writer.add_summary(summary_val_acc, step)
 
 	# test accuracy
 	print("\nTesting...", end="", flush=True)
 	acc = 0
 	for batch, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 		b = batch+1
-		acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+		acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
 		print_step(
 				"{:15} {} => Accuracy {:.4f}%",
 				"Testing:",
