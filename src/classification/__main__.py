@@ -91,12 +91,13 @@ LOGDIR_VALIDATION = "{}/validation{}".format(LOGDIR, LOGDIR_SUFFIX)
 #	Training and validation sets share objects but have their images split between them.
 #	Test data are new objects that are not part of the training phase.
 
-DATA = find_arg("data", "data/classification/images/")
-DATA_RATIO = 0.8
+DATA_TRAIN = find_arg("train-data", "data/classification/images-train/")
+DATA_TEST = find_arg("test-data", "data/classification/images-test/")
+#DATA_RATIO = 0.8
 INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 
 # load dataset
-objects = [
+training_objects = [
 		#"ball",
 		"bottle",
 		"box",
@@ -115,13 +116,30 @@ objects = [
 		#"tube",
 		]
 
-N = 10
-training_objects = objects[:N]
-test_objects = objects[N:]
+test_objects = [
+		"new-bottle",
+		"new-can",
+		"new-cheeseknife",
+		"new-cup",
+		"new-fork",
+		"new-glass",
+		"new-jar",
+		"new-knive",
+		"new-pliers",
+		"new-scissors",
+		"new-screwdriver",
+		"new-spoon",
+		"new-wineglass",
+		"new-bottle2",
+		]
+
+#N = 10
+#training_objects = objects[:N]
+#test_objects = objects[N:]
 
 # split dataset
-training_sets = datasets(DATA, training_objects, K)
-test_data = datasets(DATA, test_objects, 1)[0]
+training_sets = datasets(DATA_TRAIN, training_objects, K)
+test_data = datasets(DATA_TEST, test_objects, 1)[0]
 
 print("Training on {}".format(training_objects))
 print("Testing on {}".format(test_objects))

@@ -17,6 +17,7 @@ import pickle
 
 
 obj_name2id = {
+		# training objects
 		"ball":        None,
 		"bottle":      21,
 		"box":         16,
@@ -33,9 +34,26 @@ obj_name2id = {
 		"scissors":     5,
 		"screwdriver": 14,
 		"tube":        18,
+
+		# test objects
+		"new-bottle":      100,
+		"new-can":         101,
+		"new-cheeseknife": 102,
+		"new-cup":         103,
+		"new-fork":        104,
+		"new-glass":       105,
+		"new-jar":         106,
+		"new-knive":       107,
+		"new-pliers":      108,
+		"new-scissors":    109,
+		"new-screwdriver": 110,
+		"new-spoon":       111,
+		"new-wineglass":   112,
+		"new-bottle2":     113,
 		}
 
-with open("data/classification/clusters.pkl", "rb") as f:
+
+with open("data/classification/classes.pkl", "rb") as f:
 	clusters = pickle.load(f)
 
 
@@ -105,9 +123,24 @@ def inspect_data(directory):
 	"""
 	quit = False
 	filenames = os.listdir(directory)
+	c = 1
 	for f in filenames:
 		filepath = os.path.join(directory, f)
 		im = np.load(filepath)
+		im = cv2.putText(
+				im,
+				"{}/{}".format(c, len(filenames)),
+				(10, 10),
+				cv2.FONT_HERSHEY_SIMPLEX,
+				0.25,
+				(255, 255, 255))
+		im = cv2.putText(
+				im,
+				"{}".format(f),
+				(10, 20),
+				cv2.FONT_HERSHEY_SIMPLEX,
+				0.25,
+				(255, 255, 255))
 		cv2.imshow("opencv", im)
 		while True:
 			k = cv2.waitKey(0)
@@ -119,6 +152,7 @@ def inspect_data(directory):
 			elif k == ord('q'):
 				quit = True
 				break
+		c += 1
 		if quit:
 			break
 
@@ -130,15 +164,16 @@ N_AUGMENTATIONS = int(find_arg("augmentations", "2"))
 RADIUS = int(find_arg("radius", "5"))
 
 
-if any(map(lambda arg: arg=="--inspect", sys.argv)):
+#if any(map(lambda arg: arg=="--inspect", sys.argv)):
+if "--inspect" in sys.argv:
 	# we are only inspecting the dataset and maybe not keeping all of it
 	inspect_data(DATASET_DIR)
 else:
 	for name in os.listdir(IMAGES_DIR):
 		# only traverse directories and
 		# don't augment directories starting with 'new_', they are not part of the training set
-		if name.startswith("new_") or \
-				not os.path.isdir(os.path.join(IMAGES_DIR, name)) or \
+		#if name.startswith("new_") or \
+		if not os.path.isdir(os.path.join(IMAGES_DIR, name)) or \
 				obj_name2id[name] is None:
 			continue
 		augment_directory(os.path.join(IMAGES_DIR, name), DATASET_DIR, n=N_AUGMENTATIONS, r=RADIUS)
