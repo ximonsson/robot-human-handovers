@@ -81,9 +81,9 @@ def __fc__(x, ci, co, name, relu=True):
 
 def network(x, dropout, classes=OUTPUTS):
 	"""
-	model creates a new model with all the layers as defined by AlexNet.
+	Create a new network with all the layers as defined by AlexNet.
 	See https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks
-	for more documenation on the actual model.
+	for more documenation on the actual architecture.
 
 	:param x: tensorflow placeholder for input
 	:param dropout: tensor with keep probability for dropout after layers 6 and 7
