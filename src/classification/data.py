@@ -113,7 +113,6 @@ def datasets(src, objects, k=1):
 	:param k: integer - number of datasets to create.
 	:returns: array of arrays - k arrays with balanced datasets.
 	"""
-	import random
 
 	# list files in the source directory
 	# sort out the files that belong to the supplied list of objects
