@@ -34,7 +34,7 @@ from .utils import progressbar, print_step, find_arg
 # learning parameters
 LEARNING_RATE = float(find_arg("learning-rate", "0.001"))
 EPOCHS = int(find_arg("epochs", "10"))
-BATCH_SIZE = int(find_arg("batch-size", "64"))
+BATCH_SIZE = int(find_arg("batch-size", "32"))
 K = int(find_arg("k", "5"))
 
 # network parameters
@@ -93,7 +93,6 @@ LOGDIR_VALIDATION = "{}/validation{}".format(LOGDIR, LOGDIR_SUFFIX)
 
 DATA_TRAIN = find_arg("train-data", "data/classification/images-train/")
 DATA_TEST = find_arg("test-data", "data/classification/images-test/")
-#DATA_RATIO = 0.8
 INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 
 # load dataset
@@ -132,10 +131,6 @@ test_objects = [
 		"new-wineglass",
 		"new-bottle2",
 		]
-
-#N = 10
-#training_objects = objects[:N]
-#test_objects = objects[N:]
 
 # split dataset
 training_sets = datasets(DATA_TRAIN, training_objects, K)
@@ -194,20 +189,27 @@ with tf.Session() as s:
 						"Validating:",
 						progressbar(b, n_validation_batches_per_epoch),
 						acc/b*100)
-			print("\n{} Validation Accuracy: {:.4f}%".format(datetime.now(), acc/b*100))
 			summary_val_acc = tf.Summary()
 			summary_val_acc.value.add(tag="validation_accuracy", simple_value=acc/b*100)
 			validation_writer.add_summary(summary_val_acc, step)
 
-	# test accuracy
-	print("\nTesting...", end="", flush=True)
-	acc = 0
-	for batch, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-		b = batch+1
-		acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
-		print_step(
-				"{:15} {} => Accuracy {:.4f}%",
-				"Testing:",
-				progressbar(b, int(len(test_data)/BATCH_SIZE)),
-				acc/b*100)
-	print("\n{} Test Accuracy: {:.4f}%".format(datetime.now(), acc/b*100))
+			# check test accuracy
+			print("\nTesting...", end="", flush=True)
+			acc = 0
+			for batch, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+				b = batch+1
+				acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+				print_step(
+						"{:15} {} => Accuracy {:.4f}%",
+						"Testing:",
+						progressbar(b, int(len(test_data)/BATCH_SIZE)),
+						acc/b*100)
+			print()
+
+	# check accuracy of each object
+	for o in test_objects:
+		test_data = datasets(DATA_TEST, [o], 1)[0]
+		acc = 0
+		for batch, X, Y, in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+			acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+		print(" '{}': {:.4f}%".format(o, acc/(batch+1)*100))
