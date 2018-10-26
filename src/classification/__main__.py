@@ -43,7 +43,7 @@ OUTPUTS = 2
 train_layers = ["fc6", "fc7", "fc8"]
 
 # tensorflow variables, x input, y output and dropout
-x = tf.placeholder(tf.float32, [BATCH_SIZE, alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH])
+x = tf.placeholder(tf.float32, [None, alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH])
 y = tf.placeholder(tf.float32, [None, OUTPUTS])
 keep_prob = tf.placeholder_with_default(1.0, shape=())
 
