@@ -117,8 +117,8 @@ def print_summary(cluster_assignments, sample_assignments, k, samples):
 		if FLAG_VISUALIZE:
 			display_object(oid, largest_label, k.cluster_centers_[largest_label])
 			wait()
-		im = draw(oid, largest_label, k.cluster_centers_[largest_label])
-		cv2.imwrite("results/clustering/{}_handover.jpg".format(oid), im)
+		#im = draw(oid, largest_label, k.cluster_centers_[largest_label])
+		#cv2.imwrite("results/clustering/{}_handover.jpg".format(oid), im)
 
 	print("Cluster information:")
 	for label in cluster_assignments:
@@ -143,9 +143,20 @@ def plot(k, samples):
 
 
 def cluster(samples):
-	X = samples[:, [1, 2, 3, 4]]
+	from sklearn.preprocessing import StandardScaler
+	from sklearn.decomposition import PCA
+
+	X = samples[:, 1:]
+	#X = StandardScaler().fit_transform(X)
+	pca = PCA(.9)
+	X = pca.fit_transform(X)
+
+	#X = samples[:, [1, 2, 3, 4]]
+
 	k = skcluster.KMeans(init="random", n_clusters=n_clusters)
 	k.fit(X)
+	plot(k, X)
+
 	return k
 
 
@@ -169,7 +180,7 @@ with open(samples_file, "rb") as f:
 	k = cluster(samples)
 	clusters, object_assignments = summarize(k, samples)
 	print_summary(clusters, object_assignments, k, samples)
-	plot(k, samples)
-	save(k, clusters, object_assignments)
+	#plot(k, samples)
+	#save(k, clusters, object_assignments)
 
 cv2.destroyAllWindows()
