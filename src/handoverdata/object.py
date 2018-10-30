@@ -29,6 +29,9 @@ class Object:
 		self.__center__ = center
 		self.__area__ = None
 		self.__mask__ = None
+		self.__diagonal__ = None
+		self.__h__ = None
+		self.__w__ = None
 
 	def __str__(self):
 		data = [
@@ -79,6 +82,11 @@ class Object:
 		cy = int(M['m01']/M['m00'])
 		self.__center__ = (cx, cy)
 
+		# calculate dimensions
+		_, _, self.__w__, self.__h__ = cv2.boundingRect(cnt)
+		self.__diagonal__ = np.sqrt(self.__w__**2 + self.__h__**2)
+
+
 	@property
 	def center(self):
 		"""
@@ -100,6 +108,36 @@ class Object:
 		if self.__area__ is None:
 			self.__load_properties__()
 		return self.__area__
+
+	@property
+	def diagonal(self):
+		"""
+		Diagonal of the object
+		:returns: float
+		"""
+		if self.__diagonal__ is None:
+			self.__load_properties__()
+		return self.__diagonal__
+
+	@property
+	def height(self):
+		"""
+		Height of the object
+		:returns: integer
+		"""
+		if self.__h__ is None:
+			self.__load_properties__()
+		return self.__h__
+
+	@property
+	def width(self):
+		"""
+		Width of the object
+		:returns: integer
+		"""
+		if self.__w__ is None:
+			self.__load_properties__()
+		return self.__w__
 
 
 

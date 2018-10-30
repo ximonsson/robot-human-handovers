@@ -28,6 +28,7 @@ def handover2sample(h):
 		- Rotation of object in z-axis
 		- Direction from object center to the grasp center expressed as an angle in degrees
 		- Distance between centers of object and grasp
+		- Ratio of distance between centers to diagonal
 		- Ratio between object area and grasp area
 		- Rotation of the grasp in z-axis
 		- Width of grasp
@@ -42,12 +43,15 @@ def handover2sample(h):
 	# distance between centers
 	d = np.linalg.norm(v)
 
-	# direction from object center to grasp center
+	# ratio of distance between center to diagonal of the object
+	dr = obj.diagonal / d
+
+	# direction from object center to grasp center (angle)
 	u = v / d
 	u = math.atan(u[0]/u[1])
 	u = math.degrees(u)
 
-	# rotation in Z-axis
+	# rotation of object in Z-axis
 	R = rotation_matrix(h.H)
 	z = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
 	z = math.degrees(z)
@@ -56,17 +60,23 @@ def handover2sample(h):
 	ga = h.grasp.w * h.grasp.h
 	r = ga / obj.area
 
-	sample = [h.objectID, z, u, d, r, h.grasp.a, h.grasp.w, h.grasp.h]
+	sample = [h.objectID, z, u, d, dr, r, h.grasp.a, h.grasp.w, h.grasp.h]
 	return sample
 
 
 def sample2handover(sample):
-	g = hd.Grasp(0, 0, sample[6], sample[7], sample[5])
-	h = hd.Handover("", sample[0], g, np.array())
-	return h
+	"""
+	Convert sample to handover object.
+	TODO - implement if possible
+
+	:param sample: list -
+		sample of handover features in same format as obtained through handover2sample
+	:returns: handover.Handover object
+	"""
+	return None
 
 
-def read_samples(f, indices):
+def create_samples(f, indices):
 	"""
 	Reads handover data with supplied indices from the file pointer and returns them in
 	the form of samples to be used.
