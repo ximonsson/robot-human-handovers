@@ -90,18 +90,24 @@ test_objects=(
 # TESTS
 #
 
+K=5
 
 # LEARNING RATES
 LRs=("0.1" "0.01" "0.001" "0.0001" "0.00001")
-BS=128
+BS="32"
 for LR in "${LRs[@]}"
 do
-	classify $LR $BS "${objects[@]}" "${test_objects[@]}" "lr_$LR""__bs_$BS" 5
+	classify $LR $BS "${objects[@]}" "${test_objects[@]}" "lr_$LR""__bs_$BS" $K
 done
 
 
 # BATCH SIZES
-
+BSs=("8" "16" "32" "64" "128")
+LR="0.00001"
+for BS in "${BSs[@]}"
+do
+	classify $LR $BS "${objects[@]}" "${test_objects[@]}" "lr_$LR""__bs_$BS" $K
+done
 
 
 # OBJECTS
