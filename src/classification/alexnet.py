@@ -54,7 +54,7 @@ def __conv__(x, fh, fw, co, sy, sx, name, padding="VALID", group=1):
 			conv = tf.concat(groups_out, 3)
 
 		# add bias and return
-		return tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape().as_list())
+		return tf.reshape(tf.nn.bias_add(conv, biases), [-1] + conv.get_shape().as_list()[1:])
 
 
 def __fc__(x, ci, co, name, relu=True):
