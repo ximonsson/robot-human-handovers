@@ -159,9 +159,12 @@ def batches(data, size, imdim, outputs):
 			name, _ = os.path.splitext(os.path.basename(data[i]))
 			cluster = np.int(name.split("_")[-1])
 			x[j] = np.load(data[i])
+
+			# change base to [0, 255], RGB -> BGR, and scale to imagenet mean
 			x[j] *= 255.0
 			x[:, :, 0], x[:, :, 2] = x[:, :, 2], x[:, :, 0]
 			x[j] -= np.array([104., 117, 124.], dtype=np.float32)
+
 			y[j][cluster] = 1
 			i += 1
 		yield b, x, y
