@@ -44,23 +44,22 @@ def handover2sample(h):
 	d = np.linalg.norm(v)
 
 	# ratio of distance between center to diagonal of the object
-	dr = obj.diagonal / d
+	dr = d / obj.diagonal
 
 	# direction from object center to grasp center (angle)
 	u = v / d
 	u = math.atan(u[0]/u[1])
-	u = math.degrees(u)
+	u /= 2 * math.pi
 
 	# rotation of object in Z-axis
 	R = rotation_matrix(h.H)
 	z = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
-	z = math.degrees(z)
+	z = (z + math.pi) / (2 * math.pi)
 
 	# ratio between object area and grasp area
-	ga = h.grasp.w * h.grasp.h
-	r = ga / obj.area
+	ar = h.grasp.area / obj.area
 
-	sample = [h.objectID, z, u, d, dr, obj.area, h.grasp.area, r, h.grasp.a, h.grasp.w, h.grasp.h]
+	sample = [h.objectID, z, u, d, dr, obj.area, h.grasp.area, ar, h.grasp.a, h.grasp.w, h.grasp.h]
 	return sample
 
 
