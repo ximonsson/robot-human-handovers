@@ -8,8 +8,6 @@ from handoverdata.helpers import rotation_matrix
 import math
 
 
-# number of features per sample
-FEATURES = 4
 OBJECTS_DB_FILE = "data/objects/objects.db"
 
 
@@ -28,7 +26,9 @@ def handover2sample(h):
 		- Rotation of object in z-axis
 		- Direction from object center to the grasp center expressed as an angle in degrees
 		- Distance between centers of object and grasp
-		- Ratio of distance between centers to diagonal
+		- Ratio between distance between centers and diagonal of object
+		- Object area
+		- Grasp area
 		- Ratio between object area and grasp area
 		- Rotation of the grasp in z-axis
 		- Width of grasp
@@ -60,7 +60,7 @@ def handover2sample(h):
 	ga = h.grasp.w * h.grasp.h
 	r = ga / obj.area
 
-	sample = [h.objectID, z, u, d, dr, r, h.grasp.a, h.grasp.w, h.grasp.h]
+	sample = [h.objectID, z, u, d, dr, obj.area, h.grasp.area, r, h.grasp.a, h.grasp.w, h.grasp.h]
 	return sample
 
 

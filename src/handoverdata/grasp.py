@@ -32,6 +32,10 @@ class Grasp:
 		"""
 		return (self.x, self.y), (self.w, self.h), self.a
 
+	@property
+	def area(self):
+		return float(self.w * self.h)
+
 	def draw(self, im, color=(0, 0, 255), thickness=1):
 		"""
 		Draw the grasping region on the image.
