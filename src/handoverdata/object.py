@@ -63,29 +63,31 @@ class Object:
 			self.__load_properties__()
 		return self.__mask__
 
-
 	def __load_properties__(self):
 		# load mask file
 		filename = self.filename.replace("%d" % self.tag_id, "%d_mask" % self.tag_id)
 		self.__mask__ = cv2.flip(cv2.imread(filename), 1)
 
 		# find (largest) contour around the object
+
 		bw = cv2.cvtColor(self.__mask__, cv2.COLOR_BGRA2GRAY)
 		_, contours, _ = cv2.findContours(bw, 1, 2)
 		contours = sorted(contours, key=cv2.contourArea)
 		cnt = contours[-1]
 
-		# calculate area and center
-		self.__area__ = cv2.contourArea(cnt)
+		# calculate center and area
+
 		M = cv2.moments(cnt)
 		cx = int(M['m10']/M['m00'])
 		cy = int(M['m01']/M['m00'])
 		self.__center__ = (cx, cy)
+		#self.__area__ = cv2.contourArea(cnt)
+		self.__area__ = M['m00']
+		self.__M__ = M # save the moments
 
 		# calculate dimensions
 		_, _, self.__w__, self.__h__ = cv2.boundingRect(cnt)
 		self.__diagonal__ = np.sqrt(self.__w__**2 + self.__h__**2)
-
 
 	@property
 	def center(self):
@@ -107,7 +109,8 @@ class Object:
 		"""
 		if self.__area__ is None:
 			self.__load_properties__()
-		return self.__area__
+		return self.width * self.height
+		#return self.__area__
 
 	@property
 	def diagonal(self):
