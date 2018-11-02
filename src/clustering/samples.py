@@ -22,23 +22,23 @@ def handover2sample(h):
 	"""
 	Converts a Handover object to a sample used for clustering.
 	One sample contains:
-		- Object Tag ID
-		- Rotation of object in z-axis
-		- Direction from object center to the grasp center expressed as an angle in degrees
-		- Distance between centers of object and grasp
-		- Ratio between distance between centers and diagonal of object
-		- Object area
-		- Grasp area
-		- Ratio between object area and grasp area
-		- Rotation of the grasp in z-axis
-		- Width of grasp
-		- Height of grasp
+		0. Object Tag ID
+		1. Rotation of object in z-axis
+		2. Direction from object center to the grasp center expressed as an angle in degrees
+		3. Distance between centers of object and grasp
+		4. Ratio between distance between centers and diagonal of object
+		5. Object area
+		6. Grasp area
+		7. Ratio between object area and grasp area
+		8. Rotation of the grasp in z-axis
+		9. Width of grasp
+		10. Height of grasp
 
 	:param h: Handover object
 	:returns: list of features
 	"""
 	obj = objects[h.objectID]
-	v = np.array((h.grasp.x, h.grasp.y)) - np.array(obj.center) # vector between centers
+	v = np.array(h.grasp.center) - np.array(obj.center) # vector between centers
 
 	# distance between centers
 	d = np.linalg.norm(v)
@@ -47,19 +47,31 @@ def handover2sample(h):
 	dr = d / obj.diagonal
 
 	# direction from object center to grasp center (angle)
-	u = v / d
-	u = math.atan(u[0]/u[1])
+	u = math.atan(v[0]/v[1])
+	if v[1] < 0:
+		u += math.pi / 2
 	u /= 2 * math.pi
 
 	# rotation of object in Z-axis
 	R = rotation_matrix(h.H)
 	z = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
-	z = (z + math.pi) / (2 * math.pi)
+	z /= math.pi
 
 	# ratio between object area and grasp area
 	ar = h.grasp.area / obj.area
 
-	sample = [h.objectID, z, u, d, dr, obj.area, h.grasp.area, ar, h.grasp.a, h.grasp.w, h.grasp.h]
+	sample = [
+			h.objectID,
+			z,
+			u,
+			d,
+			dr,
+			obj.area,
+			h.grasp.area,
+			ar,
+			h.grasp.a,
+			h.grasp.w,
+			h.grasp.h]
 	return sample
 
 

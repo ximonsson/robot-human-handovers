@@ -3,13 +3,19 @@ import json
 import sys
 from samples import create_samples
 
-directory = sys.argv[1]
+#directory = sys.argv[1]
+directories = sys.argv[1:-1]
+dst = sys.argv[-1]
+samples = []
 
-with open("%s/progress.json" % directory) as f:
-	data = json.load(f)
+for directory in directories:
+	print("{}...".format(directory))
+	with open("%s/progress.json" % directory) as f:
+		data = json.load(f)
+	with open("%s/raw" % directory) as f:
+		s = create_samples(f, data["valid"])
+	samples.append(s)
 
-with open("%s/raw" % directory) as f:
-	samples = create_samples(f, data["valid"])
-
-with open("samples.npy", "wb") as f:
+samples = np.concatenate(samples)
+with open(dst, "wb") as f:
 	np.save(f, samples)
