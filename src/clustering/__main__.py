@@ -124,11 +124,7 @@ def print_summary(cluster_assignments, sample_assignments, k, samples):
 		print("   Objects: {}".format(cluster_assignments[label]))
 
 
-X_FEATURE = 0
-Y_FEATURE = 1
-Z_FEATURE = 2
-
-def plot(k, samples, x=X_FEATURE, y=Y_FEATURE, z=Z_FEATURE):
+def plot(k, samples, x=0, y=1, z=2):
 	import matplotlib.pyplot as plt
 	from mpl_toolkits.mplot3d import Axes3D
 	color = plt.cm.rainbow(np.linspace(0, 1, n_clusters))
@@ -157,17 +153,29 @@ def cluster(samples):
 	# Perform standard scaling, PCA to get the most variant features
 	#
 
-	X = samples[:, [1,2,3,5,6]]
+	X = samples[:, [1,2,4,7]]
+	#X = samples[:, 1:]
+
 	#X = StandardScaler().fit_transform(X)
+
 	pca = PCA(.9)
+	#pca = PCA(n_components=X.shape[1])
 	pca.fit(X)
 	X = pca.transform(X)
-
-	#print(pca.explained_variance_ratio_)
+	print(pca.explained_variance_ratio_)
 
 	k = skcluster.KMeans(init="random", n_clusters=n_clusters)
 	k.fit(X)
-	plot(k, X)
+
+	if len(pca.explained_variance_ratio_) >= 3:
+		variance = pca.explained_variance_ratio_
+		variance = sorted(variance, reverse=True)
+		variance = [np.where(pca.explained_variance_ratio_ == v) for v in variance[:3]]
+		plot(k, X, x=variance[0], y=variance[1], z=variance[2])
+	elif len(pca.explained_variance_ratio_) == 2:
+		pass
+	else:
+		pass
 
 	return k
 
