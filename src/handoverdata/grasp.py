@@ -46,3 +46,7 @@ class Grasp:
 		box = np.int0(box)
 		cv2.drawContours(im, [box], 0, color, thickness)
 		return im
+
+	@property
+	def center(self):
+		return (self.x, self.y)
