@@ -124,7 +124,7 @@ def print_summary(cluster_assignments, sample_assignments, k, samples):
 		print("   Objects: {}".format(cluster_assignments[label]))
 
 
-def plot(k, samples, x=0, y=1, z=2):
+def __plot__(k, samples, x=0, y=1, z=2):
 	import matplotlib.pyplot as plt
 	from mpl_toolkits.mplot3d import Axes3D
 	color = plt.cm.rainbow(np.linspace(0, 1, n_clusters))
@@ -138,7 +138,13 @@ def plot(k, samples, x=0, y=1, z=2):
 	plt.show()
 
 
-def cluster(samples):
+
+FEATURES = [1,4,7,11,12]
+PCA_COMPONENTS = 0.9
+#PCA_COMPONENTS = len(FEATURES)
+
+
+def __prepare__(X):
 	from sklearn.preprocessing import StandardScaler
 	from sklearn.decomposition import PCA
 
@@ -153,25 +159,34 @@ def cluster(samples):
 	# Perform standard scaling, PCA to get the most variant features
 	#
 
-	X = samples[:, [1,2,4,7]]
-	#X = samples[:, 1:]
-
-	#X = StandardScaler().fit_transform(X)
-
-	pca = PCA(.9)
-	#pca = PCA(n_components=X.shape[1])
-	pca.fit(X)
-	X = pca.transform(X)
+	X = X[:, FEATURES]
+	X = StandardScaler().fit_transform(X)
+	pca = PCA(PCA_COMPONENTS)
+	X = pca.fit_transform(X)
 	print(pca.explained_variance_ratio_)
+	return X
 
-	k = skcluster.KMeans(init="random", n_clusters=n_clusters)
+
+def __elbow_method__(X, ks):
+	import matplotlib.pyplot as plt
+	kmeans = [skcluster.KMeans(n_clusters=i) for i in ks]
+	score = [kmeans[i].fit(X).score(X) for i in range(len(kmeans))]
+	plt.plot(ks, score)
+	plt.show()
+
+
+def cluster(samples):
+	X = __prepare__(samples)
+	k = skcluster.KMeans(n_clusters=n_clusters)
 	k.fit(X)
+	return k
 
+	# TODO fix ploting
 	if len(pca.explained_variance_ratio_) >= 3:
 		variance = pca.explained_variance_ratio_
 		variance = sorted(variance, reverse=True)
 		variance = [np.where(pca.explained_variance_ratio_ == v) for v in variance[:3]]
-		plot(k, X, x=variance[0], y=variance[1], z=variance[2])
+		__plot__(k, X, x=variance[0], y=variance[1], z=variance[2])
 	elif len(pca.explained_variance_ratio_) == 2:
 		pass
 	else:
@@ -197,10 +212,13 @@ if "--visualize" in sys.argv:
 
 with open(samples_file, "rb") as f:
 	samples = np.load(f)
+	__elbow_method__(samples, range(2,10))
+
 	k = cluster(samples)
 	clusters, object_assignments = summarize(k, samples)
 	print_summary(clusters, object_assignments, k, samples)
-	#plot(k, samples)
+
+	#__plot__(k, samples)
 	#save(k, clusters, object_assignments)
 
 cv2.destroyAllWindows()
