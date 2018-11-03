@@ -33,45 +33,49 @@ def handover2sample(h):
 		8. Rotation of the grasp in z-axis
 		9. Width of grasp
 		10. Height of grasp
+		11. Direction(center_o, center_grasp)_x
+		12. Direction(center_o, center_grasp)_y
 
 	:param h: Handover object
 	:returns: list of features
 	"""
 	obj = objects[h.objectID]
-	v = np.array(h.grasp.center) - np.array(obj.center) # vector between centers
+	direction = np.array(h.grasp.center) - np.array(obj.center) # vector between centers
 
 	# distance between centers
-	d = np.linalg.norm(v)
+	distance = np.linalg.norm(direction)
 
 	# ratio of distance between center to diagonal of the object
-	dr = d / obj.diagonal
+	distance_ratio = distance / obj.diagonal
 
 	# direction from object center to grasp center (angle)
-	u = math.atan(v[0]/v[1])
-	if v[1] < 0:
-		u += math.pi / 2
-	u /= 2 * math.pi
+	direction /= distance
+	direction_angle = math.atan(direction[0]/direction[1])
+	direction_angle /= 2 * math.pi
 
 	# rotation of object in Z-axis
 	R = rotation_matrix(h.H)
-	z = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
-	z /= math.pi
+	obj_rot_z = math.atan2(R[1,0], R[0,0]) # rotation in Z-axis
+	obj_rot_z /= math.pi
 
 	# ratio between object area and grasp area
-	ar = h.grasp.area / obj.area
+	area_ratio = h.grasp.area / obj.area
 
 	sample = [
 			h.objectID,
-			z,
-			u,
-			d,
-			dr,
+			obj_rot_z,
+			direction_angle,
+			distance,
+			distance_ratio,
 			obj.area,
 			h.grasp.area,
-			ar,
+			area_ratio,
 			h.grasp.a,
 			h.grasp.w,
-			h.grasp.h]
+			h.grasp.h,
+			direction[0],
+			direction[1],
+			]
 	return sample
 
 
