@@ -1,16 +1,15 @@
-from sklearn import cluster as skcluster
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score, silhouette_samples
+
 import numpy as np
 import sys
 import cv2
-from handoverdata.object import load_objects_database
 import math
+import matplotlib.pyplot as plt
 
-
-N_FEATURES = 7
-
-samples_file = sys.argv[1]
-n_clusters = int(sys.argv[2])
-objects = load_objects_database("data/objects/objects.db")
+from handoverdata.object import load_objects_database
 
 
 def wait():
@@ -62,34 +61,6 @@ def display_object(oid, label, centroid):
 	cv2.imshow("opencv object centroid", im)
 
 
-def summarize(k, samples):
-	"""
-	Returns summary for the clustering in form of which objects were assigned to which cluster and how
-	many samples of each object were assigned to which cluster.
-	"""
-	cluster_assignments = dict()
-	sample_assignments = dict()
-
-	unique, counts = np.unique(samples[:, 0], return_counts=True)
-	sample_objects = dict(zip(unique, counts))
-	for oid in sample_objects:
-		# count the number of samples that belonged to each cluster for this object
-		sample_assignments[oid] = dict()
-		for i, s in enumerate(samples):
-			if s[0] == oid:
-				l = k.labels_[i]
-				if not l in sample_assignments[oid]:
-					sample_assignments[oid][l] = 0
-				sample_assignments[oid][l] += 1
-		largest_label = max(sample_assignments[oid], key=sample_assignments[oid].get)
-		# add the object to the cluster which it has most belonging samples to
-		if largest_label not in cluster_assignments:
-			cluster_assignments[largest_label] = []
-		cluster_assignments[largest_label].append(oid)
-
-	return cluster_assignments, sample_assignments
-
-
 # visualize the clustering
 FLAG_VISUALIZE = False
 
@@ -124,8 +95,7 @@ def print_summary(cluster_assignments, sample_assignments, k, samples):
 		print("   Objects: {}".format(cluster_assignments[label]))
 
 
-def __plot__(k, samples, x=0, y=1, z=2):
-	import matplotlib.pyplot as plt
+def __plot__(k, samples, n_clusters, x=0, y=1, z=2):
 	from mpl_toolkits.mplot3d import Axes3D
 	color = plt.cm.rainbow(np.linspace(0, 1, n_clusters))
 	fig = plt.figure()
@@ -135,67 +105,56 @@ def __plot__(k, samples, x=0, y=1, z=2):
 		ax.scatter(centroid[x], centroid[y], centroid[z], s=20, c='black')
 		s = np.array([samples[j] for j in range(len(k.labels_)) if k.labels_[j] == i])
 		ax.scatter(s[:, x], s[:, y], s[:, z], c=color[i])
-	plt.show()
 
 
 
-FEATURES = [1,4,7,11,12]
-PCA_COMPONENTS = 0.9
-#PCA_COMPONENTS = len(FEATURES)
+# -----------------------------------------------------------------------------------------------------
+# Here starts code that is used
+# The above will most likely be removed later
 
 
-def __prepare__(X):
-	from sklearn.preprocessing import StandardScaler
-	from sklearn.decomposition import PCA
+def summarize(k, samples):
+	"""
+	Returns summary for the clustering in form of which objects were assigned to which cluster and how
+	many samples of each object were assigned to which cluster.
+	"""
+	cluster_assignments = dict()
+	sample_assignments = dict()
 
-	#
-	# Cluster on:
-	#	- rotation of object
-	#	- direction from object center to grasp center
-	#	- distance ratio between diagonal of object and distance between centers
-	#	- ratio of object area and grasp area
-	#	- rotation of the grasp region
-	#
-	# Perform standard scaling, PCA to get the most variant features
-	#
+	unique, counts = np.unique(samples[:, 0], return_counts=True)
+	sample_objects = dict(zip(unique, counts))
+	for oid in sample_objects:
+		# count the number of samples that belonged to each cluster for this object
+		sample_assignments[oid] = dict()
+		for i, s in enumerate(samples):
+			if s[0] == oid:
+				l = k.labels_[i]
+				if not l in sample_assignments[oid]:
+					sample_assignments[oid][l] = 0
+				sample_assignments[oid][l] += 1
+		largest_label = max(sample_assignments[oid], key=sample_assignments[oid].get)
+		# add the object to the cluster which it has most belonging samples to
+		if largest_label not in cluster_assignments:
+			cluster_assignments[largest_label] = []
+		cluster_assignments[largest_label].append(oid)
 
-	X = X[:, FEATURES]
-	X = StandardScaler().fit_transform(X)
-	pca = PCA(PCA_COMPONENTS)
-	X = pca.fit_transform(X)
-	print(pca.explained_variance_ratio_)
-	return X
-
-
-def __elbow_method__(X, ks):
-	import matplotlib.pyplot as plt
-	kmeans = [skcluster.KMeans(n_clusters=i) for i in ks]
-	score = [kmeans[i].fit(X).score(X) for i in range(len(kmeans))]
-	plt.plot(ks, score)
-	plt.show()
+	return cluster_assignments, sample_assignments
 
 
-def cluster(samples):
-	X = __prepare__(samples)
-	k = skcluster.KMeans(n_clusters=n_clusters)
-	k.fit(X)
-	return k
-
-	# TODO fix ploting
-	if len(pca.explained_variance_ratio_) >= 3:
-		variance = pca.explained_variance_ratio_
-		variance = sorted(variance, reverse=True)
-		variance = [np.where(pca.explained_variance_ratio_ == v) for v in variance[:3]]
-		__plot__(k, X, x=variance[0], y=variance[1], z=variance[2])
-	elif len(pca.explained_variance_ratio_) == 2:
-		pass
-	else:
-		pass
-
-	return k
+def __store_dat__(filename, *args):
+	with open("results/clustering/{}".format(filename), "w") as f:
+		lines = []
+		for dataset in args:
+			for x in dataset:
+				if hasattr(x, "__iter__"):
+					lines.append("\t" + " ".join(map(str, x)))
+				else:
+					lines.append("\t" + str(x))
+			lines.append(""); lines.append("")
+		f.write("\n".join(lines[:-2]))
 
 
-def save(k, cluster_assignments, sample_assignments):
+def __store__(k, cluster_assignments, sample_assignments):
 	import pickle
 	import os
 	DIR = "data/clustering"
@@ -207,18 +166,92 @@ def save(k, cluster_assignments, sample_assignments):
 		pickle.dump(cluster_assignments, f, pickle.HIGHEST_PROTOCOL)
 
 
+def __print_pca_info__(pca):
+	print(" *** PCA FEATURES ***")
+	print(pca.components_)
+	print(pca.explained_variance_)
+	print(pca.explained_variance_ratio_)
+	print(pca.singular_values_)
+	print(pca.noise_variance_)
+	print()
+
+
+# -----------------------------------------------------------------------------------------------------
+# Start main script
+#
+
+# Cluster on:
+#	- rotation of object
+#	- distance ratio between diagonal of object and distance between centers
+#	- ratio of object area and grasp area
+#	- direction from object center to grasp center X-axis
+#	- direction from object center to grasp center Y-axis
+
+FEATURES = [1,4,7,11,12]
+PCA_COMPONENTS = 0.9
+#PCA_COMPONENTS = len(FEATURES)
+
+# parse command line arguments
+
+samples_file = sys.argv[1]
+n_clusters = int(sys.argv[2])
+objects = load_objects_database("data/objects/objects.db")
+
 if "--visualize" in sys.argv:
 	FLAG_VISUALIZE = True
 
 with open(samples_file, "rb") as f:
+	#
+	# Load samples, extract wanted features from the samples.
+	# Scale the features.
+	# PCA to get the most variant features.
+	# Transform the data to fit the scaling and PCA.
+	#
 	samples = np.load(f)
-	__elbow_method__(samples, range(2,10))
+	X = samples[:, FEATURES]
+	X = StandardScaler().fit_transform(X)
+	pca = PCA(PCA_COMPONENTS)
+	X = pca.fit_transform(X)
+	__print_pca_info__(pca)
 
-	k = cluster(samples)
-	clusters, object_assignments = summarize(k, samples)
-	print_summary(clusters, object_assignments, k, samples)
+	# compute variance per numbers of clusters
+	cs = range(2, n_clusters)
+	scores = np.zeros((len(cs), 2))
+	silhouette = np.zeros((len(cs), 2))
 
-	#__plot__(k, samples)
-	#save(k, clusters, object_assignments)
+	for i, n in enumerate(cs):
+		# cluster the samples
+		k = KMeans(n_clusters=n)
+		k.fit(X)
+
+		# compute total variance and average silhouette score
+		scores[i] = [n, k.score(X)]
+		silhouette[i] = [n, silhouette_score(X, k.labels_)]
+		print("Silhouette and cluster score for {} clusters: {:.4f}, {:.4f}".format(n, silhouette[i][1], scores[i][1]))
+
+		silhouette_sample_values = silhouette_samples(X, k.labels_)
+		silhouette_sample_values = [sorted(silhouette_sample_values[k.labels_ == c]) for c in range(n)]
+
+		# cluster data for plotting
+		#clusters = {l: [] for l in k.labels_}
+		#for i, label in enumerate(k.labels_):
+			#clusters[label].append(X[i,:])
+		clusters = [X[k.labels_ == c] for c in range(n)]
+
+		__store_dat__("silhouette_sample_values_{}.dat".format(n), *silhouette_sample_values)
+		__store_dat__("clusters_{}.dat".format(n), *clusters)
+		__store_dat__("centroids_{}.dat".format(n), *k.cluster_centers_)
+
+		# create object summaries of the data
+		clusters, object_assignments = summarize(k, samples)
+
+		#print_summary(clusters, object_assignments, k, samples)
+		#__plot__(k, samples, n)
+		#__store__(k, clusters, object_assignments)
+		#plt.show()
+
+	# store data for scores and silhouette coefficients
+	__store_dat__("scores.dat", scores)
+	__store_dat__("silhouette.dat", silhouette)
 
 cv2.destroyAllWindows()
