@@ -141,7 +141,7 @@ def summarize(k, samples):
 	return cluster_assignments, sample_assignments
 
 
-def __store_dat__(filename, *args):
+def store_dat(filename, *args):
 	with open("results/clustering/{}".format(filename), "w") as f:
 		lines = []
 		for dataset in args:
@@ -188,8 +188,7 @@ def __print_pca_info__(pca):
 #	- direction from object center to grasp center Y-axis
 
 FEATURES = [1,4,7,11,12]
-PCA_COMPONENTS = 0.9
-#PCA_COMPONENTS = len(FEATURES)
+PCA_COMPONENTS = .9
 
 # parse command line arguments
 
@@ -215,7 +214,7 @@ with open(samples_file, "rb") as f:
 	__print_pca_info__(pca)
 
 	# compute variance per numbers of clusters
-	cs = range(2, n_clusters)
+	cs = range(2, n_clusters+1)
 	scores = np.zeros((len(cs), 2))
 	silhouette = np.zeros((len(cs), 2))
 
@@ -225,33 +224,31 @@ with open(samples_file, "rb") as f:
 		k.fit(X)
 
 		# compute total variance and average silhouette score
-		scores[i] = [n, k.score(X)]
+		scores[i] = [n, k.inertia_]
 		silhouette[i] = [n, silhouette_score(X, k.labels_)]
-		print("Silhouette and cluster score for {} clusters: {:.4f}, {:.4f}".format(n, silhouette[i][1], scores[i][1]))
+		print(
+				"Silhouette and cluster score for {} clusters: {:.4f}, {:.4f}".format(
+					n,
+					silhouette[i][1],
+					scores[i][1]))
 
 		silhouette_sample_values = silhouette_samples(X, k.labels_)
 		silhouette_sample_values = [sorted(silhouette_sample_values[k.labels_ == c]) for c in range(n)]
 
 		# cluster data for plotting
-		#clusters = {l: [] for l in k.labels_}
-		#for i, label in enumerate(k.labels_):
-			#clusters[label].append(X[i,:])
 		clusters = [X[k.labels_ == c] for c in range(n)]
 
-		__store_dat__("silhouette_sample_values_{}.dat".format(n), *silhouette_sample_values)
-		__store_dat__("clusters_{}.dat".format(n), *clusters)
-		__store_dat__("centroids_{}.dat".format(n), *k.cluster_centers_)
+		store_dat("silhouette_sample_values_{}.dat".format(n), *silhouette_sample_values)
+		store_dat("clusters_{}.dat".format(n), *clusters)
+		store_dat("centroids_{}.dat".format(n), *k.cluster_centers_)
 
 		# create object summaries of the data
-		clusters, object_assignments = summarize(k, samples)
-
-		#print_summary(clusters, object_assignments, k, samples)
-		#__plot__(k, samples, n)
-		#__store__(k, clusters, object_assignments)
-		#plt.show()
+		cluster_assignments, sample_assignments = summarize(k, samples)
+		np.save("results/clustering/object-cluster-assignments_{}.npy".format(n), cluster_assignments)
+		np.save("results/clustering/object-sample-assignments_{}.npy".format(n), sample_assignments)
 
 	# store data for scores and silhouette coefficients
-	__store_dat__("scores.dat", scores)
-	__store_dat__("silhouette.dat", silhouette)
+	store_dat("scores.dat", scores)
+	store_dat("silhouette.dat", silhouette)
 
 cv2.destroyAllWindows()

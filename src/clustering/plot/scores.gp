@@ -1,3 +1,4 @@
+set autoscale
 set style data linespoints
 #set pointtype 7 pointsize 1.5
 
