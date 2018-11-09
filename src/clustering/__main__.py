@@ -8,6 +8,8 @@ import sys
 import cv2
 import math
 import matplotlib.pyplot as plt
+import pickle
+import os
 
 from handoverdata.object import load_objects_database
 
@@ -141,8 +143,11 @@ def summarize(k, samples):
 	return cluster_assignments, sample_assignments
 
 
+# directory where to save the results
+DIR = "results/clustering"
+
 def store_dat(filename, *args):
-	with open("results/clustering/{}".format(filename), "w") as f:
+	with open(os.path.join(DIR, filename), "w") as f:
 		lines = []
 		for dataset in args:
 			for x in dataset:
@@ -152,18 +157,6 @@ def store_dat(filename, *args):
 					lines.append("\t" + str(x))
 			lines.append(""); lines.append("")
 		f.write("\n".join(lines[:-2]))
-
-
-def __store__(k, cluster_assignments, sample_assignments):
-	import pickle
-	import os
-	DIR = "data/clustering"
-	with open(os.path.join(DIR, "centroids.npy"), "wb") as f:
-		np.save(f, k.cluster_centers_)
-	with open(os.path.join(DIR, "labels.npy"), "wb") as f:
-		np.save(f, k.labels_)
-	with open(os.path.join(DIR, "clusters.pkl"), "wb") as f:
-		pickle.dump(cluster_assignments, f, pickle.HIGHEST_PROTOCOL)
 
 
 def __print_pca_info__(pca):
@@ -180,24 +173,25 @@ def __print_pca_info__(pca):
 # Start main script
 #
 
+#
 # Cluster on:
 #	- rotation of object
 #	- distance ratio between diagonal of object and distance between centers
 #	- ratio of object area and grasp area
 #	- direction from object center to grasp center X-axis
 #	- direction from object center to grasp center Y-axis
+#
+# Perform PCA to project the data on to 3 components
+#
 
 FEATURES = [1,4,7,11,12]
-PCA_COMPONENTS = .9
+PCA_COMPONENTS = 3
 
 # parse command line arguments
 
 samples_file = sys.argv[1]
 n_clusters = int(sys.argv[2])
 objects = load_objects_database("data/objects/objects.db")
-
-if "--visualize" in sys.argv:
-	FLAG_VISUALIZE = True
 
 with open(samples_file, "rb") as f:
 	#
@@ -226,26 +220,31 @@ with open(samples_file, "rb") as f:
 		# compute total variance and average silhouette score
 		scores[i] = [n, k.inertia_]
 		silhouette[i] = [n, silhouette_score(X, k.labels_)]
+		silhouette_sample_values = silhouette_samples(X, k.labels_)
+		silhouette_sample_values = [sorted(silhouette_sample_values[k.labels_ == c]) for c in range(n)]
+
+		# sample cluster data for plotting
+		clusters = [X[k.labels_ == c] for c in range(n)]
+
+		# create object summaries of the data
+		cluster_assignments, sample_assignments = summarize(k, samples)
+
+		# store results
+		store_dat("silhouette_sample_values_{}.dat".format(n), *silhouette_sample_values)
+		store_dat("clusters_{}.dat".format(n), *clusters)
+		store_dat(
+				"centroids_{}.dat".format(n),
+				*k.cluster_centers_.reshape((k.cluster_centers_.shape[0], 1, k.cluster_centers_.shape[1])))
+		with open(os.path.join(DIR, "object-cluster-assignments_{}.pkl".format(n)), "wb") as f:
+			pickle.dump(cluster_assignments, f)
+		with open(os.path.join(DIR, "object-sample-assignments_{}.pkl".format(n)), "wb") as f:
+			pickle.dump(sample_assignments, f)
+
 		print(
 				"Silhouette and cluster score for {} clusters: {:.4f}, {:.4f}".format(
 					n,
 					silhouette[i][1],
 					scores[i][1]))
-
-		silhouette_sample_values = silhouette_samples(X, k.labels_)
-		silhouette_sample_values = [sorted(silhouette_sample_values[k.labels_ == c]) for c in range(n)]
-
-		# cluster data for plotting
-		clusters = [X[k.labels_ == c] for c in range(n)]
-
-		store_dat("silhouette_sample_values_{}.dat".format(n), *silhouette_sample_values)
-		store_dat("clusters_{}.dat".format(n), *clusters)
-		store_dat("centroids_{}.dat".format(n), *k.cluster_centers_)
-
-		# create object summaries of the data
-		cluster_assignments, sample_assignments = summarize(k, samples)
-		np.save("results/clustering/object-cluster-assignments_{}.npy".format(n), cluster_assignments)
-		np.save("results/clustering/object-sample-assignments_{}.npy".format(n), sample_assignments)
 
 	# store data for scores and silhouette coefficients
 	store_dat("scores.dat", scores)
