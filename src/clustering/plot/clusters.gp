@@ -3,9 +3,12 @@ set view 60,80
 set autoscale
 #set parametric
 
+clusterfile = 'results/clustering/clusters_'
+centroidsfile = 'results/clustering/centroids_'
+
 clusters = ARG1
 centroids = ARG2
-stats clusters
+stats clusters nooutput
 
 set multiplot layout 1,2 rowsfirst
 

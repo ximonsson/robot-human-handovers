@@ -1,13 +1,15 @@
 set autoscale
 set style data linespoints
-#set pointtype 7 pointsize 1.5
+set style line 1 pt 7 ps 1.5
 
 set multiplot layout 1,2 rowsfirst
 
-#set label "Opposite of the value of X on the K-means objective"
-plot "results/clustering/scores.dat" notitle
+set xlabel "Number of clusters"
 
-#set label "Mean silhouette coefficient"
-plot "results/clustering/silhouette.dat" notitle
+set ylabel "Sum of squared distances of samples to their closests cluster center"
+plot "results/clustering/scores.dat" w linespoints ls 1 notitle
+
+set ylabel "Mean silhouette coefficient"
+plot "results/clustering/silhouette.dat" w linespoints ls 1 notitle
 
 unset multiplot
