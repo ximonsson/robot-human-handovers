@@ -1,6 +1,8 @@
+reset
 set autoscale
 set style data linespoints
 set style line 1 pt 7 ps 1.5
+set grid
 
 set multiplot layout 1,2 rowsfirst
 
