@@ -1,3 +1,4 @@
+reset
 set nohidden3d
 set view 60,80
 set autoscale
