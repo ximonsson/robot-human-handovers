@@ -221,7 +221,8 @@ with open(samples_file, "rb") as f:
 		scores[i] = [n, k.inertia_]
 		silhouette[i] = [n, silhouette_score(X, k.labels_)]
 		silhouette_sample_values = silhouette_samples(X, k.labels_)
-		silhouette_sample_values = [sorted(silhouette_sample_values[k.labels_ == c]) for c in range(n)]
+		silhouette_sample_values = \
+				[sorted(silhouette_sample_values[k.labels_ == c], reverse=True) for c in range(n)]
 
 		# sample cluster data for plotting
 		clusters = [X[k.labels_ == c] for c in range(n)]
