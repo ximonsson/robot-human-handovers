@@ -36,25 +36,23 @@ obj_name2id = {
 		"tube":        18,
 
 		# test objects
-		"new-bottle":      100,
-		"new-can":         101,
-		"new-cheeseknife": 102,
+		"new-beerglass":   100,
+		"new-bottle":      101,
+		"new-carrafe":     102,
 		"new-cup":         103,
 		"new-fork":        104,
 		"new-glass":       105,
-		"new-jar":         106,
-		"new-knive":       107,
-		"new-pliers":      108,
-		"new-scissors":    109,
-		"new-screwdriver": 110,
-		"new-spoon":       111,
-		"new-wineglass":   112,
-		"new-bottle2":     113,
+		"new-knife":       106,
+		"new-scissors":    107,
+		"new-spatula":     108,
+		"new-spoon":       109,
+		"new-wineglass":   110,
+		"new-woodenspoon": 111,
 		}
 
 
-with open("data/classification/classes.pkl", "rb") as f:
-	clusters = pickle.load(f)
+#with open("data/classification/classes.pkl", "rb") as f:
+	#clusters = pickle.load(f)
 
 
 def	object_cluster(oid):
@@ -108,7 +106,7 @@ def augment_directory(src, dst, n=10, r=20):
 		merged = replace_with_depth(im, os.path.join(dir_depth, filename))
 		out = augment_image(merged, n=n, r=r)
 		for i, image in enumerate(out):
-			filename = "{}_{}_{}_{}.npy".format(obj, oid, total, object_cluster(oid))
+			filename = "{}_{}_{}.npy".format(obj, oid, total)
 			outfile = os.path.join(dst, filename)
 			np.save(outfile, image)
 			total += 1
