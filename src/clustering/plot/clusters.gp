@@ -1,4 +1,6 @@
 reset
+
+set output outputfile
 set nohidden3d
 set view 60,80
 set autoscale
@@ -7,8 +9,8 @@ set autoscale
 clusterfile = 'results/clustering/clusters_'
 centroidsfile = 'results/clustering/centroids_'
 
-clusters = ARG1
-centroids = ARG2
+clusters = clusterfile.ARG1.".dat"
+centroids = centroidsfile.ARG1.".dat"
 stats clusters nooutput
 
 set multiplot layout 1,2 rowsfirst

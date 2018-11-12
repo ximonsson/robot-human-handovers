@@ -3,17 +3,56 @@ TEX=pdflatex
 BIBTEX=biber
 OUT=build/tex
 BCF=$(OUT)/$(DOC).bcf
+GNUPLOT=gnuplot
+
+GNUPLOTSRC=clusters.gp scores.gp samples_silhouette_score.gp
+GNUTERM=epslatex
+
+TEXFLAGS=-output-directory=$(OUT) \
+		 -shell-escape
 
 
-all: bib pdf
+all: ref pdf
 
-pdf:
+
+pdf: plot
 	@mkdir -p $(OUT)
-	$(TEX) -output-directory=$(OUT) $(DOC)
+	$(TEX) $(TEXFLAGS) $(DOC)
 
-bib:
+
+ref:
 	$(BIBTEX) --output-directory=$(OUT) $(DOC)
 
+
+# plots
+plot: plot_clusters plot_scores plot_silhouette
+
+
+plot_clusters: tex/plot_clusters.tex
+
+tex/plot_clusters.tex: src/clustering/plot/clusters.gp
+	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< 6
+
+
+plot_scores: tex/plot_scores.tex
+
+tex/plot_scores.tex: src/clustering/plot/scores.gp
+	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $<
+
+
+plot_silhouette: tex/plot_silhouette_5.tex tex/plot_silhouette_6.tex tex/plot_silhouette_7.tex
+
+tex/plot_silhouette_5.tex: src/clustering/plot/samples_silhouette_score.gp
+	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< results/clustering/silhouette_sample_values_5.dat
+
+tex/plot_silhouette_6.tex: src/clustering/plot/samples_silhouette_score.gp
+	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< results/clustering/silhouette_sample_values_6.dat
+
+tex/plot_silhouette_7.tex: src/clustering/plot/samples_silhouette_score.gp
+	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< results/clustering/silhouette_sample_values_7.dat
+
+
+# images
 imgs: method_imgs result_imgs
 
 method_imgs:
