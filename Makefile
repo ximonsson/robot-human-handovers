@@ -1,7 +1,7 @@
 DOC=thesis
 TEX=pdflatex
 BIBTEX=biber
-OUT=out
+OUT=build/tex
 BCF=$(OUT)/$(DOC).bcf
 
 
