@@ -69,6 +69,9 @@ class Object:
 			if self.ID in objects:
 				self.cl = c
 
+	def __str__(self):
+		return "[{}] {} ({})".format(self.ID, self.name, self.cl)
+
 
 __training_objects__ = [
 		#"ball",
