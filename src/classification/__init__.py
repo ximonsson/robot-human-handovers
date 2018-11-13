@@ -58,7 +58,6 @@ __obj_name2id__ = {
 __CLASS_ASSIGNMENT_FP__ = "data/classification/classes.pkl"
 
 with open(__CLASS_ASSIGNMENT_FP__, "rb") as f:
-	print("loading cluster assignment database")
 	__class_assignments__ = pickle.load(f)
 
 

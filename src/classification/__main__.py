@@ -75,18 +75,16 @@ with tf.name_scope("testing"):
 	classifier = tf.nn.softmax(net) # for testing output
 	test = tf.equal(tf.argmax(classifier, 1), tf.argmax(y, 1))
 	test_accuracy = tf.reduce_mean(tf.cast(test, tf.float32))
-#tf.summary.scalar("test_accuracy", test_accuracy)
 
 # Setup logging
 
-tf.summary.scalar("cross_entropy", loss)
-tf.summary.scalar("accuracy", accuracy)
-summary_op = tf.summary.merge_all()
-
 LOGDIR = "results/classification/"
-LOGDIR_SUFFIX = find_arg("logdir-suffix", "")
-LOGDIR_TRAIN = "{}/train{}".format(LOGDIR, LOGDIR_SUFFIX)
-LOGDIR_VALIDATION = "{}/validation{}".format(LOGDIR, LOGDIR_SUFFIX)
+LOGDIR_SUFFIX = find_arg("logdir-suffix", "") # TODO use this
+
+summary_loss = []
+summary_train_acc = [] # TODO
+summary_test_acc = []
+summary_val_acc = []
 
 # Prepare data for training, validation and testing.
 #	Training and validation sets share objects but have their images split between them.
@@ -102,15 +100,8 @@ INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 training_sets = datasets(DATA_TRAIN, TRAIN_OBJECTS, K)
 test_data = datasets(DATA_TEST, TEST_OBJECTS, 1)[0]
 
-print("Training on {}".format(TRAIN_OBJECTS))
-print("Testing on {}".format(TEST_OBJECTS))
-
 
 with tf.Session() as s:
-	# create writers for summary
-	train_writer = tf.summary.FileWriter(LOGDIR_TRAIN, s.graph)
-	validation_writer = tf.summary.FileWriter(LOGDIR_VALIDATION)
-
 	# initialize and load weights
 	s.run(tf.global_variables_initializer())
 	alexnet.load_weights("data/classification/weights/bvlc_alexnet.npy", s, train_layers)
@@ -139,8 +130,10 @@ with tf.Session() as s:
 			print("Training...", end="", flush=True)
 			for batch, X, Y in batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 				s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})
-				summary = s.run(summary_op, feed_dict={x: X, y: Y, keep_prob: 1.0})
-				train_writer.add_summary(summary, step)
+
+				loss_ = s.run(loss, feed_dict={x: X, y: Y, keep_prob: 1.0})
+				summary_loss.append(loss_)
+
 				print_step("{:15} {}", "Training:", progressbar(batch+1, n_train_batches_per_epoch))
 				step += 1
 
@@ -155,9 +148,7 @@ with tf.Session() as s:
 						"Validating:",
 						progressbar(b, n_validation_batches_per_epoch),
 						acc/b*100)
-			summary_val_acc = tf.Summary()
-			summary_val_acc.value.add(tag="validation_accuracy", simple_value=acc/b*100)
-			validation_writer.add_summary(summary_val_acc, step)
+			summary_val_acc.append(acc/b*100)
 
 			# check test accuracy
 			print("\nTesting...", end="", flush=True)
@@ -171,11 +162,27 @@ with tf.Session() as s:
 						progressbar(b, int(len(test_data)/BATCH_SIZE)),
 						acc/b*100)
 			print()
+			summary_test_acc.append(acc/b*100)
 
 	# check accuracy of each object
-	for o in test_objects:
+	for o in TEST_OBJECTS:
 		test_data = datasets(DATA_TEST, [o], 1)[0]
 		acc = 0
 		for batch, X, Y, in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 			acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
 		print(" '{}': {:.4f}%".format(o, acc/(batch+1)*100))
+
+
+# store data files over the progress
+
+with open(os.path.join(LOGDIR, "loss.dat"), "w") as f:
+	for v in summary_loss:
+		f.write("\t{}\n".format(v))
+
+with open(os.path.join(LOGDIR, "acc_val.dat"), "w") as f:
+	for v in summary_val_acc:
+		f.write("\t{}\n".format(v))
+
+with open(os.path.join(LOGDIR, "acc_test.dat"), "w") as f:
+	for v in summary_test_acc:
+		f.write("\t{}\n".format(v))
