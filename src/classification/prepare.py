@@ -9,60 +9,12 @@ Description:
 """
 from classification.data import augment_image, replace_with_depth
 from classification.utils import find_arg
+from classification import obj_name2id
 import sys
 import cv2
 import numpy as np
 import os
 import pickle
-
-
-obj_name2id = {
-		# training objects
-		"ball":        None,
-		"bottle":      21,
-		"box":         16,
-		"brush":       22,
-		"can":         15,
-		"cutters":     17,
-		"glass":       20,
-		"hammer":       2,
-		"knife":       12,
-		"cup":         23,
-		"pen":          3,
-		"pitcher":     19,
-		"scalpel":      4,
-		"scissors":     5,
-		"screwdriver": 14,
-		"tube":        18,
-
-		# test objects
-		"new-beerglass":   100,
-		"new-bottle":      101,
-		"new-carrafe":     102,
-		"new-cup":         103,
-		"new-fork":        104,
-		"new-glass":       105,
-		"new-knife":       106,
-		"new-scissors":    107,
-		"new-spatula":     108,
-		"new-spoon":       109,
-		"new-wineglass":   110,
-		"new-woodenspoon": 111,
-		}
-
-
-#with open("data/classification/classes.pkl", "rb") as f:
-	#clusters = pickle.load(f)
-
-
-def	object_cluster(oid):
-	"""
-	Return which cluster an object belongs to.
-	"""
-	for label in clusters:
-		if oid in clusters[label]:
-			return label
-	return None
 
 
 def augment_directory(src, dst, n=10, r=20):

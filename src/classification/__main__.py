@@ -26,6 +26,7 @@ from datetime import datetime
 import classification.alexnet as alexnet
 from .data import datasets, batches
 from .utils import progressbar, print_step, find_arg
+from classification import TEST_OBJECTS, TRAIN_OBJECTS
 
 
 # Create network
@@ -96,48 +97,13 @@ DATA_TEST = find_arg("test-data", "data/classification/images-test/")
 INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 
 # load dataset
-training_objects = [
-		#"ball",
-		"bottle",
-		"box",
-		"cutters",
-		"glass",
-		"knife",
-		"scissors",
-		"brush",
-		"scalpel",
-		"can",
-		"screwdriver",
-		"pitcher",
-		"hammer",
-		"pen",
-		"cup",
-		#"tube",
-		]
-
-test_objects = [
-		"new-bottle",
-		"new-can",
-		"new-cheeseknife",
-		"new-cup",
-		"new-fork",
-		"new-glass",
-		"new-jar",
-		"new-knive",
-		"new-pliers",
-		"new-scissors",
-		"new-screwdriver",
-		"new-spoon",
-		"new-wineglass",
-		"new-bottle2",
-		]
 
 # split dataset
-training_sets = datasets(DATA_TRAIN, training_objects, K)
-test_data = datasets(DATA_TEST, test_objects, 1)[0]
+training_sets = datasets(DATA_TRAIN, TRAIN_OBJECTS, K)
+test_data = datasets(DATA_TEST, TEST_OBJECTS, 1)[0]
 
-print("Training on {}".format(training_objects))
-print("Testing on {}".format(test_objects))
+print("Training on {}".format(TRAIN_OBJECTS))
+print("Testing on {}".format(TEST_OBJECTS))
 
 
 with tf.Session() as s:

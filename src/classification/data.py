@@ -1,8 +1,9 @@
 """
 File: data.py
 Description:
-	Functions for manipulating and augmenting data in need to train for object classification
-	by handover type.
+	Functions for manipulating and augmenting data in need to train for object classification by handover type.
+	Also functions for load batches used for feeding a network during training and testing as well as
+	split data into balanced datasets.
 """
 import cv2
 import struct
@@ -11,7 +12,7 @@ from math import ceil
 import classification.alexnet as alexnet
 import random
 import os
-
+from classification import Object
 
 
 def __crop__(im, center, radius, size):
@@ -109,7 +110,7 @@ def datasets(src, objects, k=1):
 	according to ratio.
 
 	:param src: string - filepath to source directory with data
-	:param objects: array - list of names of objects that we want included in the dataset
+	:param objects: array - list of objects that we want included in the dataset
 	:param k: integer - number of datasets to create.
 	:returns: array of arrays - k arrays with balanced datasets.
 	"""
@@ -124,7 +125,7 @@ def datasets(src, objects, k=1):
 
 	datafiles = os.listdir(src)
 
-	object_files = {o: [f for f in datafiles if f.startswith(o)] for o in objects}
+	object_files = {o: [f for f in datafiles if f.startswith(o.name)] for o in objects}
 	n = min(map(len, object_files.values()))
 	object_files = {o: files[:n] for o, files in object_files.items()}
 
@@ -157,7 +158,8 @@ def batches(data, size, imdim, outputs):
 		y = np.zeros((size, outputs))
 		for j in range(size):
 			name, _ = os.path.splitext(os.path.basename(data[i]))
-			cluster = np.int(name.split("_")[-1])
+			name = name.split("_")[0]
+			cl = Object(name).cl
 			x[j] = np.load(data[i])
 
 			# change base to [0, 255], RGB -> BGR, and scale to imagenet mean
@@ -165,6 +167,6 @@ def batches(data, size, imdim, outputs):
 			x[:, :, 0], x[:, :, 2] = x[:, :, 2], x[:, :, 0]
 			x[j] -= np.array([104., 117, 124.], dtype=np.float32)
 
-			y[j][cluster] = 1
+			y[j][cl] = 1
 			i += 1
 		yield b, x, y
