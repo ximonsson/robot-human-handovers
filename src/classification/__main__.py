@@ -75,6 +75,7 @@ with tf.name_scope("testing"):
 	classifier = tf.nn.softmax(net) # for testing output
 	test = tf.equal(tf.argmax(classifier, 1), tf.argmax(y, 1))
 	test_accuracy = tf.reduce_mean(tf.cast(test, tf.float32))
+	confusion_matrix = tf.confusion_matrix(tf.argmax(y, 1), tf.argmax(classifier, 1), num_classes=OUTPUTS)
 
 # Setup logging
 
@@ -130,25 +131,29 @@ with tf.Session() as s:
 			print("Training...", end="", flush=True)
 			for batch, X, Y in batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 				s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})
-
 				loss_ = s.run(loss, feed_dict={x: X, y: Y, keep_prob: 1.0})
-				summary_loss.append(loss_)
-
-				print_step("{:15} {}", "Training:", progressbar(batch+1, n_train_batches_per_epoch))
 				step += 1
 
-			# validate and write summary of the accuracy
-			acc = 0
-			print("\nValidating...", end="", flush=True)
-			for batch, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-				b = batch + 1
-				acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+				# validate and write summary of the accuracy
+				acc = 0
+				#print("\nValidating...", end="", flush=True)
+				for batch, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+					b = batch + 1
+					acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+					#print_step(
+							#"{:15} {} => Accuracy {:.4f}%",
+							#"Validating:",
+							#progressbar(b, n_validation_batches_per_epoch),
+							#acc/b*100)
+
+				summary_loss.append(loss_)
+				summary_val_acc.append(acc/b*100)
 				print_step(
-						"{:15} {} => Accuracy {:.4f}%",
-						"Validating:",
-						progressbar(b, n_validation_batches_per_epoch),
+						"{:15} {} Loss: {:.4f}, Val accuracy: {:4.f}",
+						"Training:",
+						progressbar(batch+1, n_train_batches_per_epoch),
+						loss_,
 						acc/b*100)
-			summary_val_acc.append(acc/b*100)
 
 			# check test accuracy
 			print("\nTesting...", end="", flush=True)
@@ -163,6 +168,11 @@ with tf.Session() as s:
 						acc/b*100)
 			print()
 			summary_test_acc.append(acc/b*100)
+
+	# create confusion matrix
+	cm = np.zeros((OUTPUTS, OUTPUTS), dtype=np.int32)
+	for batch, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+		cm += s.run(confusion_matrix, feed_dict={x: X, y: Y, keep_prob: 1.0})
 
 	# check accuracy of each object
 	for o in TEST_OBJECTS:
@@ -186,3 +196,7 @@ with open(os.path.join(LOGDIR, "acc_val.dat"), "w") as f:
 with open(os.path.join(LOGDIR, "acc_test.dat"), "w") as f:
 	for v in summary_test_acc:
 		f.write("\t{}\n".format(v))
+
+with open(os.path.join(LOGDIR, "confusion_matrix.dat"), "w") as f:
+	for row in cm:
+		f.write("\t{}\n".format(" ".join(row)))
