@@ -79,8 +79,10 @@ with tf.name_scope("testing"):
 
 # Setup logging
 
-LOGDIR = "results/classification/"
+LOGDIR = "{}/LR-{}_EP-{}_BS-{}".format("results/classification/", LEARNING_RATE, EPOCHS, BATCH_SIZE)
 LOGDIR_SUFFIX = find_arg("logdir-suffix", "") # TODO use this
+if LOGDIR_SUFFIX != "":
+	LOGDIR = "{}_{}".format(LOGDIR, LOGDIR_SUFFIX)
 
 summary_loss = []
 summary_train_acc = [] # TODO
