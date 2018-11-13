@@ -175,12 +175,14 @@ with tf.Session() as s:
 		cm += s.run(confusion_matrix, feed_dict={x: X, y: Y, keep_prob: 1.0})
 
 	# check accuracy of each object
+	object_accuracy = [[o.name for o in TEST_OBJECTS], []]
 	for o in TEST_OBJECTS:
 		test_data = datasets(DATA_TEST, [o], 1)[0]
 		acc = 0
 		for batch, X, Y, in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 			acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
 		print(" '{}': {:.4f}%".format(o, acc/(batch+1)*100))
+		object_accuracy[1].append(acc/(batch+1)*100)
 
 
 # store data files over the progress
@@ -200,3 +202,7 @@ with open(os.path.join(LOGDIR, "acc_test.dat"), "w") as f:
 with open(os.path.join(LOGDIR, "confusion_matrix.dat"), "w") as f:
 	for row in cm:
 		f.write("\t{}\n".format(" ".join(row)))
+
+with open(os.path.join(LOGDIR, "acc_object.dat"), "w") as f:
+	f.write("\t{}\n".format(" ".join(object_accuracy[0])))
+	f.write("\t{}\n".format(" ".join(map(str, object_accuracy[1]))))
