@@ -79,13 +79,16 @@ with tf.name_scope("testing"):
 
 # Setup logging
 
-LOGDIR = "{}/LR-{}_EP-{}_BS-{}".format("results/classification/", LEARNING_RATE, EPOCHS, BATCH_SIZE)
-LOGDIR_SUFFIX = find_arg("logdir-suffix", "") # TODO use this
+LOGDIR = "{}/LR-{}__EP-{}__BS-{}__K-{}".format(
+		"results/classification/", LEARNING_RATE, EPOCHS, BATCH_SIZE, K)
+LOGDIR_SUFFIX = find_arg("logdir-suffix", "")
 if LOGDIR_SUFFIX != "":
 	LOGDIR = "{}_{}".format(LOGDIR, LOGDIR_SUFFIX)
 
+if not os.path.exists(LOGDIR): # make sure it exists
+	os.mkdir(LOGDIR)
+
 summary_loss = []
-summary_train_acc = [] # TODO
 summary_test_acc = []
 summary_val_acc = []
 
@@ -103,6 +106,7 @@ INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 training_sets = datasets(DATA_TRAIN, TRAIN_OBJECTS, K)
 test_data = datasets(DATA_TEST, TEST_OBJECTS, 1)[0]
 
+VISUALIZATION_STEP = 10
 
 with tf.Session() as s:
 	# initialize and load weights
@@ -134,42 +138,32 @@ with tf.Session() as s:
 			for batch, X, Y in batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 				s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})
 				loss_ = s.run(loss, feed_dict={x: X, y: Y, keep_prob: 1.0})
-				step += 1
-
-				# validate and write summary of the accuracy
-				acc = 0
-				#print("\nValidating...", end="", flush=True)
-				for batch, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-					b = batch + 1
-					acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
-					#print_step(
-							#"{:15} {} => Accuracy {:.4f}%",
-							#"Validating:",
-							#progressbar(b, n_validation_batches_per_epoch),
-							#acc/b*100)
-
 				summary_loss.append(loss_)
-				summary_val_acc.append(acc/b*100)
+
+				if step % VISUALIZATION_STEP == 0 or step == n_train_batches_per_epoch - 1:
+					# validate and write summary of the accuracy
+					val_acc = 0
+					for b, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+						val_acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+					val_acc /= (b + 1)
+					summary_val_acc.append(val_acc)
+
+					# check test accuracy
+					test_acc = 0
+					for b, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+						test_acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+					test_acc /= (b + 1)
+					summary_test_acc.append(test_acc)
+
+				step += 1
 				print_step(
-						"{:15} {} Loss: {:.4f}, Val accuracy: {:4.f}",
+						"{:10} {}, Loss: {:.4f}, Val: {:.2f}%, Test: {:.2f}%",
 						"Training:",
 						progressbar(batch+1, n_train_batches_per_epoch),
 						loss_,
-						acc/b*100)
-
-			# check test accuracy
-			print("\nTesting...", end="", flush=True)
-			acc = 0
-			for batch, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-				b = batch+1
-				acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
-				print_step(
-						"{:15} {} => Accuracy {:.4f}%",
-						"Testing:",
-						progressbar(b, int(len(test_data)/BATCH_SIZE)),
-						acc/b*100)
+						val_acc * 100,
+						test_acc * 100)
 			print()
-			summary_test_acc.append(acc/b*100)
 
 	# create confusion matrix
 	cm = np.zeros((OUTPUTS, OUTPUTS), dtype=np.int32)

@@ -20,7 +20,7 @@ def progressbar(done, total, length=30):
 		bar += "#"
 	for _ in range(length-int(length * progress)):
 		bar += "-"
-	return "[{}] {}% Done".format(bar, int(progress * 100))
+	return "[{}] {}%".format(bar, int(progress * 100))
 
 
 def print_step(msg, *args):
