@@ -171,7 +171,6 @@ with tf.Session() as s:
 		cm += s.run(confusion_matrix, feed_dict={x: X, y: Y, keep_prob: 1.0})
 
 	# check accuracy of each object
-	# TODO keep track of images that are incorrectly predicted
 	object_accuracy = [[o.name for o in TEST_OBJECTS], []]
 	bad_images = []
 	for o in TEST_OBJECTS:
