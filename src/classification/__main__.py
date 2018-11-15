@@ -88,6 +88,8 @@ if LOGDIR_SUFFIX != "":
 if not os.path.exists(LOGDIR): # make sure it exists
 	os.mkdir(LOGDIR)
 
+VISUALIZATION_STEP = 10
+
 summary_loss = []
 summary_test_acc = []
 summary_val_acc = []
@@ -105,8 +107,6 @@ INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 # split dataset
 training_sets = datasets(DATA_TRAIN, TRAIN_OBJECTS, K)
 test_data = datasets(DATA_TEST, TEST_OBJECTS, 1)[0]
-
-VISUALIZATION_STEP = 10
 
 with tf.Session() as s:
 	# initialize and load weights
@@ -171,12 +171,19 @@ with tf.Session() as s:
 		cm += s.run(confusion_matrix, feed_dict={x: X, y: Y, keep_prob: 1.0})
 
 	# check accuracy of each object
+	# TODO keep track of images that are incorrectly predicted
 	object_accuracy = [[o.name for o in TEST_OBJECTS], []]
+	bad_images = []
 	for o in TEST_OBJECTS:
 		test_data = datasets(DATA_TEST, [o], 1)[0]
 		acc = 0
-		for batch, X, Y, in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+		bs = 1
+
+		for batch, X, Y, in batches(test_data, bs, INPUT_DIMENSIONS, OUTPUTS):
 			acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+			predictions = s.run(test, feed_dict={x: X, y: Y, keep_prob: 1.0})
+			bad_images += [test_data[batch * bs + i] for i, pred in enumerate(predictions) if not pred]
+
 		print(" '{}': {:.4f}%".format(o, acc/(batch+1)*100))
 		object_accuracy[1].append(acc/(batch+1)*100)
 
@@ -197,8 +204,12 @@ with open(os.path.join(LOGDIR, "acc_test.dat"), "w") as f:
 
 with open(os.path.join(LOGDIR, "confusion_matrix.dat"), "w") as f:
 	for row in cm:
-		f.write("\t{}\n".format(" ".join(row)))
+		f.write("\t{}\n".format(" ".join(map(str, row))))
 
 with open(os.path.join(LOGDIR, "acc_object.dat"), "w") as f:
 	f.write("\t{}\n".format(" ".join(object_accuracy[0])))
 	f.write("\t{}\n".format(" ".join(map(str, object_accuracy[1]))))
+
+with open(os.path.join(LOGDIR, "bad_images.dat"), "w") as f:
+	for im in bad_images:
+		f.write("\t{}\n".format(im))
