@@ -12,7 +12,7 @@ from math import ceil
 import classification.alexnet as alexnet
 import random
 import os
-from classification import Object
+from classification import Object, __class_assignments__
 
 
 def __crop__(im, center, radius, size):
@@ -125,16 +125,24 @@ def datasets(src, objects, k=1):
 
 	datafiles = os.listdir(src)
 
-	object_files = {o: [f for f in datafiles if f.startswith(o.name)] for o in objects}
+	object_files = {o.ID: [f for f in datafiles if f.startswith(o.name)] for o in objects}
 	n = min(map(len, object_files.values()))
 	object_files = {o: files[:n] for o, files in object_files.items()}
+
+	# divide into datasets per class and balance between them before returning
+	# them divided into k different ones
+
+	class_files = {c: sum([object_files[oID] for oID in o if oID in object_files], []) \
+			for c, o in __class_assignments__.items()}
+	n = min(map(len, class_files.values()))
+	class_files = {c: files[:n] for c, files in class_files.items()}
 
 	# create datasets
 
 	datasets = []
 	size = int(n / k)
 	for i in range(0, n, size):
-		files = {o: f[i:i+size] for o, f in object_files.items()}
+		files = {c: f[i:i+size] for c, f in class_files.items()}
 		datasets.append([os.path.join(src, f) for f in sum(files.values(), [])])
 
 	return datasets
