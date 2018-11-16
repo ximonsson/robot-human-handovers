@@ -1,4 +1,5 @@
 import pickle
+import os
 
 
 """
@@ -71,6 +72,11 @@ class Object:
 
 	def __str__(self):
 		return "[{}] {} ({})".format(self.ID, self.name, self.cl)
+
+	def files(self, src):
+		datafiles = os.listdir(src)
+		return [f for f in datafiles if f.startswith(self.name)]
+
 
 
 __training_objects__ = [

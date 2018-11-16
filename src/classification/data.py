@@ -123,9 +123,7 @@ def datasets(src, objects, k=1):
 	# balancing is done by grouping object datafiles in a dict mapped by the object name to
 	# a list of files, slice for each object by the smallest length of data files for an object
 
-	datafiles = os.listdir(src)
-
-	object_files = {o.ID: [f for f in datafiles if f.startswith(o.name)] for o in objects}
+	object_files = {o.ID: o.files(src) for o in objects}
 	n = min(map(len, object_files.values()))
 	object_files = {o: files[:n] for o, files in object_files.items()}
 

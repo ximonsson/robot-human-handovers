@@ -174,13 +174,13 @@ with tf.Session() as s:
 	object_accuracy = [[o.name for o in TEST_OBJECTS], []]
 	bad_images = []
 	for o in TEST_OBJECTS:
-		test_data = datasets(DATA_TEST, [o], 1)[0]
+		test_data = [os.path.join(DATA_TEST, f) for f in o.files(DATA_TEST)]
 		acc = 0
 		bs = 1
 
 		for batch, X, Y, in batches(test_data, bs, INPUT_DIMENSIONS, OUTPUTS):
-			acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
 			predictions = s.run(test, feed_dict={x: X, y: Y, keep_prob: 1.0})
+			acc += s.run(tf.reduce_mean(tf.cast(predictions, tf.float32)))
 			bad_images += [test_data[batch * bs + i] for i, pred in enumerate(predictions) if not pred]
 
 		print(" '{}': {:.4f}%".format(o, acc/(batch+1)*100))
