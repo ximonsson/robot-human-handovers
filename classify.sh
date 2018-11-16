@@ -1,7 +1,7 @@
 
 # RUN SETTINGS
 
-. ./env # load environment
+#. ./env # load environment
 
 PKG=classification
 TRAINING_DATA=data/classification/images-train
@@ -11,20 +11,18 @@ function classify
 {
 	LR=$1
 	BS=$2
-	OBJECTS="$3"
-	TEST_OBJECTS="$4"
-	LOG_SUFFIX=$5
-	K=$6
+	#OBJECTS="$3"
+	#TEST_OBJECTS="$4"
+	LOG_SUFFIX=$3
+	K=$4
 
-	echo "python -m $PKG \
+	python -m $PKG \
 		--learning-rate=$LR \
 		--batch-size=$BS \
-		--objects="$OBJECTS" \
-		--test-objects="$TEST_OBJECTS" \
 		--data="$TRAINING_DATA" \
 		--test-data="$TEST_DATA" \
 		--logdir-suffix="$LOG_SUFFIX" \
-		--k=$K"
+		--k=$K
 }
 
 
@@ -97,7 +95,7 @@ LRs=("0.1" "0.01" "0.001" "0.0001" "0.00001")
 BS="32"
 for LR in "${LRs[@]}"
 do
-	classify $LR $BS "${objects[@]}" "${test_objects[@]}" "lr_$LR""__bs_$BS" $K
+	classify $LR $BS "" $K
 done
 
 
@@ -106,7 +104,7 @@ BSs=("8" "16" "32" "64" "128")
 LR="0.00001"
 for BS in "${BSs[@]}"
 do
-	classify $LR $BS "${objects[@]}" "${test_objects[@]}" "lr_$LR""__bs_$BS" $K
+	classify $LR $BS "" $K
 done
 
 
