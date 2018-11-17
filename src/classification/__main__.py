@@ -140,7 +140,7 @@ with tf.Session() as s:
 				loss_ = s.run(loss, feed_dict={x: X, y: Y, keep_prob: 1.0})
 				summary_loss.append(loss_)
 
-				if step % VISUALIZATION_STEP == 0 or step == n_train_batches_per_epoch - 1:
+				if step % VISUALIZATION_STEP == 0 or step % (n_train_batches_per_epoch - 1) == 0:
 					# validate and write summary of the accuracy
 					val_acc = 0
 					for b, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
