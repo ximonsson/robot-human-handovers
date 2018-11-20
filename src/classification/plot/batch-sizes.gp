@@ -1,7 +1,6 @@
 reset
 
-#set output outputfile
-#set autoscale
+set output "tex/plot_bs.tex"
 set border 2
 set xtics nomirror
 set ytics nomirror
@@ -13,7 +12,6 @@ set xrange [0:200]
 
 set multiplot layout 3,1
 
-#set yrange [0:2]
 
 set ylabel "Cross entropy"
 plot \
@@ -23,7 +21,7 @@ plot \
 	"results/classification/LR-1e-05__EP-10__BS-16__K-5/loss.dat" w lines t "16", \
 	"results/classification/LR-1e-05__EP-10__BS-8__K-5/loss.dat" w lines t "8"
 
-#set yrange [0:1]
+set autoscale
 
 unset title
 set ylabel "Validation accuracy"

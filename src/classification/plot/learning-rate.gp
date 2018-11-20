@@ -1,6 +1,6 @@
 reset
 
-#set autoscale
+set output "tex/plot_lr.tex"
 set border 2
 set xtics nomirror
 set ytics nomirror
@@ -20,7 +20,7 @@ plot \
 	"results/classification/LR-0.0001__EP-10__BS-32__K-5/loss.dat" w lines t "0.0001", \
 	"results/classification/LR-1e-05__EP-10__BS-32__K-5/loss.dat" w lines t "1e-05"
 
-#set yrange [0:1]
+set autoscale
 
 unset title
 set ylabel "Validation accuracy"

@@ -29,13 +29,34 @@ Here we report the results from clustering depending on different features used.
 
 \subsection{K-means}
 
-\input{tex/plot_scores.tex}
+\begin{figure}
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_clustering__mean-silhouette}
+		\caption{Mean silhouette coefficient per number of clusters.}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_clustering__sum-sqr-dist}
+		\caption{Sum of squared distances per sample to their closest cluster by number of clusters.}
+	\end{subfigure}
+\end{figure}
 
-\input{tex/plot_silhouette_5.tex}
-
-\input{tex/plot_silhouette_6.tex}
-
-\input{tex/plot_silhouette_7.tex}
+\begin{figure}
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_silhouette_5}
+		\caption{Silhouette coefficient for samples for five clusters.}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_silhouette_6}
+		\caption{Silhouette coefficient for samples for six clusters.}
+	\end{subfigure}
+\end{figure}
+\begin{figure}
+	\ContinuedFloat
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_silhouette_7}
+		\caption{Silhouette coefficient for samples for seven clusters.}
+	\end{subfigure}
+\end{figure}
 
 \input{tex/plot_clusters.tex}
 
@@ -58,3 +79,61 @@ Here we report the results from clustering depending on different features used.
 \section{Classification}
 Output different results from classification depending on which layers are trained further and network architecture.
 
+\subsection{Initial testing of batch sizes and learning rates}
+
+\subsubsection{Learning rates}
+
+\begin{figure}
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_classification__learning-rates__loss}
+		\caption{Loss for batch size 32 and different learning rates.}
+	\end{subfigure}
+
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_classification__learning-rates__val-acc}
+		\caption{Validation accuracy for batch size 32 and different learning rates.}
+	\end{subfigure}
+\end{figure}
+
+\begin{figure}
+	\ContinuedFloat
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_classification__learning-rates__test-acc}
+		\caption{Test accuracy for batch size 32 and different learning rates.}
+	\end{subfigure}
+	\caption{Loss, validation and test accuracy for batch size 32 and different learning rates.}
+\end{figure}
+
+
+\subsubsection{Batch sizes}
+
+\begin{figure}
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_classification__batch-sizes__loss}
+		\caption{Loss for learning 1e-05 and different batch sizes.}
+	\end{subfigure}
+
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_classification__batch-sizes__val-acc}
+		\caption{Validation accuracy for learning rate 1e-05 and different batch sizes.}
+	\end{subfigure}
+\end{figure}
+
+\begin{figure}
+	\ContinuedFloat
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_classification__batch-sizes__test-acc}
+		\caption{Test accuracy for learning rate 1e-05 and different batch sizes.}
+	\end{subfigure}
+	\caption{Loss, validation and test accuracy for learning rate 1e-05 and different batch sizes.}
+\end{figure}
+
+
+\subsection{Finetuning parameters}
+
+\subsection{End results}
+
+\begin{figure}
+	\input{tex/plot_classification__confmat}
+	\caption{Confusion matrix.}
+\end{figure}

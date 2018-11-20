@@ -4,12 +4,32 @@ BIBTEX=biber
 OUT=build/tex
 BCF=$(OUT)/$(DOC).bcf
 GNUPLOT=gnuplot
+TEXSRC=tex
 
 GNUPLOTSRC=clusters.gp scores.gp samples_silhouette_score.gp
 GNUTERM=epslatex
 
 TEXFLAGS=-output-directory=$(OUT) \
-		 -shell-escape
+		 --shell-escape
+
+# plot files from classification step
+CLS_PLOT_DIR=src/classification/plot
+CLS_PLOT_SRC= \
+			 learning-rates__loss.gp \
+			 learning-rates__test-acc.gp \
+			 learning-rates__val-acc.gp \
+			 batch-sizes__loss.gp \
+			 batch-sizes__test-acc.gp \
+			 batch-sizes__val-acc.gp \
+			 confmat.gp
+CLS_PLOT_TEX=$(addprefix $(TEXSRC)/plot_classification__, $(CLS_PLOT_SRC:.gp=.tex))
+
+# plot files from clustering step
+CLT_PLOT_DIR=src/clustering/plot
+CLT_PLOT_SRC=\
+			 sum-sqr-dist.gp \
+			 mean-silhouette.gp
+CLT_PLOT_TEX=$(addprefix $(TEXSRC)/plot_clustering__, $(CLT_PLOT_SRC:.gp=.tex))
 
 
 all: ref pdf
@@ -25,7 +45,7 @@ ref:
 
 
 # plots
-plot: plot_clusters plot_scores plot_silhouette
+plot: plot_clusters plot_silhouette plot_classification plot_clustering
 
 
 plot_clusters: tex/plot_clusters.tex
@@ -33,12 +53,10 @@ plot_clusters: tex/plot_clusters.tex
 tex/plot_clusters.tex: src/clustering/plot/clusters.gp
 	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< 6
 
+#plot_scores: tex/plot_scores.tex
 
-plot_scores: tex/plot_scores.tex
-
-tex/plot_scores.tex: src/clustering/plot/scores.gp
-	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $<
-
+#tex/plot_scores.tex: src/clustering/plot/scores.gp
+	#GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $<
 
 plot_silhouette: tex/plot_silhouette_5.tex tex/plot_silhouette_6.tex tex/plot_silhouette_7.tex
 
@@ -50,6 +68,18 @@ tex/plot_silhouette_6.tex: src/clustering/plot/samples_silhouette_score.gp
 
 tex/plot_silhouette_7.tex: src/clustering/plot/samples_silhouette_score.gp
 	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< results/clustering/silhouette_sample_values_7.dat
+
+
+plot_clustering: $(CLT_PLOT_TEX)
+
+$(TEXSRC)/plot_clustering__%.tex: $(CLT_PLOT_DIR)/%.gp
+	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $<
+
+
+plot_classification: $(CLS_PLOT_TEX)
+
+$(TEXSRC)/plot_classification__%.tex: $(CLS_PLOT_DIR)/%.gp
+	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $<
 
 
 # images

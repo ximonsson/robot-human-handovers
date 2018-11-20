@@ -27,23 +27,3 @@ xcoord(n, i) = n + sizes[i+1]
 plot \
 	for [i=0:indices-1] ARG1 index i u (xcoord($0, i)):1 w boxes t "Cluster [".(i+1)."]", \
 	M w lines ls 2 t "Mean"
-
-#
-#set multiplot layout indices,1
-
-#stats ARG1 index 0 nooutput
-#set title "Cluster [1]"
-#plot \
-#	ARG1 index 0 u 1:0 w boxes lc 0 notitle, \
-#	STATS_mean w lines ls 2 t "Cluster Mean", \
-#	M w lines ls 3 t "Sample Mean"
-
-#do for [i=1:indices-1] {
-#	stats ARG1 index i nooutput
-#	set title "Cluster [".(i+1)."]"
-#	plot \
-#		ARG1 index i u 1:0 w boxes lc i notitle, \
-#		STATS_mean w lines ls 2 notitle, \
-#		M w lines ls 3 notitle
-#}
-#unset multiplot
