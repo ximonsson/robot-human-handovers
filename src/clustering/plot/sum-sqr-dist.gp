@@ -4,6 +4,7 @@ stats 'results/clustering/silhouette.dat' name 'A' nooutput
 
 set output outputfile
 set autoscale
+set border 3
 set style data linespoints
 set style line 1 pt 7 ps 1.5
 set grid

@@ -4,7 +4,7 @@ set output outputfile
 set grid
 set xtics nomirror
 set ytics nomirror
-set border 2
+set border 3
 
 set xrange [0:200]
 set ylabel "Cross entropy"

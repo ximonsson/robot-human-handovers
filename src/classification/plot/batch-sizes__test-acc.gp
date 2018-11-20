@@ -4,7 +4,7 @@ set output outputfile
 set grid
 set xtics nomirror
 set ytics nomirror
-set border 2
+set border 3
 
 set autoscale
 set xrange[0:200]

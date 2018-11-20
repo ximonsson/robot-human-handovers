@@ -1,7 +1,7 @@
 reset
 
 set output outputfile
-set border 2
+set border 3
 set xtics nomirror
 set ytics nomirror
 set grid

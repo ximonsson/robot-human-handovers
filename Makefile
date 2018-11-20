@@ -49,6 +49,9 @@ ref:
 # plots
 plot: plot_silhouette plot_classification plot_clustering
 
+$(TEXSRC)/plot_clustering__clusters-%.tex: $(CLT_PLOT_DIR)/clusters-%.gp
+	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< 6
+
 
 plot_silhouette: tex/plot_silhouette_5.tex tex/plot_silhouette_6.tex tex/plot_silhouette_7.tex
 
