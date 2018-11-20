@@ -43,22 +43,35 @@ Here we report the results from clustering depending on different features used.
 \begin{figure}
 	\begin{subfigure}[b]{\textwidth}
 		\input{tex/plot_silhouette_5}
-		\caption{Silhouette coefficient for samples for five clusters.}
+		\caption{Silhouette coefficient per samples for five clusters.}
 	\end{subfigure}
 	\begin{subfigure}[b]{\textwidth}
 		\input{tex/plot_silhouette_6}
-		\caption{Silhouette coefficient for samples for six clusters.}
+		\caption{Silhouette coefficient per samples for six clusters.}
 	\end{subfigure}
+	\caption{Silhouette coefficient per sample in each cluster for five, six and seven number of clusters.}
 \end{figure}
 \begin{figure}
 	\ContinuedFloat
 	\begin{subfigure}[b]{\textwidth}
 		\input{tex/plot_silhouette_7}
-		\caption{Silhouette coefficient for samples for seven clusters.}
+		\caption{Silhouette coefficient per samples for seven clusters.}
 	\end{subfigure}
 \end{figure}
 
-\input{tex/plot_clusters.tex}
+
+\begin{figure}
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_clustering__clusters-2d}
+		\caption{Two-dimensional representation of the samples and their assigned clusters and centroids.}
+	\end{subfigure}
+	\begin{subfigure}[b]{\textwidth}
+		\input{tex/plot_clustering__clusters-3d}
+		\caption{Three-dimensional representation of the samples and their assigned clusters and centroids.}
+	\end{subfigure}
+	\caption{A two-dimensional and three-dimensional representation of the sample space with their assigned clusters and centroids for six clusters.}
+\end{figure}
+
 
 \subsection{Object cluster assignments}
 
@@ -86,12 +99,12 @@ Output different results from classification depending on which layers are train
 \begin{figure}
 	\begin{subfigure}[b]{\textwidth}
 		\input{tex/plot_classification__learning-rates__loss}
-		\caption{Loss for batch size 32 and different learning rates.}
+		\caption{Loss.}
 	\end{subfigure}
 
 	\begin{subfigure}[b]{\textwidth}
 		\input{tex/plot_classification__learning-rates__val-acc}
-		\caption{Validation accuracy for batch size 32 and different learning rates.}
+		\caption{Validation accuracy.}
 	\end{subfigure}
 \end{figure}
 
@@ -99,7 +112,7 @@ Output different results from classification depending on which layers are train
 	\ContinuedFloat
 	\begin{subfigure}[b]{\textwidth}
 		\input{tex/plot_classification__learning-rates__test-acc}
-		\caption{Test accuracy for batch size 32 and different learning rates.}
+		\caption{Test accuracy.}
 	\end{subfigure}
 	\caption{Loss, validation and test accuracy for batch size 32 and different learning rates.}
 \end{figure}
@@ -110,12 +123,12 @@ Output different results from classification depending on which layers are train
 \begin{figure}
 	\begin{subfigure}[b]{\textwidth}
 		\input{tex/plot_classification__batch-sizes__loss}
-		\caption{Loss for learning 1e-05 and different batch sizes.}
+		\caption{Loss.}
 	\end{subfigure}
 
 	\begin{subfigure}[b]{\textwidth}
 		\input{tex/plot_classification__batch-sizes__val-acc}
-		\caption{Validation accuracy for learning rate 1e-05 and different batch sizes.}
+		\caption{Validation accuracy.}
 	\end{subfigure}
 \end{figure}
 
@@ -123,7 +136,7 @@ Output different results from classification depending on which layers are train
 	\ContinuedFloat
 	\begin{subfigure}[b]{\textwidth}
 		\input{tex/plot_classification__batch-sizes__test-acc}
-		\caption{Test accuracy for learning rate 1e-05 and different batch sizes.}
+		\caption{Test accuracy.}
 	\end{subfigure}
 	\caption{Loss, validation and test accuracy for learning rate 1e-05 and different batch sizes.}
 \end{figure}

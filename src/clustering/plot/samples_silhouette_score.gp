@@ -25,5 +25,5 @@ do for [i=2:indices] {
 
 xcoord(n, i) = n + sizes[i+1]
 plot \
-	for [i=0:indices-1] ARG1 index i u (xcoord($0, i)):1 w boxes t "Cluster [".(i+1)."]", \
+	for [i=0:indices-1] ARG1 index i u (xcoord($0, i)):1 w boxes notitle, \
 	M w lines ls 2 t "Mean"

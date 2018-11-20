@@ -28,7 +28,9 @@ CLS_PLOT_TEX=$(addprefix $(TEXSRC)/plot_classification__, $(CLS_PLOT_SRC:.gp=.te
 CLT_PLOT_DIR=src/clustering/plot
 CLT_PLOT_SRC=\
 			 sum-sqr-dist.gp \
-			 mean-silhouette.gp
+			 mean-silhouette.gp \
+			 clusters-3d.gp \
+			 clusters-2d.gp
 CLT_PLOT_TEX=$(addprefix $(TEXSRC)/plot_clustering__, $(CLT_PLOT_SRC:.gp=.tex))
 
 
@@ -45,18 +47,8 @@ ref:
 
 
 # plots
-plot: plot_clusters plot_silhouette plot_classification plot_clustering
+plot: plot_silhouette plot_classification plot_clustering
 
-
-plot_clusters: tex/plot_clusters.tex
-
-tex/plot_clusters.tex: src/clustering/plot/clusters.gp
-	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< 6
-
-#plot_scores: tex/plot_scores.tex
-
-#tex/plot_scores.tex: src/clustering/plot/scores.gp
-	#GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $<
 
 plot_silhouette: tex/plot_silhouette_5.tex tex/plot_silhouette_6.tex tex/plot_silhouette_7.tex
 
