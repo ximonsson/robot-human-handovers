@@ -1,4 +1,4 @@
-DOC=thesis
+THESIS=thesis
 TEX=pdflatex
 BIBTEX=biber
 OUT=build/tex
@@ -34,16 +34,16 @@ CLT_PLOT_SRC=\
 CLT_PLOT_TEX=$(addprefix $(TEXSRC)/plot_clustering__, $(CLT_PLOT_SRC:.gp=.tex))
 
 
-all: ref pdf
+all: ref $(THESIS)
 
 
-pdf: plot
+$(THESIS): plot
 	@mkdir -p $(OUT)
-	$(TEX) $(TEXFLAGS) $(DOC)
+	TEXINPUTS=.:./$(TEXSRC): $(TEX) $(TEXFLAGS) $@
 
 
 ref:
-	$(BIBTEX) --output-directory=$(OUT) $(DOC)
+	$(BIBTEX) --output-directory=$(OUT) $(THESIS)
 
 
 # plots
