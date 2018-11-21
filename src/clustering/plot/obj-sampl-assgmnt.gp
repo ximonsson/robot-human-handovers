@@ -12,4 +12,3 @@ set view map
 plot \
 	f matrix columnheaders rowheaders u 1:2:3 with image notitle, \
 	f matrix columnheaders rowheaders u 1:2:($3 == 0 ? "" : sprintf("%g",$3)) w labels notitle
-

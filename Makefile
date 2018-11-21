@@ -7,7 +7,7 @@ GNUPLOT=gnuplot
 TEXSRC=tex
 
 GNUPLOTSRC=clusters.gp scores.gp samples_silhouette_score.gp
-GNUTERM=epslatex
+GNUTERM="epslatex color"
 
 TEXFLAGS=-output-directory=$(OUT) \
 		 --shell-escape
@@ -66,7 +66,7 @@ tex/plot_silhouette_7.tex: src/clustering/plot/samples_silhouette_score.gp
 	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< results/clustering/silhouette_sample_values_7.dat
 
 
-plot_clustering: $(CLT_PLOT_TEX)
+plot_clustering: $(CLT_PLOT_TEX) results/clustering/*.dat
 
 $(TEXSRC)/plot_clustering__%.tex: $(CLT_PLOT_DIR)/%.gp
 	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $<
@@ -87,3 +87,7 @@ method_imgs:
 
 result_imgs:
 	montage img/results/object_handovers/*.jpg -geometry 128x128+2+2 -tile x5 img/results/object_handovers.jpg
+
+
+clean:
+	rm tex/plot_*
