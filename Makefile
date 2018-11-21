@@ -30,7 +30,8 @@ CLT_PLOT_SRC=\
 			 sum-sqr-dist.gp \
 			 mean-silhouette.gp \
 			 clusters-3d.gp \
-			 clusters-2d.gp
+			 clusters-2d.gp \
+			 obj-sampl-assgmnt.gp
 CLT_PLOT_TEX=$(addprefix $(TEXSRC)/plot_clustering__, $(CLT_PLOT_SRC:.gp=.tex))
 
 
@@ -42,7 +43,7 @@ $(THESIS): plot
 	TEXINPUTS=.:./$(TEXSRC): $(TEX) $(TEXFLAGS) $@
 
 
-ref:
+ref: $(THESIS)
 	$(BIBTEX) --output-directory=$(OUT) $(THESIS)
 
 

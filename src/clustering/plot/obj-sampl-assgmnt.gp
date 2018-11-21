@@ -1,14 +1,15 @@
 reset
 
 set output outputfile
-set palette rgbformula -7,2,-7
+#set palette rgbformula -7,2,-7
 
-set ylabel "True value"
-set xlabel "Predicted value"
+set ylabel "Object"
+set xlabel "Cluster"
 
-f = "results/classification/LR-1e-05__EP-10__BS-16__K-5/confusion_matrix.dat"
+f='results/clustering/object-sample-assignments_6.dat'
 
 set view map
 plot \
 	f matrix columnheaders rowheaders u 1:2:3 with image notitle, \
 	f matrix columnheaders rowheaders u 1:2:($3 == 0 ? "" : sprintf("%g",$3)) w labels notitle
+
