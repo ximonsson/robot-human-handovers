@@ -63,53 +63,6 @@ def display_object(oid, label, centroid):
 	cv2.imshow("opencv object centroid", im)
 
 
-# visualize the clustering
-FLAG_VISUALIZE = False
-
-def print_summary(cluster_assignments, sample_assignments, k, samples):
-	print("*** Summary ***")
-	print("Object assignments:")
-	for oid in sample_assignments:
-		object_samples = sample_assignments[oid]
-		object_samples_total = list(samples[:, 0]).count(oid)
-		largest_label = max(object_samples, key=object_samples.get)
-		print(" > Object #{} [Label #{}: {} samples]".format(
-			oid,
-			largest_label,
-			object_samples_total))
-		for label in object_samples:
-			print("   => Label #{}: {}% ({} samples)".format(
-				label,
-				int(object_samples[label]/object_samples_total*100),
-				object_samples[label]))
-		# visualize the grasp of the cluster on this object
-		if FLAG_VISUALIZE:
-			display_object(oid, largest_label, k.cluster_centers_[largest_label])
-			wait()
-		#im = draw(oid, largest_label, k.cluster_centers_[largest_label])
-		#cv2.imwrite("results/clustering/{}_handover.jpg".format(oid), im)
-
-	print("Cluster information:")
-	for label in cluster_assignments:
-		print(" > Label #{} >> Centroid {}".format(
-			label,
-			k.cluster_centers_[label]))
-		print("   Objects: {}".format(cluster_assignments[label]))
-
-
-def __plot__(k, samples, n_clusters, x=0, y=1, z=2):
-	from mpl_toolkits.mplot3d import Axes3D
-	color = plt.cm.rainbow(np.linspace(0, 1, n_clusters))
-	fig = plt.figure()
-	ax = fig.add_subplot(111, projection='3d')
-	for i in range(n_clusters):
-		centroid = k.cluster_centers_[i]
-		ax.scatter(centroid[x], centroid[y], centroid[z], s=20, c='black')
-		s = np.array([samples[j] for j in range(len(k.labels_)) if k.labels_[j] == i])
-		ax.scatter(s[:, x], s[:, y], s[:, z], c=color[i])
-
-
-
 # -----------------------------------------------------------------------------------------------------
 # Here starts code that is used
 # The above will most likely be removed later
