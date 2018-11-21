@@ -14,20 +14,46 @@
 
 
 \section{Clustering}
-Here we report the results from clustering depending on different features used.
 
-%\begin{figure}
-	%\centering
-	%\includegraphics[width=\textwidth]{img/results/object_handovers.jpg}
-	%\caption{Resulting handover data applied to each object}
-	%\label{fig:object_handovers}
-%\end{figure}
+\subsection{PCA}
 
+PCA was performed to keep the three most variant features of the samples. In \ref{tab:pca_components} we can see the principle axes for maximum variance in the data, and from there we can see that the features rotation, and direction are the most variant features. In \ref{tab:pca_variance} we can see the variance for each of these three features as well as their ratio for the dataset. In total these features represent around 80\% of the entire variance, seeing how we have five in total, this would mean that the other two would represent around 10\% each which is of quite small significance compared to the other three, we therefore can be quite happy about this new dimensional reduction.
 
-\subsection{Principal Component Analysis}
+\begin{table}
+	\begin{tabular}{ c c c c c }
+		\hline
+		\multicolumn{5}{c}{Principal Components} \\ \hline
+		-0.51661962 & -0.51137137 &  0.59560332 &  0.29608388 &  0.17086402 \\ \hline
+		-0.36102909 &  0.33317829 & -0.15354445 & -0.22331964 &  0.82776969 \\ \hline
+		-0.07275141 & -0.28151638 &  0.19427207 & -0.92743392 & -0.13259127 \\ \hline
+	\end{tabular}
+	\caption{Principal axes in feature space, representing the directions of maximum variance in the data.}
+	\label{tab:pca_components}
+\end{table}
+
+\begin{table}
+	\begin{center}
+		\begin{tabular}{cc}
+			\hline
+			Variance & Ratio \\ \hline
+			1.9754988 & 0.39498577 \\
+			1.12242609 & 0.22442045 \\
+			0.89518261 & 0.17898487 \\
+			\hline
+		\end{tabular}
+		\caption{Variance and their ratio for the principal features.}
+		\label{tab:pca_variance}
+	\end{center}
+\end{table}
 
 
 \subsection{K-means}
+
+K-means was later run on the transformed data for cluster numbers ranging two to fifteen. As to choose the best fit of number of clusters we later look at the mean silhouette coefficient and sum of squared distances from each sample to their closest cluster center. These results are presented in \ref{fig:kmeans_score}. By using the \texttt{elbow method} on the graph containing the sum of squared distances for the samples we can judge that a number of clusters between five and eight is suitable. With the help of the silhouette score, where six clusters gives the best results, and which falls into this range, we can conclude that six clusters is a good fit.
+
+Figure \ref{fig:silhouette_coef} shows us the silhouette coefficient per sample for the three cases of five, six and seven clusters. We can see that for five clusters there are a lot of samples that have a very poor coefficient in some clusters. Seven has a better repartition but the gradient is quite important for the larger clusters. While six gives us something more balanced, and thus confirming it is a better choice.
+
+Figure \ref{fig:clusters} show us a two-dimensional and three-dimensional representation of the data divided into clusters and their centers. It is not entirely obvious how the data is clustered as the data is a bit hard to reduce in dimensionality.
 
 \begin{figure}
 	\begin{subfigure}[b]{\textwidth}
@@ -39,6 +65,7 @@ Here we report the results from clustering depending on different features used.
 		\caption{Sum of squared distances per sample to their closest cluster by number of clusters. Used in the \texttt{elbow method}.}
 	\end{subfigure}
 	\caption{Mean silhouette coefficient and sum of squared distances per sample to their closest cluster, depending on number of clusters. \texttt{best fit} identifies the possible best number of clusters in accordance to the maximum value of the mean silhouette coefficient and the elbow method.}
+	\label{fig:kmeans_score}
 \end{figure}
 
 \begin{figure}
@@ -58,8 +85,8 @@ Here we report the results from clustering depending on different features used.
 		\caption{Silhouette coefficient per samples for seven clusters.}
 	\end{subfigure}
 	\caption{Silhouette coefficient per sample in each cluster for five, six and seven number of clusters.}
+	\label{fig:silhouette_coef}
 \end{figure}
-
 
 \begin{figure}
 	\begin{subfigure}[b]{\textwidth}
@@ -71,6 +98,7 @@ Here we report the results from clustering depending on different features used.
 		\caption{Three-dimensional representation of the samples and their assigned clusters and centroids.}
 	\end{subfigure}
 	\caption{A two-dimensional and three-dimensional representation of the sample space with their assigned clusters and centroids for six clusters.}
+	\label{fig:clusters}
 \end{figure}
 
 
@@ -80,6 +108,32 @@ Here we report the results from clustering depending on different features used.
 	\input{plot_clustering__obj-sampl-assgmnt}
 	\caption{}
 \end{figure}
+
+\begin{table}
+	\begin{tabular}{|c|l|}
+		\hline
+		Cluster & Objects \\
+		\hline
+		one   & hammer, pen, scalpell, scissors, knife, screwdriver, brush \\
+		two   & tube \\
+		three & can, pitcher, glass, bottle, cup \\
+		four  & box \\
+		five  & cutters \\
+		six   & - \\
+		\hline
+	\end{tabular}
+	\caption{Cluster assignment of objects between six clusters.}
+	\label{tab:object_cluster_assign}
+\end{table}
+
+
+% TODO create images of the objects with the mean values of their cluster on them
+%\begin{figure}
+	%\centering
+	%\includegraphics[width=\textwidth]{img/results/object_handovers.jpg}
+	%\caption{Resulting handover data applied to each object}
+	%\label{fig:object_handovers}
+%\end{figure}
 
 
 
