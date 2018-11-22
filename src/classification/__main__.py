@@ -27,6 +27,7 @@ import classification.alexnet as alexnet
 from .data import datasets, batches
 from .utils import progressbar, print_step, find_arg
 from classification import TEST_OBJECTS, TRAIN_OBJECTS
+import operator
 
 
 # Create network
@@ -90,9 +91,12 @@ if not os.path.exists(LOGDIR): # make sure it exists
 
 VISUALIZATION_STEP = 10
 
-summary_loss = []
-summary_test_acc = []
-summary_val_acc = []
+summary_loss = [[] for k in range(K)]
+summary_test_acc = [[] for k in range(K)]
+summary_val_acc = [[] for k in range(K)]
+object_accuracy = [[] for k in range(K)]
+confmats = []
+bad_images = []
 
 # Prepare data for training, validation and testing.
 #	Training and validation sets share objects but have their images split between them.
@@ -108,19 +112,20 @@ INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 training_sets = datasets(DATA_TRAIN, TRAIN_OBJECTS, K)
 test_data = datasets(DATA_TEST, TEST_OBJECTS, 1)[0]
 
-with tf.Session() as s:
-	# initialize and load weights
-	s.run(tf.global_variables_initializer())
-	alexnet.load_weights("data/classification/weights/bvlc_alexnet.npy", s, train_layers)
+for k in range(K):
+	print("*** K={} ***".format(k+1))
 
-	# for each epoch fit the model to the training set and
-	# calculate accuracy over the validation set
-	# after we have run each epoch we test the model on the test set
+	with tf.Session() as s:
+		# initialize and load weights
+		s.run(tf.global_variables_initializer())
+		alexnet.load_weights("data/classification/weights/bvlc_alexnet.npy", s, train_layers)
 
-	step = 0
+		# for each epoch fit the model to the training set and
+		# calculate accuracy over the validation set
+		# after we have run each epoch we test the model on the test set
 
-	for k in range(K):
-		print("*** K={} ***".format(k+1))
+		step = 0
+
 		training_data = sum(training_sets[:k] + training_sets[k+1:], [])
 		validation_data = training_sets[k]
 
@@ -138,22 +143,22 @@ with tf.Session() as s:
 			for batch, X, Y in batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 				s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})
 				loss_ = s.run(loss, feed_dict={x: X, y: Y, keep_prob: 1.0})
-				summary_loss.append(loss_)
+				summary_loss[k].append(loss_)
 
 				if step % VISUALIZATION_STEP == 0 or step % (n_train_batches_per_epoch - 1) == 0:
-					# validate and write summary of the accuracy
+					# calculate validation accuracy
 					val_acc = 0
 					for b, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 						val_acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
 					val_acc /= (b + 1)
-					summary_val_acc.append(val_acc)
+					summary_val_acc[k].append(val_acc)
 
-					# check test accuracy
+					# calculate test accuracy
 					test_acc = 0
 					for b, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 						test_acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
 					test_acc /= (b + 1)
-					summary_test_acc.append(test_acc)
+					summary_test_acc[k].append(test_acc)
 
 				step += 1
 				print_step(
@@ -165,49 +170,71 @@ with tf.Session() as s:
 						test_acc * 100)
 			print()
 
-	# create confusion matrix
-	cm = np.zeros((OUTPUTS, OUTPUTS), dtype=np.int32)
-	for batch, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-		cm += s.run(confusion_matrix, feed_dict={x: X, y: Y, keep_prob: 1.0})
+		# create confusion matrix
+		cm = np.zeros((OUTPUTS, OUTPUTS), dtype=np.int32)
+		for batch, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+			cm += s.run(confusion_matrix, feed_dict={x: X, y: Y, keep_prob: 1.0})
+		confmats.append(cm)
 
-	# check accuracy of each object
-	object_accuracy = [[o.name for o in TEST_OBJECTS], []]
-	bad_images = []
-	for o in TEST_OBJECTS:
-		test_data = [os.path.join(DATA_TEST, f) for f in o.files(DATA_TEST)]
-		acc = 0
-		bs = 1
+		# check accuracy of each object
+		for o in TEST_OBJECTS:
+			test_data = [os.path.join(DATA_TEST, f) for f in o.files(DATA_TEST)]
+			acc = 0
+			bs = 1
 
-		for batch, X, Y, in batches(test_data, bs, INPUT_DIMENSIONS, OUTPUTS):
-			predictions = s.run(test, feed_dict={x: X, y: Y, keep_prob: 1.0})
-			acc += s.run(tf.reduce_mean(tf.cast(predictions, tf.float32)))
-			bad_images += [test_data[batch * bs + i] for i, pred in enumerate(predictions) if not pred]
+			for batch, X, Y, in batches(test_data, bs, INPUT_DIMENSIONS, OUTPUTS):
+				predictions = s.run(test, feed_dict={x: X, y: Y, keep_prob: 1.0})
+				acc += s.run(tf.reduce_mean(tf.cast(predictions, tf.float32)))
+				bad_images += [test_data[batch * bs + i] for i, pred in enumerate(predictions) if not pred]
 
-		print(" '{}': {:.4f}%".format(o, acc/(batch+1)*100))
-		object_accuracy[1].append(acc/(batch+1)*100)
+			print(" '{}': {:.4f}%".format(o, acc/(batch+1)*100))
+			object_accuracy[k].append(acc/(batch+1)*100)
 
 
 # store data files over the progress
+#
+#	we would like to store the run with the highest test accuracy as the first index in the dataset
+#	to make plotting a little easier
+#
+
+i, _ = max(enumerate(summary_test_acc), key=lambda x: operator.itemgetter(1)(x)[-1])
+summary_loss[0], summary_loss[i] = summary_loss[i], summary_loss[0]
+summary_val_acc[0], summary_val_acc[i] = summary_val_acc[i], summary_val_acc[0]
+summary_test_acc[0], summary_test_acc[i] = summary_test_acc[i], summary_test_acc[0]
+confmats[0], confmats[i] = confmats[i], confmats[0]
+object_accuracy[0], object_accuracy[i] = object_accuracy[i], object_accuracy[0]
+bad_images = set(bad_images)
+
 
 with open(os.path.join(LOGDIR, "loss.dat"), "w") as f:
-	for v in summary_loss:
-		f.write("\t{}\n".format(v))
+	for summary in summary_loss:
+		for v in summary:
+			f.write("\t{}\n".format(v))
+		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "acc_val.dat"), "w") as f:
-	for v in summary_val_acc:
-		f.write("\t{}\n".format(v))
+	for summary in summary_val_acc:
+		for v in summary:
+			f.write("\t{}\n".format(v))
+		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "acc_test.dat"), "w") as f:
-	for v in summary_test_acc:
-		f.write("\t{}\n".format(v))
+	for summary in summary_test_acc:
+		for v in summary:
+			f.write("\t{}\n".format(v))
+		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "confusion_matrix.dat"), "w") as f:
-	for row in cm:
-		f.write("\t{}\n".format(" ".join(map(str, row))))
+	for cm in confmats:
+		for row in cm:
+			f.write("\t{}\n".format(" ".join(map(str, row))))
+		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "acc_object.dat"), "w") as f:
-	f.write("\t{}\n".format(" ".join(object_accuracy[0])))
-	f.write("\t{}\n".format(" ".join(map(str, object_accuracy[1]))))
+	f.write("#\t{}\n".format(" ".join(TEST_OBJECTS)))
+	for k in range(K):
+		f.write("\t{}\n".format(" ".join(map(str, object_accuracy[k]))))
+		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "bad_images.dat"), "w") as f:
 	for im in bad_images:
