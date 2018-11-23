@@ -124,14 +124,17 @@ def datasets(src, objects, k=1):
 	# a list of files, slice for each object by the smallest length of data files for an object
 
 	object_files = {o.ID: o.files(src) for o in objects}
+	for v in object_files.values():
+		random.shuffle(v)
 	n = min(map(len, object_files.values()))
 	object_files = {o: files[:n] for o, files in object_files.items()}
 
 	# divide into datasets per class and balance between them before returning
 	# them divided into k different ones
 
-	class_files = {c: sum([object_files[oID] for oID in o if oID in object_files], []) \
-			for c, o in __class_assignments__.items()}
+	class_files = {
+			c: sum([object_files[oID] for oID in o if oID in object_files], []) \
+					for c, o in __class_assignments__.items()}
 	n = min(map(len, class_files.values()))
 	class_files = {c: files[:n] for c, files in class_files.items()}
 

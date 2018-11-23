@@ -34,7 +34,7 @@ import operator
 # create the original alexnet model and add a new fully connected layer to output the
 
 # learning parameters
-LEARNING_RATE = float(find_arg("learning-rate", "0.001"))
+LEARNING_RATE = float(find_arg("learning-rate", "1e-06"))
 EPOCHS = int(find_arg("epochs", "10"))
 BATCH_SIZE = int(find_arg("batch-size", "32"))
 K = int(find_arg("k", "5"))
@@ -141,8 +141,8 @@ for k in range(K):
 			# run training operation on each batch and then summarize
 			print("Training...", end="", flush=True)
 			for batch, X, Y in batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-				s.run(train_op, feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})
-				loss_ = s.run(loss, feed_dict={x: X, y: Y, keep_prob: 1.0})
+				loss_ = s.run([loss, train_op], feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})[0]
+				#loss_ = s.run(loss, feed_dict={x: X, y: Y, keep_prob: 1.0})
 				summary_loss[k].append(loss_)
 
 				if step % VISUALIZATION_STEP == 0 or step % (n_train_batches_per_epoch - 1) == 0:
@@ -178,14 +178,14 @@ for k in range(K):
 
 		# check accuracy of each object
 		for o in TEST_OBJECTS:
-			test_data = [os.path.join(DATA_TEST, f) for f in o.files(DATA_TEST)]
+			test_data_ = [os.path.join(DATA_TEST, f) for f in o.files(DATA_TEST)]
 			acc = 0
 			bs = 1
 
-			for batch, X, Y, in batches(test_data, bs, INPUT_DIMENSIONS, OUTPUTS):
+			for batch, X, Y, in batches(test_data_, bs, INPUT_DIMENSIONS, OUTPUTS):
 				predictions = s.run(test, feed_dict={x: X, y: Y, keep_prob: 1.0})
 				acc += s.run(tf.reduce_mean(tf.cast(predictions, tf.float32)))
-				bad_images += [test_data[batch * bs + i] for i, pred in enumerate(predictions) if not pred]
+				bad_images += [test_data_[batch * bs + i] for i, pred in enumerate(predictions) if not pred]
 
 			print(" '{}': {:.4f}%".format(o, acc/(batch+1)*100))
 			object_accuracy[k].append(acc/(batch+1)*100)
@@ -231,7 +231,7 @@ with open(os.path.join(LOGDIR, "confusion_matrix.dat"), "w") as f:
 		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "acc_object.dat"), "w") as f:
-	f.write("#\t{}\n".format(" ".join(TEST_OBJECTS)))
+	f.write("#\t{}\n".format(" ".join(map(lambda x: x.name, TEST_OBJECTS))))
 	for k in range(K):
 		f.write("\t{}\n".format(" ".join(map(str, object_accuracy[k]))))
 		f.write("\n\n")
