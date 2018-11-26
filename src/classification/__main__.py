@@ -59,7 +59,7 @@ with tf.variable_scope("grasp_class") as scope:
 
 # calculate loss
 with tf.name_scope("loss"):
-	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=net, labels=y))
+	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=net, labels=y))
 
 # training operation applying optimizer function
 with tf.name_scope("train"):
@@ -142,32 +142,43 @@ for k in range(K):
 			print("Training...", end="", flush=True)
 			for batch, X, Y in batches(training_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
 				loss_ = s.run([loss, train_op], feed_dict={x: X, y: Y, keep_prob: 1.0-DROPOUT})[0]
-				#loss_ = s.run(loss, feed_dict={x: X, y: Y, keep_prob: 1.0})
-				summary_loss[k].append(loss_)
-
-				if step % VISUALIZATION_STEP == 0 or step % (n_train_batches_per_epoch - 1) == 0:
-					# calculate validation accuracy
-					val_acc = 0
-					for b, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-						val_acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
-					val_acc /= (b + 1)
-					summary_val_acc[k].append(val_acc)
-
-					# calculate test accuracy
-					test_acc = 0
-					for b, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
-						test_acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
-					test_acc /= (b + 1)
-					summary_test_acc[k].append(test_acc)
-
 				step += 1
+				summary_loss[k].append([step, loss_])
 				print_step(
-						"{:10} {}, Loss: {:.4f}, Val: {:.2f}%, Test: {:.2f}%",
-						"Training:",
+						"Training...   {}, Loss: {:.4f}",
 						progressbar(batch+1, n_train_batches_per_epoch),
-						loss_,
-						val_acc * 100,
-						test_acc * 100)
+						loss_)
+
+			# calculate validation accuracy
+			print_step(
+					"Validating... {}, Loss: {:.4f}",
+					progressbar(batch+1, n_train_batches_per_epoch),
+					loss_)
+			val_acc = 0
+			for b, X, Y in batches(validation_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+				val_acc += s.run(accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+			val_acc /= (b + 1)
+			summary_val_acc[k].append([step, val_acc])
+
+			print_step(
+					"Testing...    {}, Loss: {:.4f}, Val: {:.2f}%",
+					progressbar(batch+1, n_train_batches_per_epoch),
+					loss_,
+					val_acc * 100)
+
+			# calculate test accuracy
+			test_acc = 0
+			for b, X, Y in batches(test_data, BATCH_SIZE, INPUT_DIMENSIONS, OUTPUTS):
+				test_acc += s.run(test_accuracy, feed_dict={x: X, y: Y, keep_prob: 1.0})
+			test_acc /= (b + 1)
+			summary_test_acc[k].append([step, test_acc])
+
+			print_step(
+					"Done          {}, Loss: {:.4f}, Val: {:.2f}%, Test: {:.2f}%",
+					progressbar(batch+1, n_train_batches_per_epoch),
+					loss_,
+					val_acc * 100,
+					test_acc * 100)
 			print()
 
 		# create confusion matrix
@@ -187,7 +198,7 @@ for k in range(K):
 				acc += s.run(tf.reduce_mean(tf.cast(predictions, tf.float32)))
 				bad_images += [test_data_[batch * bs + i] for i, pred in enumerate(predictions) if not pred]
 
-			print(" '{}': {:.4f}%".format(o, acc/(batch+1)*100))
+			print(" '{}': {:.2f}%".format(o, acc/(batch+1)*100))
 			object_accuracy[k].append(acc/(batch+1)*100)
 
 
@@ -209,25 +220,26 @@ bad_images = set(bad_images)
 with open(os.path.join(LOGDIR, "loss.dat"), "w") as f:
 	for summary in summary_loss:
 		for v in summary:
-			f.write("\t{}\n".format(v))
+			f.write("\t{}\n".format(" ".join(map(str, v))))
 		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "acc_val.dat"), "w") as f:
 	for summary in summary_val_acc:
 		for v in summary:
-			f.write("\t{}\n".format(v))
+			f.write("\t{}\n".format(" ".join(map(str, v))))
 		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "acc_test.dat"), "w") as f:
 	for summary in summary_test_acc:
 		for v in summary:
-			f.write("\t{}\n".format(v))
+			f.write("\t{}\n".format(" ".join(map(str, v))))
 		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "confusion_matrix.dat"), "w") as f:
 	for cm in confmats:
-		for row in cm:
-			f.write("\t{}\n".format(" ".join(map(str, row))))
+		f.write("- {}\n".format(" ".join(map(lambda x: str(x+1), range(OUTPUTS)))))
+		for i in range(len(cm)):
+			f.write("{} {}\n".format(str(i+1), " ".join(map(str, cm[i]))))
 		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "acc_object.dat"), "w") as f:
