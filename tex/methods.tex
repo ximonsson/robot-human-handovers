@@ -113,13 +113,16 @@ The last features that we can extract are: the distance \(\Delta\) as the L2 nor
 	O_{object} = \frac{M_y}{M}, \frac{M_x}{M}
 \]
 
-We can then extract the distance between center of mass of the object and the center of the grasping region as a feature. It also enables us to create a unit vector from the center of mass of the object towards the grasping region. A vector in two dimensions would be expressed with two values, but we can summarize this in one value by instead calculating the angle on the z-axis by using \(\tan(\theta_G) = \sqrt{x^2 + y^2}\).
+We can then extract the distance between center of mass of the object and the center of the grasping region as a feature. It also enables us to create a unit vector from the center of mass of the object towards the grasping region.
 
+% TODO write better later
 To summarize we can extract the following features:
 \begin{itemize}
 	\item Rotation of object in z-axis, extracted from the homography matrix of the AprilTag.
 	\item Distance between center of mass of the object and the center of the grasping region.
-	\item Angle between the two mentioned centers.
+	\item Ratio of distance between center of mass of the object and the center of grasp, over the diagonal of the object.
+	\item Direction in x-axis between center of mass of the object and the center of the grasp.
+	\item Direction in y-axis between center of mass of the object and the center of the grasp.
 	\item Ratio of area of the grasping region by the area of object.
 	\item Width of grasp region.
 	\item Height of grasp region.
@@ -128,7 +131,15 @@ To summarize we can extract the following features:
 	\item Center of mass of the object.
 \end{itemize}
 
-With these features we define for a robot how to grasp an object and present it to a human for a handover.  This list of features is however quite large and represents a very high-dimensional set of data. High-dimensionality can become quite problematic as the values might not vary with the same amount in all dimensions. We will later look at ways on reducing the number of dimensions. More on the role of the features for clustering will be presented in the results and discussion section.
+With these features we define for a robot how to grasp an object and present it to a human for a handover. This list of features is however quite large and represents a very high-dimensional set of data. High-dimensionality can become quite problematic as the values might not vary with the same amount in all dimensions as well as create similarities between objects that are not there. A first filtering of these features can be made on the idea that the features should be expressable invariant to the object, i.e. we only keep the features that are expressed in relation to the object. This will leave us with the following list:
+
+\begin{itemize}
+	\item Rotation of the object in z-axis, expressed between 0.0-1.0 where 1.0 is a full circle (360 degrees).
+	\item Direction in x-axis between center of object and center of grasp.
+	\item Direction in y-axis between center of object and center of grasp.
+	\item Ratio of distance between center of the object and the center of the grasping region.
+	\item Ratio area of grasp region to area of object.
+\end{itemize}
 
 \subsubsection{Filtering of unwanted frames}
 

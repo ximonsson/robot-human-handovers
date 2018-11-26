@@ -150,9 +150,14 @@ Figure \ref{fig:clusters} show us a two-dimensional and three-dimensional repres
 %	-
 
 \section{Classification}
-Output different results from classification depending on which layers are trained further and network architecture.
 
 \subsection{Initial testing of batch sizes and learning rates}
+
+The first steps into finding optimal parameters for finetuning the network are presented in figures \ref{fig:res_init_lr} and \ref{fig:res_init_bs}. All training sessions were performed with a K-fold cross validation of five and trained for a total of 20 epochs. The figures show us the loss, validation and test accuracy at different learning rates with a fixed batch size (figure \ref{fig:res_init_lr}) and different batch sizes with a fixed learning rate (figure \ref{fig:res_init_bs}).
+
+First observations of the results in \ref{fig:res_init_lr} indicate that learning rates larger than 0.0001 are unable to learn anything probably as a result from being too large to descend the local minima. This is also confirmed as seeing how training with the smallest learning rate, 1e-05, is the one that performs the best on test and validation accuracy.
+
+By inspecting the results of differently sized batches we can see that the larger ones are preferred as they reach better blablabla.
 
 \subsubsection{Learning rates}
 
@@ -175,6 +180,7 @@ Output different results from classification depending on which layers are train
 		\caption{Test accuracy.}
 	\end{subfigure}
 	\caption{Loss, validation and test accuracy for batch size 32 and different learning rates.}
+	\label{fig:res_init_lr}
 \end{figure}
 
 
@@ -199,6 +205,7 @@ Output different results from classification depending on which layers are train
 		\caption{Test accuracy.}
 	\end{subfigure}
 	\caption{Loss, validation and test accuracy for learning rate 1e-05 and different batch sizes.}
+	\label{fig:res_init_bs}
 \end{figure}
 
 
