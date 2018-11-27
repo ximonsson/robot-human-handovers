@@ -1,6 +1,13 @@
+\section{Overview}
+
 The goal of this project is to develop a system that has atonomously learned from the handovers performed by humans to output an object's settings for how to be handed over, given an image of it. Another of our requirements is that the learning has been abstracted enough that this system is also accurately applicable on new objects that are not present in the training set. One way to go about with this would be by learning the handover settings for an object and then training for object classification. In other words, record all the handover features for each individual object, create a mean from them, and train a machine to recognize the object based on images as to output its settings. Such a machine would for \(n\) number of objects learn to output \(n\) different classes. This can potentially become an increasingly difficult task as the dataset of objects grows. At the same time as the requirements on the size for the dataset grows to be able to learn to properly recognize the objects. Such a system would believe that each object has its settings. If we instead hypothesize that some objects are handed over in similar fashion we can try a different approach:  letting the system, through unsupervised learning, find relationships between the observations of handovers and through this classify the individual objects into classes of handovers. This simplifies our problem as the number of outputs shrinks. We no longer pressure the system into properly recognizing invidual objects, but instead similarities between those that share the same features, which also lowers the requirements on data collection.
 
 The first part of this work will be to observe and record a number of handovers between humans for a defined set of objects which the system will the try to categorise into different classes. In a second part each object will then be assigned a class that we train a machine to return when given an image. Seeing how we do not have any labels for the handovers, but still want to train a model that outputs some defined class for how the object should be handed over, we will be using a semi-supervised approach in this project: by first applying an unsupervised learning algorithm to categorise and create classes of handovers that are later used as output through self-supervised learning.
+
+\subsection*{Testing}
+
+For testing purposes a number of images will be taken of objects that are not part of the training set. On the contrary to the objects used for training we will not record handovers of them and instead manually decide which class they belong to. This means that we are required to choose objects that in some ways resemble the objects from the training set and that have a quite decisively way of being handed over, so it does not become too questionable about which class they belong to. The images of the objects will be inputed to the model achieved and the accuracy will be tested against it. We aim for an accuracy of 90\% with a standard deviation of 2\%. If these results are achieved we judge the model to be successful.
+
 
 \section{Tools and material}
 
@@ -47,7 +54,7 @@ The applications will be written mostly in C++ or Python depending on availabili
 
 \section{Categorisation of handovers}
 
-\subsection{Collection of data: recording of handovers}
+\subsection{Recording of handovers}
 
 For this purpose a number of voluteers were asked to be recorded while handing over a set of objects between each other. Even though Kinect v2 supports depth images, only two-dimensional color data will be used in this part. A total of 11 people who already knew each other from before volunteered (including myself) for this task. Pairs of volunteers were permuted as to try and make each person while being the giver adapt to different receivers. Instructions for handing over the objects were given prior to recordings as to make sure participants gave the object in a manner that the person receiving the object can use it straight away after grasping it. For example the hammer should be handed over with its handle first in a manner that the next person can start hammering directly without requiring a switch of grip after receiving it. Or a cup is to be handed handle-first so the person can start drinking right away. A bottle is easier to pour from if you hold it below its center of gravity therefore this area should be free for the receiving person while handing it over. For reasons that we will see later participants were instructed to use a grasp that covers the object, they could not for example hand something over flat in their palm. This is because of how the grasp region is identified and its limitations. The general regions of where to grasp by the giver and what part to present to the person receiving were chosen by myself with in mind for optimization for the receiver when given the object. For objects that might contain liquids the participants were asked to imagine that these objects were filled to the top while handing them over between each other.
 
@@ -138,8 +145,9 @@ With these features we define for a robot how to grasp an object and present it 
 	\item Direction in x-axis between center of object and center of grasp.
 	\item Direction in y-axis between center of object and center of grasp.
 	\item Ratio of distance between center of the object and the center of the grasping region.
-	\item Ratio area of grasp region to area of object.
+	\item Ratio area of grasp region over area of object.
 \end{itemize}
+
 
 \subsubsection{Filtering of unwanted frames}
 
