@@ -112,10 +112,10 @@ INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 training_sets = datasets(DATA_TRAIN, TRAIN_OBJECTS, K)
 test_data = datasets(DATA_TEST, TEST_OBJECTS, 1)[0]
 
-for k in range(K):
-	print("*** K={} ***".format(k+1))
+with tf.Session() as s:
+	for k in range(K):
+		print("*** K={} ***".format(k+1))
 
-	with tf.Session() as s:
 		# initialize and load weights
 		s.run(tf.global_variables_initializer())
 		alexnet.load_weights("data/classification/weights/bvlc_alexnet.npy", s, train_layers)
