@@ -4,10 +4,6 @@ The goal of this project is to develop a system that has atonomously learned fro
 
 The first part of this work will be to observe and record a number of handovers between humans for a defined set of objects which the system will the try to categorise into different classes. In a second part each object will then be assigned a class that we train a machine to return when given an image. Seeing how we do not have any labels for the handovers, but still want to train a model that outputs some defined class for how the object should be handed over, we will be using a semi-supervised approach in this project: by first applying an unsupervised learning algorithm to categorise and create classes of handovers that are later used as output through self-supervised learning.
 
-\subsection*{Testing}
-
-For testing purposes a number of images will be taken of objects that are not part of the training set. On the contrary to the objects used for training we will not record handovers of them and instead manually decide which class they belong to. This means that we are required to choose objects that in some ways resemble the objects from the training set and that have a quite decisively way of being handed over, so it does not become too questionable about which class they belong to. The images of the objects will be inputed to the model achieved and the accuracy will be tested against it. We aim for an accuracy of 90\% with a standard deviation of 2\%. If these results are achieved we judge the model to be successful.
-
 
 \section{Tools and material}
 
@@ -287,3 +283,30 @@ There are issues like black triangles in the corners or along the edges after ro
 \end{figure}
 
 Training and validation will be performed on a larger subset of the images to see how well the system is able to recognize and predict a class for objects it has been trained for. While a smaller subset will be used later for testing to see how well the system performs on foreign objects that it has never seen before. The sizes of these subsets will be varied as to see how many objects are required for training to perform well on new objects.
+
+
+\section{Testing}
+\label{sec:testing}
+
+For testing purposes a number of images will be taken of objects that are not part of the training set. This is to make sure that the model adapts well to the same kind of objects as well as finding similarities as to output them to the same class. On the contrary to the objects used for training we will not record handovers for them. Instead we will manually decide which class they belong to. This means that we are required to choose objects that in some ways resemble the objects from the training set and that have a quite decisive way of being handed over, so it does not become too questionable about which class they belong to. The list of objects used for testing is as follows:
+
+\begin{itemize}
+	\item Beer glass.
+	\item Bottle, a larger one than the one trained on.
+	\item Carafe.
+	\item Cup, different from the one trained on.
+	\item Fork.
+	\item Glass, with different shape from the training set.
+	\item Knife, smaller and different shape than the one trained on.
+	\item Scissors, smaller than the one trained on.
+	\item Spatula.
+	\item Spoon.
+	\item Wine glass.
+	\item Wooden spoon.
+\end{itemize}
+
+These objects are chosen depending on the results achieved from the clustering, further explaination are presented in section \ref{sec:res_setup}.
+
+The images of the objects will be inputed to the model achieved and the accuracy will be tested against it. We aim for an accuracy of 90\% with a standard deviation of 2\%. If these results are achieved we judge the model to be successful.
+
+
