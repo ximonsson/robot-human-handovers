@@ -117,17 +117,13 @@ def datasets(src, objects, k=1):
 
 	# list files in the source directory
 	# sort out the files that belong to the supplied list of objects
-	# balance the dataset among the objects according to the required size if any
-	# and last shuffle everything
-	#
-	# balancing is done by grouping object datafiles in a dict mapped by the object name to
-	# a list of files, slice for each object by the smallest length of data files for an object
+	# start by balancing the images so there are an equal amount of images per object
 
 	object_files = {o.ID: o.files(src) for o in objects}
 	for v in object_files.values():
 		random.shuffle(v)
-	n = min(map(len, object_files.values()))
-	object_files = {o: files[:n] for o, files in object_files.items()}
+	#n = min(map(len, object_files.values()))
+		#object_files = {o: files[:n] for o, files in object_files.items()}
 
 	# divide into datasets per class and balance between them before returning
 	# them divided into k different ones
@@ -135,13 +131,26 @@ def datasets(src, objects, k=1):
 	class_files = {
 			c: sum([object_files[oID] for oID in o if oID in object_files], []) \
 					for c, o in __class_assignments__.items()}
-	n = min(map(len, class_files.values()))
-	class_files = {c: files[:n] for c, files in class_files.items()}
 
-	# create datasets
+	# find the smallest class and rectify the number of images per object in the larger class to
+	# to make it more balanced
+
+	n = min(map(len, class_files.values()))
+	for c in class_files:
+		obj = [o for o in __class_assignments__[c] if o in object_files.keys()]
+		nim = int(n / len(obj)) # number of images per object in the class for it to be balanced
+		for o in obj:
+			if o in object_files:
+				object_files[o] = object_files[o][:nim]
+		class_files[c] = sum([object_files[oID] for oID in obj if oID in object_files], [])
+		random.shuffle(class_files[c])
+
+	# create k datasets
 
 	datasets = []
+	n = min(map(len, class_files.values()))
 	size = int(n / k)
+	n = size * k
 	for i in range(0, n, size):
 		files = {c: f[i:i+size] for c, f in class_files.items()}
 		datasets.append([os.path.join(src, f) for f in sum(files.values(), [])])
