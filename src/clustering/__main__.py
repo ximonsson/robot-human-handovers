@@ -12,6 +12,7 @@ import pickle
 import os
 
 from handoverdata.object import load_objects_database
+from handoverdata import OBJID_2_NAME
 
 
 def wait():
@@ -122,6 +123,17 @@ def __print_pca_info__(pca):
 	print()
 
 
+def sample_heat_map(object_samples_assignemnts, n):
+	m = np.zeros((len(object_samples_assignemnts), n+1), dtype=np.int)
+	count = 0
+	for oID, assignments in object_samples_assignemnts.items():
+		m[count][0] = oID
+		for l, c in assignments.items():
+			m[count][l+1] = c
+		count += 1
+	return m
+
+
 # -----------------------------------------------------------------------------------------------------
 # Start main script
 #
@@ -179,13 +191,23 @@ with open(samples_file, "rb") as f:
 
 		# sample cluster data for plotting
 		clusters = [X[k.labels_ == c] for c in range(n)]
+		cluster_samples = [samples[:, FEATURES][k.labels_ == c] for c in range(n)]
 
 		# create object summaries of the data
 		cluster_assignments, sample_assignments = summarize(k, samples)
 
+		# store a heat map of the distribution of the original samples into the clusters per object
+		hm = sample_heat_map(sample_assignments, n)
+		with open(os.path.join(DIR, "object-sample-assignments_{}.dat".format(n)), "w") as f:
+			f.write("- {}\n".format(" ".join(map(str, range(1, n+1)))))
+			for row in hm:
+				f.write("{} {}\n".format(OBJID_2_NAME[row[0]], " ".join(map(str, row[1:]))))
+
 		# store results
 		store_dat("silhouette_sample_values_{}.dat".format(n), *silhouette_sample_values)
 		store_dat("clusters_{}.dat".format(n), *clusters)
+		store_dat("cluster-samples_{}.dat".format(n), *cluster_samples)
+		#store_dat("object-sample-assignments_6.dat", hm)
 		store_dat(
 				"centroids_{}.dat".format(n),
 				*k.cluster_centers_.reshape((k.cluster_centers_.shape[0], 1, k.cluster_centers_.shape[1])))
