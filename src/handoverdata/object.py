@@ -71,7 +71,7 @@ class Object:
 		# find (largest) contour around the object
 
 		bw = cv2.cvtColor(self.__mask__, cv2.COLOR_BGRA2GRAY)
-		_, contours, _ = cv2.findContours(bw, 1, 2)
+		contours, _ = cv2.findContours(bw, 1, 2)
 		contours = sorted(contours, key=cv2.contourArea)
 		cnt = contours[-1]
 
@@ -152,7 +152,7 @@ def load_objects_database(filepath):
 	:returns: dictionary with objects with the tag IDs as keys.
 	"""
 	objects = dict()
-	with open("data/objects/objects.db") as f:
+	with open(filepath) as f:
 		for line in f:
 			tokens = line[:-1].split(__DB_DELIMITER__)
 			# parse center point
