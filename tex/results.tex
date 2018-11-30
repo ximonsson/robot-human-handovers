@@ -25,7 +25,7 @@
 		-0.36102909 &  0.33317829 & -0.15354445 & -0.22331964 &  0.82776969 \\ \hline
 		-0.07275141 & -0.28151638 &  0.19427207 & -0.92743392 & -0.13259127 \\ \hline
 	\end{tabular}
-	\caption{Principal axes in feature space, representing the directions of maximum variance in the data.}
+	\caption{Principal axes in feature space, representing the directions of maximum variance in the data. We can see that the features 3, 5 and 4 the most variant ones.}
 	\label{tab:pca_components}
 \end{table}
 
@@ -44,7 +44,7 @@
 	\end{center}
 \end{table}
 
-PCA was performed to keep the three most variant features of the samples. In \ref{tab:pca_components} we can see the principle axes for maximum variance in the data, and from there we can see that the features rotation, and direction are the most variant features. In \ref{tab:pca_variance} we can see the variance for each of these three features as well as their ratio for the dataset. In total these features represent around 80\% of the entire variance, seeing how we have five in total, this would mean that the other two would represent around 10\% each which is of quite small significance compared to the other three, we therefore can be quite happy about this new dimensional reduction.
+PCA was performed to keep the three most variant features of the samples. In \ref{tab:pca_components} we can see the principle axes for maximum variance in the data. From this we find that the features that vary the most are in order of variance 3, 5 and 4 that correspond to: ratio between area of grasp and area of object, direction of vector between center of grasp and center of object in y-axis, and the direction of this same vector in the x-axis. In \ref{tab:pca_variance} we can see the variance for each of these three features as well as their ratio for the dataset. In total these features represent around 80\% of the entire variance, seeing how we have five in total, this would mean that the other two would represent around 10\% each which is of quite small significance compared to the other three, we therefore can be content about this new dimensional reduction.
 
 
 \subsection{K-means}
