@@ -87,7 +87,6 @@ method_imgs:
 
 result_imgs:
 	montage img/results/objects/*.jpg -geometry 128x128+2+2 -tile x5 img/results/objects.jpg
-	#montage img/results/object_handovers/*.jpg -geometry 128x128+2+2 -tile x5 img/results/object_handovers.jpg
 
 
 clean:
