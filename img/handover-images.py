@@ -61,4 +61,3 @@ with open("data/raw") as f:
 				break
 
 		n += 1
-

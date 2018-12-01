@@ -117,28 +117,27 @@ Figure \ref{fig:clusters} show us a two-dimensional and three-dimensional repres
 		Cluster & Objects \\
 		\hline
 		one   & hammer, pen, scalpell, scissors, knife, screwdriver, brush \\
-		two   & tube \\
-		three & can, pitcher, glass, bottle, cup \\
-		four  & box \\
-		five  & cutters \\
-		six   & - \\
+		two   & box \\
+		three & - \\
+		four  & can, pitcher, glass, bottle, cup \\
+		five  & tube \\
+		six   & cutters \\
 		\hline
 	\end{tabular}
 	\caption{Cluster assignment of objects between six clusters.}
 	\label{tab:object_cluster_assign}
 \end{table}
 
-In figure \ref{fig:silhouette_6} we observe two dominant clusters, the first one and the third one. Figure \ref{fig:obj_sample_heatmap} represents a heatmap over the distribution of samples belonging to each object between the clusters. We can see that each cluster represents at least one object, with the exception of the sixth cluster. The screwdriver, knife, scissors, pen, hammer, scalpell and brush have the largest majority of their samples belonging to the first cluster, while the bottle, pitcher, glass, cup and can are represented by the third cluster. The cutters, box and tube are represented by their own clusters, respectively fifth, fourth and third clusters, showing that they are handed over in unique ways compared to the other previous objects. The sixth cluster seems quite evenly distributed over the objects, with the pitcher having the larges part, which indicates that it can be considered as a cluster of noise from the input data. Table \ref{tab:object_cluster_assign} shows us the final distribution of the objects between the clusters.
+In figure \ref{fig:silhouette_6} we observe two dominant clusters, the first and fourth one. Figure \ref{fig:obj_sample_heatmap} represents a heatmap over the distribution of samples belonging to each object between the clusters. We can see that each cluster represents at least one object, with the exception of the sixth cluster. The screwdriver, knife, scissors, pen, hammer, scalpell and brush have the largest majority of their samples belonging to the first cluster, while the bottle, pitcher, glass, cup and can are represented by the third cluster. The cutters, box and tube are represented by their own clusters, respectively fifth, fourth and third clusters, showing that they are handed over in unique ways compared to the other previous objects. The sixth cluster seems quite evenly distributed over the objects, with the pitcher having the larges part, which indicates that it can be considered as a cluster of noise from the input data. Table \ref{tab:object_cluster_assign} shows us the final distribution of the objects between the clusters. In figure \ref{fig:results_objects} every object is visualized with their corresponding cluster mean features applied to them.
 
 Already here we can see some similarities between the objects that are clustered together, notable in clusters one and three. The first one includes objects that are longer and thinner and that often include a tip of contact for it's usage, like the head of the hammer or the tip of the brush. While the third cluster is made of objects that are larger and cylindrical, often used for containing fluids which explains they need to be held similar fashion when handed over as to not spill out the contents.
 
-% TODO create images of the objects with the mean values of their cluster on them
-%\begin{figure}
-	%\centering
-	%\includegraphics[width=\textwidth]{img/results/object_handovers.jpg}
-	%\caption{Resulting handover data applied to each object}
-	%\label{fig:object_handovers}
-%\end{figure}
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{img/results/objects.jpg}
+	\caption{The training objects with the mean values of the corresponding cluster applied to them.}
+	\label{fig:results_objects}
+\end{figure}
 
 
 
