@@ -80,8 +80,9 @@ with tf.name_scope("testing"):
 
 # Setup logging
 
-LOGDIR = "{}/LR-{}__EP-{}__BS-{}__K-{}".format(
-		"results/classification/", LEARNING_RATE, EPOCHS, BATCH_SIZE, K)
+LOGDIR = "{}/LR-{}__EP-{}__BS-{}__K-{}__D-{}".format(
+		"results/classification/", LEARNING_RATE, EPOCHS, BATCH_SIZE, K, DROPOUT)
+
 LOGDIR_SUFFIX = find_arg("logdir-suffix", "")
 if LOGDIR_SUFFIX != "":
 	LOGDIR = "{}_{}".format(LOGDIR, LOGDIR_SUFFIX)
@@ -202,21 +203,9 @@ with tf.Session() as s:
 			object_accuracy[k].append(acc/(batch+1)*100)
 
 
+#
 # store data files over the progress
 #
-#	we would like to store the run with the highest test accuracy as the first index in the dataset
-#	to make plotting a little easier
-#
-
-#i, _ = max(enumerate(summary_test_acc), key=lambda x: operator.itemgetter(1)(x)[-1])
-#summary_loss[0], summary_loss[i] = summary_loss[i], summary_loss[0]
-#summary_val_acc[0], summary_val_acc[i] = summary_val_acc[i], summary_val_acc[0]
-#summary_test_acc[0], summary_test_acc[i] = summary_test_acc[i], summary_test_acc[0]
-#confmats[0], confmats[i] = confmats[i], confmats[0]
-#object_accuracy[0], object_accuracy[i] = object_accuracy[i], object_accuracy[0]
-#training_sets[0], training_sets[i] = training_sets[i], training_sets[0]
-#bad_images = set(bad_images)
-
 
 with open(os.path.join(LOGDIR, "loss.dat"), "w") as f:
 	for summary in summary_loss:
