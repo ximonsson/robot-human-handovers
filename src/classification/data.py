@@ -1,9 +1,9 @@
 """
 File: data.py
 Description:
-	Functions for manipulating and augmenting data in need to train for object classification by handover type.
-	Also functions for load batches used for feeding a network during training and testing as well as
-	split data into balanced datasets.
+	Functions for manipulating and augmenting data in need to train for object classification
+	by handover type. Also functions for load batches used for feeding a network during training
+	and testing as well as split data into balanced datasets.
 """
 import cv2
 import struct
@@ -122,8 +122,6 @@ def datasets(src, objects, k=1):
 	object_files = {o.ID: o.files(src) for o in objects}
 	for v in object_files.values():
 		random.shuffle(v)
-	#n = min(map(len, object_files.values()))
-		#object_files = {o: files[:n] for o, files in object_files.items()}
 
 	# divide into datasets per class and balance between them before returning
 	# them divided into k different ones
