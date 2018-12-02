@@ -38,9 +38,9 @@ LEARNING_RATE = float(find_arg("learning-rate", "1e-06"))
 EPOCHS = int(find_arg("epochs", "10"))
 BATCH_SIZE = int(find_arg("batch-size", "32"))
 K = int(find_arg("k", "5"))
+DROPOUT = float(find_arg("dropout", "0.5"))
 
 # network parameters
-DROPOUT = 0.5
 OUTPUTS = 2
 train_layers = ["fc6", "fc7", "fc8"]
 
@@ -208,13 +208,14 @@ with tf.Session() as s:
 #	to make plotting a little easier
 #
 
-i, _ = max(enumerate(summary_test_acc), key=lambda x: operator.itemgetter(1)(x)[-1])
-summary_loss[0], summary_loss[i] = summary_loss[i], summary_loss[0]
-summary_val_acc[0], summary_val_acc[i] = summary_val_acc[i], summary_val_acc[0]
-summary_test_acc[0], summary_test_acc[i] = summary_test_acc[i], summary_test_acc[0]
-confmats[0], confmats[i] = confmats[i], confmats[0]
-object_accuracy[0], object_accuracy[i] = object_accuracy[i], object_accuracy[0]
-bad_images = set(bad_images)
+#i, _ = max(enumerate(summary_test_acc), key=lambda x: operator.itemgetter(1)(x)[-1])
+#summary_loss[0], summary_loss[i] = summary_loss[i], summary_loss[0]
+#summary_val_acc[0], summary_val_acc[i] = summary_val_acc[i], summary_val_acc[0]
+#summary_test_acc[0], summary_test_acc[i] = summary_test_acc[i], summary_test_acc[0]
+#confmats[0], confmats[i] = confmats[i], confmats[0]
+#object_accuracy[0], object_accuracy[i] = object_accuracy[i], object_accuracy[0]
+#training_sets[0], training_sets[i] = training_sets[i], training_sets[0]
+#bad_images = set(bad_images)
 
 
 with open(os.path.join(LOGDIR, "loss.dat"), "w") as f:
@@ -251,3 +252,11 @@ with open(os.path.join(LOGDIR, "acc_object.dat"), "w") as f:
 with open(os.path.join(LOGDIR, "bad_images.dat"), "w") as f:
 	for im in bad_images:
 		f.write("\t{}\n".format(im))
+
+with open(os.path.join(LOGDIR, "training_images.dat"), "w") as f:
+	for tset in training_sets:
+		f.writelines(["\t{}\n".format(im) for im in tset])
+		f.write("\n\n")
+
+with open(os.path.join(LOGDIR, "test_images.dat"), "w") as f:
+	f.writelines(["\t{}\n".format(im) for im in test_data])
