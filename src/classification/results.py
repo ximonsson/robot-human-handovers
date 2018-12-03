@@ -19,5 +19,7 @@ def datasets(run, k):
 	return sum(sets[:k] + sets[k+1:], []), sets[k]
 
 
-def common_training_images(run):
-	pass
+def bad_predictions(run):
+	with open(os.path.join(DIR, run, "bad_images.dat")) as f:
+		images = f.readlines()
+	return [im.strip() for im in images]
