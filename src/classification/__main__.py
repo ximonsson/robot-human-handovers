@@ -239,8 +239,7 @@ with open(os.path.join(LOGDIR, "acc_object.dat"), "w") as f:
 		f.write("\n\n")
 
 with open(os.path.join(LOGDIR, "bad_images.dat"), "w") as f:
-	for im in bad_images:
-		f.write("\t{}\n".format(im))
+	f.writelines(["\t{}\n".format(im) for im in bad_images])
 
 with open(os.path.join(LOGDIR, "training_images.dat"), "w") as f:
 	for tset in training_sets:
