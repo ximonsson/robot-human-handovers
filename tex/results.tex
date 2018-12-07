@@ -179,62 +179,32 @@ To summarize the clustering part of this work we are able to divide the objects 
 In section \ref{sec:testing} we gave a list of objects that are to be used for testing. These were chosen after we made the decision regarding outputs for the network to achieve a balanced dataset over the outputs for testing. Table \ref{tab:classification_objects} shows the distribution of the test objects into classes with the corresponding training objects.
 
 
-\subsection{Initial testing of batch sizes and learning rates}
+\subsection{Finetuning the network}
+
+For finetuning the network we chose to train using a batch size of 128 and learning rate of 0.0001 for 20 epochs, keeping the initial value of 0.5 for dropout that was used when training the initial weights.
 
 \begin{figure}
+	\centering
 	\begin{subfigure}[b]{\textwidth}
-		\input{plot_classification__learning-rates__loss}
+		\input{plot_classification__results-loss}
 		\caption{Loss.}
+		\label{}
 	\end{subfigure}
-
 	\begin{subfigure}[b]{\textwidth}
-		\input{plot_classification__learning-rates__val-acc}
+		\input{plot_classification__results-val}
 		\caption{Validation accuracy.}
+		\label{}
 	\end{subfigure}
 \end{figure}
-
 \begin{figure}
 	\ContinuedFloat
 	\begin{subfigure}[b]{\textwidth}
-		\input{plot_classification__learning-rates__test-acc}
+		\input{plot_classification__results-test}
 		\caption{Test accuracy.}
+		\label{}
 	\end{subfigure}
-	\caption{Loss, validation and test accuracy for batch size 32 and different learning rates.}
-	\label{fig:res_init_lr}
+	\label{fig:results_plots}
 \end{figure}
-
-
-\begin{figure}
-	\begin{subfigure}[b]{\textwidth}
-		\input{plot_classification__batch-sizes__loss}
-		\caption{Loss.}
-	\end{subfigure}
-
-	\begin{subfigure}[b]{\textwidth}
-		\input{plot_classification__batch-sizes__val-acc}
-		\caption{Validation accuracy.}
-	\end{subfigure}
-\end{figure}
-
-\begin{figure}
-	\ContinuedFloat
-	\begin{subfigure}[b]{\textwidth}
-		\input{plot_classification__batch-sizes__test-acc}
-		\caption{Test accuracy.}
-	\end{subfigure}
-	\caption{Loss, validation and test accuracy for learning rate 1e-05 and different batch sizes.}
-	\label{fig:res_init_bs}
-\end{figure}
-
-
-In a first attempt to finetune the network to our data some training sessions are performed as to consider within what range the training parameters' optimal values lie within. Initial tests for finetuning the network are presented in figures \ref{fig:res_init_lr} and \ref{fig:res_init_bs} where we do coarse testing for which batch size and learning rates are optimal. With these results we will later try parameters within a smaller range to conclude which are their optimal values. All training sessions were performed with a 5-fold cross validation and trained for a total of 30 epochs with a dropout value of \(0.5\). The figures show us the loss, validation and test accuracy at different learning rates of \([0.1, 0.01, 0.001, 0.0001, 1e-05]\) with a fixed batch size of \(32\) (figure \ref{fig:res_init_lr}) and different batch sizes of \([128, 64, 32, 16, 8]\) with a fixed learning rate of \(1e-05\) (figure \ref{fig:res_init_bs}).
-
-First observations of the results in \ref{fig:res_init_lr} indicate that learning rates larger than 0.0001 make the network unable to learn from the data, probably as a result from the learning rate being too large for descending the local minima. This is confirmed by how training with the smallest learning rate, 1e-05, is the one that performs the best on test and validation accuracy.
-
-By inspecting the results of differently sized batches in figure \ref{fig:res_init_bs} we can see that the larger ones are preferred as they reach a zero loss and high validation accuracy quite early, while smaller ones tend to overfit. A problem is however that larger batches means shorter training, which for such a small dataset can be too short, and important details might be overlooked. This is illustrated by the higher test accuracy for smaller batch sizes of 16 and 8 after longer training, than the larger ones of 128 and 64.
-
-
-\subsection{End results}
 
 \begin{figure}
 	\input{plot_classification__confmat}
@@ -242,12 +212,82 @@ By inspecting the results of differently sized batches in figure \ref{fig:res_in
 	\label{fig:confusion_matrix}
 \end{figure}
 
-\textcolor{red}{insert images that had poor accuracy and write discussion on them}
+\begin{table}
+	\centering
+	\begin{tabular}{l | c | c | c | c}
+		\hline
+		Set        & Min   & Max   & Mean  & Std.  \\ \hline
+		Validation & 0.992 & 1.0   & 0.998 & 0.003 \\
+		Test       & 0.886 & 0.922 & 0.906 & 0.013 \\
+	\end{tabular}
+	\caption{Accuracy on the training and test objects for 5 fold cross validation.}
+	\label{tab:results_accuracy}
+\end{table}
 
-\textcolor{red}{insert test to show how many objects are need to train upon to achieve good results}
+\begin{table}
+	\centering
+	\begin{tabular}{l | c | c | c | c}
+		\hline
+		Object       & Min   & Max   & Mean  & Std.  \\ \hline
+		Beerglass    & 0.821 & 0.905 & 0.864 & 0.032 \\
+		Bottle       & 1.000 & 1.000 & 1.000 & 0.000 \\
+		Carafe       & 0.596 & 0.730 & 0.674 & 0.057 \\
+		Cup          & 1.000 & 1.000 & 1.000 & 0.000 \\
+		Fork         & 1.000 & 1.000 & 1.000 & 0.000 \\
+		Glass        & 0.827 & 0.988 & 0.901 & 0.064 \\
+		Knife        & 1.000 & 1.000 & 1.000 & 0.000 \\
+		Scissors     & 1.000 & 1.000 & 1.000 & 0.000 \\
+		Spatula      & 0.940 & 0.964 & 0.955 & 0.009 \\
+		Spoon        & 0.976 & 1.000 & 0.993 & 0.010 \\
+		Wineglass    & 0.471 & 0.644 & 0.538 & 0.059 \\
+		Wooden spoon & 0.926 & 1.000 & 0.951 & 0.027 \\
+	\end{tabular}
+	\caption{Accuracy on individual objects in the test set for 5 fold cross validation.}
+	\label{tab:results}
+\end{table}
+
+
+\begin{figure}
+	\centering
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{img/results/bad-images/new-beerglass_100_80.jpg}
+		\caption{}
+	\end{subfigure}
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{img/results/bad-images/new-carrafe_102_53.jpg}
+		\caption{}
+	\end{subfigure}
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{img/results/bad-images/new-glass_105_43.jpg}
+		\caption{}
+	\end{subfigure}
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{img/results/bad-images/new-spatula_108_36.jpg}
+		\caption{}
+	\end{subfigure}
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{img/results/bad-images/new-spoon_109_100.jpg}
+		\caption{}
+	\end{subfigure}
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{img/results/bad-images/new-wineglass_110_22.jpg}
+		\caption{}
+	\end{subfigure}
+	\begin{subfigure}[b]{0.3\textwidth}
+		\includegraphics[width=\textwidth]{img/results/bad-images/new-woodenspoon_111_31.jpg}
+		\caption{}
+	\end{subfigure}
+	\caption{Some images with incorrect predictions.}
+\end{figure}
+
 
 Figure \ref{fig:confusion_matrix} shows us the confusion matrix for the network. With a precision and recall of XX and XX, the results tell us that the network is in the end despite otherwise good results, a little biased towards the first class. This can be explained by the fact that even though the training set is balanced between the classes in terms of number of images per class, it is however not in the number of objects. The first class represents seven objects while the second one only five, meaning that there are more versatile features to learn for the one class than the other.
 
 We can also observe that the network struggles with objects that are made of glass, especially transparent and thinner glass. This is the case for the carafe and beer glass. Other objects in the same class that are not as transparent such as the bottle and the cup, do not have this problem though, and can achieve accuracies of 100\%. This is probably due to the noise and artifacts that appear in the images taken with the depth camera for objects made of thin glass. The glass material refracts the IR sensor unpredictably, creating noisy images for these objects. This combined with the fact that these objects do not have a distinct color as they are largely transparent make them very challenging to identify. The training set is probably not representative enough of these kind of objects for it to properly learn features to help distinguish them.
 
 A special case is the wine glass, that has the poorest results. Besides the fact that it presents the same challenges as the other glass objects its geometry is also something of a combination of the two classes. Though it has a cylindrical part for liquids it also has a long and thin handle that is similar to for example a pen or brush. As no object in the training set is of the same complex geometry the network as a result has a hard time predicting the correct class for the wineglass.
+
+
+\subsection{Object impact on accuracy}
+
+\textcolor{red}{insert test to show how many objects are need to train upon to achieve good results}

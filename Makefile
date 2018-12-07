@@ -15,12 +15,9 @@ TEXFLAGS=-output-directory=$(OUT) \
 # plot files from classification step
 CLS_PLOT_DIR=src/classification/plot
 CLS_PLOT_SRC= \
-			 learning-rates__loss.gp \
-			 learning-rates__test-acc.gp \
-			 learning-rates__val-acc.gp \
-			 batch-sizes__loss.gp \
-			 batch-sizes__test-acc.gp \
-			 batch-sizes__val-acc.gp \
+			 results-loss.gp \
+			 results-val.gp \
+			 results-test.gp \
 			 confmat.gp
 CLS_PLOT_TEX=$(addprefix $(TEXSRC)/plot_classification__, $(CLS_PLOT_SRC:.gp=.tex))
 
@@ -87,7 +84,7 @@ method_imgs:
 
 result_imgs:
 	montage img/results/objects/*.jpg -geometry 128x128+2+2 -tile x5 img/results/objects.jpg
-
+	montage img/results/bad-images/*.jpg -geometry 128x128+2+2 -tile x5 img/results/bad-images.jpg
 
 clean:
 	rm tex/plot_*
