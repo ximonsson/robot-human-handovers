@@ -181,19 +181,17 @@ In section \ref{sec:testing} we gave a list of objects that are to be used for t
 
 \subsection{Finetuning the network}
 
-For finetuning the network we chose to train using a batch size of 128 and learning rate of 0.0001 for 20 epochs, keeping the initial value of 0.5 for dropout that was used when training the initial weights.
-
 \begin{figure}
 	\centering
 	\begin{subfigure}[b]{\textwidth}
 		\input{plot_classification__results-loss}
 		\caption{Loss.}
-		\label{}
+		\label{fig:results_plots_loss}
 	\end{subfigure}
 	\begin{subfigure}[b]{\textwidth}
 		\input{plot_classification__results-val}
 		\caption{Validation accuracy.}
-		\label{}
+		\label{fig:results_plots_val}
 	\end{subfigure}
 \end{figure}
 \begin{figure}
@@ -201,7 +199,7 @@ For finetuning the network we chose to train using a batch size of 128 and learn
 	\begin{subfigure}[b]{\textwidth}
 		\input{plot_classification__results-test}
 		\caption{Test accuracy.}
-		\label{}
+		\label{fig:results_plots_test}
 	\end{subfigure}
 	\label{fig:results_plots}
 \end{figure}
@@ -246,6 +244,23 @@ For finetuning the network we chose to train using a batch size of 128 and learn
 	\label{tab:results}
 \end{table}
 
+\begin{table}
+	\centering
+	\begin{tabular}{l | c | c | c}
+		\hline
+		Class & Precision & Recall & \(F_1\) score \\ \hline
+		A & 0.875 & 0.994 & 0.931 \\ \hline
+		B & 0.991 & 0.841 & 0.910 \\ \hline
+	\end{tabular}
+	\caption{Precision, Recall and \(F_1\) score for the classes.}
+	\label{tab:results_precision_recall_f1}
+\end{table}
+
+
+Considering the limited amount of objects that we are using for training the network we run a high risk of overfitting the network to the training objects. We want the network to recognize the objects in the training set in a abstract fashion as to learn too much detail about the invidiual objects. For finetuning the network we therefore chose to train using a larger batch size of 128 and learning rate of 0.0001 for 20 epochs, keeping the initial value of 0.5 for dropout that was used when training the initial weights.
+
+We can see from figure \ref{fig:results_plots_loss} that the network very quickly is able to find zero loss and validation accuracy above 99\%, it however struggles to become steady on the test accuracy. This is likely due to some overfitting to the training set because we can notice a slight correlation between a lower validation and higher test accuracy.
+
 
 \begin{figure}
 	\centering
@@ -278,14 +293,17 @@ For finetuning the network we chose to train using a batch size of 128 and learn
 		\caption{}
 	\end{subfigure}
 	\caption{Some images with incorrect predictions.}
+	\label{fig:results_bad_images}
 \end{figure}
 
 
-Figure \ref{fig:confusion_matrix} shows us the confusion matrix for the network when it achieved it's highest test accuracy of 92.2\%. We obtain a precision of 0.875, recall of 0.994 and an \(F_1\) score of 0.931 for class \(A\) and a precision of 0.992, recall of 0.841 and a \(F_1\) score of 0.91 for class \(B\). The results tell us that the network is in the end despite otherwise good results, a little biased towards the first class. This can be explained by the fact that even though the training set is balanced between the classes in terms of number of images per class, it is however not in the number of objects. The first class represents seven objects while the second one only five, meaning that there are more versatile features to learn for the one class than the other.
+Figure \ref{fig:confusion_matrix} shows us the confusion matrix for the network when it achieved it's highest test accuracy of 92.2\%. We obtain a precision of 0.875, recall of 0.994 and an \(F_1\) score of 0.931 for class \(A\) and a precision of 0.992, recall of 0.841 and a \(F_1\) score of 0.91 for class \(B\) (summnarized in table \ref{tab:results_precision_recall_f1}. The results tell us that the network is in the end despite otherwise good results, a little biased towards the first class. This can be explained by the fact that even though the training set is balanced between the classes in terms of number of images per class, it is however not in the number of objects. The first class represents seven objects while the second one only five, meaning that there are more versatile features to learn for the one class than the other.
 
-We can also observe that the network struggles with objects that are made of glass, especially transparent and thinner glass. This is the case for the carafe and beer glass. Other objects in the same class that are not as transparent such as the bottle and the cup, do not have this problem though, and can achieve accuracies of 100\%. This is probably due to the noise and artifacts that appear in the images taken with the depth camera for objects made of thin glass. The glass material refracts the IR sensor unpredictably, creating noisy images for these objects. This combined with the fact that these objects do not have a distinct color as they are largely transparent make them very challenging to identify. The training set is probably not representative enough of these kind of objects for it to properly learn features to help distinguish them.
+In figure \ref{fig:results_bad_images} we show a sample image of each object that did not achieve 100\% accuracy for (a larger sample set can be found in appendix \ref{app:bad_images}). We can observe that the network struggles with objects that are made of glass, especially transparent and thinner glass. This is the case for the carafe, wine glass and beer glass. Other objects in the same class that are not as transparent such as the bottle and the cup, do not have this problem though, and can achieve accuracies of 100\%. This is probably due to the noise and artifacts that appear in the images taken with the depth camera for objects made of thin glass and also as they almost become seemingly invisible. Other objects that had images that were hard to classify seem to share the problem of artificats in the image created by the IR sensor in the camera for taking depth images. This combined with the fact that these objects do not have a distinct color as they are largely transparent make them very challenging to identify. The training set is probably not representative enough of these kind of objects for it to properly learn features to help distinguish them.
 
 A special case is the wine glass, that has the poorest results. Besides the fact that it presents the same challenges as the other glass objects its geometry is also something of a combination of the two classes. Though it has a cylindrical part for liquids it also has a long and thin handle that is similar to for example a pen or brush. As no object in the training set is of the same complex geometry the network as a result has a hard time predicting the correct class for the wineglass.
+
+From the first class there are some objects that did not achieve 100\% accuracy, which might not always due to the image quality, as for example the wooden spoon. One theory to why some of the images of the wooden was incorrectly predicted is that it has some resemblence due to color to the bottle that the network was trained on which is of the opposite class. This shows the limitations of training on such a small dataset of objects that are not versatily represented.
 
 
 \subsection{Object impact on accuracy}
