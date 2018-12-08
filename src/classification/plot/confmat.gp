@@ -1,12 +1,7 @@
 reset
 
 set output outputfile
-#set palette rgbformulae -23,-23,-23
-
-#set style line 1 lt 2 lc rgb '#ffffff' tc rgb '#ffffff'
-
-set palette defined (0 "#ffffff", 500 "#2222aa")
-
+set palette defined (0 "#ffffff", 500 "#3388cc")
 set ylabel "True value"
 set xlabel "Predicted value"
 
