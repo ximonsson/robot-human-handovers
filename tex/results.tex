@@ -208,7 +208,7 @@ For finetuning the network we chose to train using a batch size of 128 and learn
 
 \begin{figure}
 	\input{plot_classification__confmat}
-	\caption{Confusion matrix.}
+	\caption{Confusion matrix for k=1.}
 	\label{fig:confusion_matrix}
 \end{figure}
 
@@ -281,7 +281,7 @@ For finetuning the network we chose to train using a batch size of 128 and learn
 \end{figure}
 
 
-Figure \ref{fig:confusion_matrix} shows us the confusion matrix for the network. With a precision and recall of XX and XX, the results tell us that the network is in the end despite otherwise good results, a little biased towards the first class. This can be explained by the fact that even though the training set is balanced between the classes in terms of number of images per class, it is however not in the number of objects. The first class represents seven objects while the second one only five, meaning that there are more versatile features to learn for the one class than the other.
+Figure \ref{fig:confusion_matrix} shows us the confusion matrix for the network when it achieved it's highest test accuracy of 92.2\%. We obtain a precision of 0.875, recall of 0.994 and an \(F_1\) score of 0.931 for class \(A\) and a precision of 0.992, recall of 0.841 and a \(F_1\) score of 0.91 for class \(B\). The results tell us that the network is in the end despite otherwise good results, a little biased towards the first class. This can be explained by the fact that even though the training set is balanced between the classes in terms of number of images per class, it is however not in the number of objects. The first class represents seven objects while the second one only five, meaning that there are more versatile features to learn for the one class than the other.
 
 We can also observe that the network struggles with objects that are made of glass, especially transparent and thinner glass. This is the case for the carafe and beer glass. Other objects in the same class that are not as transparent such as the bottle and the cup, do not have this problem though, and can achieve accuracies of 100\%. This is probably due to the noise and artifacts that appear in the images taken with the depth camera for objects made of thin glass. The glass material refracts the IR sensor unpredictably, creating noisy images for these objects. This combined with the fact that these objects do not have a distinct color as they are largely transparent make them very challenging to identify. The training set is probably not representative enough of these kind of objects for it to properly learn features to help distinguish them.
 
