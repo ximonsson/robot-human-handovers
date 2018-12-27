@@ -63,7 +63,7 @@ tex/plot_silhouette_7.tex: src/clustering/plot/samples_silhouette_score.gp
 	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $< results/clustering/silhouette_sample_values_7.dat
 
 
-plot_clustering: $(CLT_PLOT_TEX) results/clustering/*.dat
+plot_clustering: $(CLT_PLOT_TEX) # results/clustering/%.dat
 
 $(TEXSRC)/plot_clustering__%.tex: $(CLT_PLOT_DIR)/%.gp
 	GNUTERM=$(GNUTERM) $(GNUPLOT) -e "outputfile='$@'" -c $<
