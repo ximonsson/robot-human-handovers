@@ -11,8 +11,6 @@ Mean performance for our network is 90.6\% with a standard deviation of 1.3\% fo
 \section{Future Work}
 \label{sec:future-work}
 
-The results of this work show that a system is able to autonomously learn to handover objects and adapt to novel ones, but some caveats do exist for it to become truly autonomous. The largest problem is object detection, which is a challenging field within computer vision. This work took help of AprilTags to locate and track the objects but in a live environment these tags do not exist on all objects and the system would need a better way of recognizing the object in the handover scene to extract data about the handover. Also in some cases the AprilTag itself could lead to awkward grips of the objects that can lead to incorrect data (see figure \ref{fig:fw_handover_awkward}). Some work show good success using alternatives such as point cloud libraries (\parencite{Chan2015a}). Object detection using point clouds was tried in this work before using AprilTags, but with very poor results. This is something that would need more work to try and implement better without the help of the tags.
-
 \begin{figure}
 	\centering
 	\includegraphics[width=\textwidth]{img/conclusion/awkward_handover_frame.jpg}
@@ -20,4 +18,8 @@ The results of this work show that a system is able to autonomously learn to han
 	\label{fig:fw_handover_awkward}
 \end{figure}
 
+The results of this work show that a system is able to autonomously learn to handover objects and adapt to novel ones, but some caveats do exist for it to become truly autonomous. The largest problem is object detection, which is a challenging field within computer vision. This work took help of AprilTags to locate and track the objects but in a live environment these tags do not exist on all objects and the system would need a better way of recognizing the object in the handover scene to extract data about the handover. Also in some cases the AprilTag itself could lead to awkward grips of the objects that can lead to incorrect data (see figure \ref{fig:fw_handover_awkward}). Some work show good success using alternatives such as point cloud libraries (\parencite{Chan2015a}). Object detection using point clouds was tried in this work before using AprilTags, but with very poor results. This is something that would need more work to try and implement better without the help of the tags.
+
 Handover classes from clustering are however not enough to tell a robot how to grasp an object when handing it over. As seen in the results when the settings of one class are applied to an object the grasp region can become outside of it, though rotation and direction from center of object are correct. Future work would have to include calculating more precisely where a robot can grasp the object when handing it over given the data from the handover class.
+
+Finally some more research in comparing architectures for the CNN could be done, also experimenting with which layers to train.
