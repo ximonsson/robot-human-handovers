@@ -167,12 +167,13 @@ def batches(data, size, imdim, outputs):
 	:param outputs: integer - number of outputs of the network
 	"""
 	i = 0
-	dim = [size]
+	size_ = len(data) if size > len(data) else size
+	dim = [size_]
 	dim.extend(imdim)
-	for b in range(int(len(data)/size)):
+	for b in range(int(len(data)/size_)):
 		x = np.ndarray(dim)
-		y = np.zeros((size, outputs))
-		for j in range(size):
+		y = np.zeros((size_, outputs))
+		for j in range(size_):
 			name, _ = os.path.splitext(os.path.basename(data[i]))
 			name = name.split("_")[0]
 			cl = Object(name).cl
