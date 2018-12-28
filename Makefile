@@ -18,7 +18,8 @@ CLS_PLOT_SRC= \
 			 results-loss.gp \
 			 results-val.gp \
 			 results-test.gp \
-			 confmat.gp
+			 confmat.gp \
+			 object-impact.gp
 CLS_PLOT_TEX=$(addprefix $(TEXSRC)/plot_classification__, $(CLS_PLOT_SRC:.gp=.tex))
 
 # plot files from clustering step
