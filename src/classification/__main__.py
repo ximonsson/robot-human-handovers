@@ -35,7 +35,7 @@ import operator
 
 # learning parameters
 LEARNING_RATE = float(find_arg("learning-rate", "1e-06"))
-EPOCHS = int(find_arg("epochs", "10"))
+EPOCHS = int(find_arg("epochs", "20"))
 BATCH_SIZE = int(find_arg("batch-size", "32"))
 K = int(find_arg("k", "5"))
 DROPOUT = float(find_arg("dropout", "0.5"))
@@ -109,8 +109,17 @@ INPUT_DIMENSIONS = [alexnet.IN_WIDTH, alexnet.IN_HEIGHT, alexnet.IN_DEPTH]
 
 # load dataset
 
+# parse arguments for which objects to train on
+train_objects_ = find_arg("train-objects", "").split(",")
+if len(train_objects_) == 0:
+	train_objects = TRAIN_OBJECTS
+else:
+	train_objects = [o for o in TRAIN_OBJECTS if o.name in train_objects_]
+
+print(train_objects)
+
 # split dataset
-training_sets = datasets(DATA_TRAIN, TRAIN_OBJECTS, K)
+training_sets = datasets(DATA_TRAIN, train_objects, K)
 test_data = datasets(DATA_TEST, TEST_OBJECTS, 1)[0]
 
 for k in range(K):
