@@ -8,6 +8,7 @@ build
 out
 *.old
 *.bckp
+__pycache__
 
 # source
 src/samples
