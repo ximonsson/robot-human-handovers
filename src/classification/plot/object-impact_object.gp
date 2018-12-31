@@ -19,6 +19,8 @@ set ytics (\
 	"woodenspoon" 11)
 set xtics ("2" 0, "4" 1, "6" 2, "8" 3, "10" 4)
 
+set xlabel "Number of objects"
+
 plot \
 	f matrix u 2:1:($3) with image notitle, \
 	f matrix u 2:1:($3 == 0 ? "" : sprintf("%.3f",$3/100)) w labels notitle
