@@ -19,7 +19,7 @@ set ytics (\
 	"woodenspoon" 11)
 set xtics ("2" 0, "4" 1, "6" 2, "8" 3, "10" 4)
 
-set xlabel "Training set size"
+set xlabel "Number of objects in training set"
 
 plot \
 	f matrix u 2:1:($3) with image notitle, \

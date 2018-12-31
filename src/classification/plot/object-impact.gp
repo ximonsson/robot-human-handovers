@@ -5,7 +5,7 @@ set border 3
 set grid
 set xtics nomirror
 set ytics nomirror
-set xlabel "Training set size"
+set xlabel "Number of objects in training set"
 set ylabel "Accuracy"
 set key right bottom
 
