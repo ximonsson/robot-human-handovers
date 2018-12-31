@@ -314,8 +314,6 @@ From the first class there are some objects that did not achieve 100\% accuracy 
 
 \subsection{Object impact on accuracy}
 
-For the purpose of finding out the impact of each object in the training set on the test accuracy this section will be dedicated to training the network by adding one pair of objects (one object for each class) to the training set and test it's impact on the end results. Table \ref{tab:obj_pairs} summarizes which pairs of objects that were created and the order they were added to the training set. These pairs were chosen randomly. Note that there are only ten objects in total in this test (five for each class), but we have twelwe in total. This is because the dataset is not balanced on objects between classes so we chose to discard two: the \texttt{scalpel} and the \texttt{pen}. These two last objects were chose because they have very similar features that are shared with and represented in the dataset through the \texttt{brush} and in some ways the \texttt{screwdriver}. A more thourough test would be to test all possible permutations of objects to train the network on and evaluate on the test set, but this would be quite time consuming. We therefore rely on this test to give us accurate enough ideas about the impact of each object.
-
 \begin{table}
 	\centering
 	\begin{tabular}{l | l}
@@ -336,7 +334,7 @@ For the purpose of finding out the impact of each object in the training set on 
 	\centering
 	\begin{tabular}{l | p{8cm}}
 		\hline
-		\# objects & Objects \\ \hline
+		Training set size & Objects \\ \hline
 		two   & glass, hammer \\
 		four  & glass, hammer, bottle, knife \\
 		six   & glass, hammer, bottle, knife, can, scissors \\
@@ -348,11 +346,19 @@ For the purpose of finding out the impact of each object in the training set on 
 	\label{tab:obj_training_sets}
 \end{table}
 
+We will explore the effects the size of the training set, as well as the individual objects, have on the final test accuracy. This section will be dedicated to presenting results from training the network on different sizes of training sets. This is done by splitting the objects into pairs (one per class) and then train the network on the subset and measure its accuracy on the test set. After each training session, a new pair of objects is added to the training set and we repeat this until all objects are in the training set.
+
+Table \ref{tab:obj_pairs} summarizes which pairs of objects that were created and the order they were added to the training set, and for clarification table \ref{tab:obj_training_sets} summarizes the objects that are used for each training session. These pairs were chosen randomly. Note that there are only ten objects in total for this test (five for each class), but we have twelwe in total. This is because the dataset is not balanced on objects between classes so we chose to discard two: the \texttt{scalpel} and the \texttt{pen}. These last two objects were chose to be removed because they have very similar features that are shared with and represented in the dataset through the \texttt{brush} and in some ways the \texttt{screwdriver}.
+
+A more thourough method would be to test all possible permutations of objects for training and evaluation, but this would be quite time consuming. We therefore rely on this test to give us accurate enough ideas about the impact of each object.
+
+
 \begin{table}
 	\centering
 	\begin{tabular}{l | l | c | c | c | c}
 		\hline
-		\# objects & Set        & Min   & Max   & Mean  & Std.  \\ \hline
+		Training set size & Set & Min & Max & Mean & Std. \\ \hline
+
 		two
 		& Validation & 0.989 & 1.0   & 0.998 & 0.005 \\
 		& Test       & 0.806 & 0.864 & 0.841 & 0.023 \\ \hline
@@ -373,7 +379,7 @@ For the purpose of finding out the impact of each object in the training set on 
 		& Validation & 0.996 & 1.0   & 0.998 & 0.001 \\
 		& Test       & 0.936 & 0.978 & 0.961 & 0.016 \\ \hline
 	\end{tabular}
-	\caption{Accuracy on the training and test objects for 5 fold cross validation.}
+	\caption{Validation and test accuracy for 5 fold cross validation.}
 	\label{tab:results_perobj}
 \end{table}
 
@@ -389,4 +395,12 @@ For the purpose of finding out the impact of each object in the training set on 
 	\label{fig:object_impact_heatmap}
 \end{figure}
 
-The results for the measured accuracy for each run with different amount of objects is reported in table \ref{tab:results_perobj}. In figure \ref{fig:object_impact} we can see the evaluation of the test and validation accuracy when adding new objects to the training set, which is summarized per object in figure \ref{fig:object_impact_heatmap}. In overall we can see that the network performs quite well for all number of objects in the training set. Lowest is of course when training for only two objects, but even here there are only two objects that have very low accuracy, while all others are between 96-100\%, which suggests that the glass and hammer are good representatives of their class otherwise. Even the wineglass that the network usually struggles with has an accuracy of 100\%. The two objects in question here are the bottle and the cup that have very little similarities with the glass which is representative of their comon class. As soon as two more objects are added the performance for these objects directly become perfect, but the overall performance of the network does not increase by very much as it becomes more confused over the other objects. We notice the largest increase in performance when introducing the fourth pair of objects, the picther and brush. Objects that benefit from it the most are the ones made of glass suggesting it is good with more representative features of transparent glass.
+The results for each session is reported in table \ref{tab:results_perobj}. In figure \ref{fig:object_impact} we present the evolution of the test and validation accuracy when adding new objects to the training set, which is also summarized per object in figure \ref{fig:object_impact_heatmap}.
+
+In overall we can see that the network performs quite well for all sizes of the training set. Lowest is of course when training for only two objects, the \texttt{hammer} and the \texttt{glass}. But even then there are only two objects that have very low accuracy, while all others have near perfect accuracy between 96-100\%. Even the wineglass that the network usually struggles with has an accuracy of 100\%. The two objects in question here with very low accuracy are the \texttt{bottle} and the \texttt{cup}. This comes though as little surprise as they have very little similarities with the \texttt{glass} which is the representative of their comon class, their shapes are not quite similar and they have more in comon with the \texttt{hammer} according to their color.
+
+As soon as two more objects are added for training the performance for these objects directly becomes perfect. The \texttt{bottle} helps with both shape and color to group the two outliers from the previous session. However there is only a very slight increase to the overall performance of the network, as it becomes more confused over the other objects. With some small exceptions the accuracy of the network only increases for each object when adding a new pair to the training set. By looking at the curve for the test accuracy in figure \ref{fig:object_imapct} we notice that the increase is quite steady per pair added. We however observe the exceptional largest increase in performance when introducing the fourth pair of objects, the \texttt{picther} and \texttt{brush}. Objects that benefit from it the most are the ones made of glass suggesting it is good with more representative features of transparent glass for the network to learn.
+
+We can conclude the results for the tests in this section with the hypothesis that increasing the training set only benefits the overall performance of the network. Our results suggest that the network performance can increase further with a larger dataset, but we are limited to the objects that we have at our disposal. We also see the importance of adding objects that are difficult to classify, such as those made of glass in our case, which give the greatest addition to the accuracy.
+
+A last observation that we can make in this section is that the final performance of the network, after trained with five pairs of objects is actually better than the accuracy reported in the previous section. As mentioned before the classes are not balanced in number of objects, however the training sets are in terms of number of images per class. We conclude that it is therefore very important that we also balance in number of objects. Here we chose manually the objects to discard. It would require more work to test if this choice was the best and then to develop an algorithm for the system to do this by itself, which is why this method was not adopted earlier.
