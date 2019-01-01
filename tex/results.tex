@@ -1,17 +1,6 @@
 % ======================================================================================
 % CLUSTERING
 %
-% graphs to insert:
-%	- score vs silhouette coefficient per cluster
-%	- sample silhouette values for the best number of clusters
-%	- 3D/2D cluster representation for the best number of clusters
-% tables to insert:
-%	- PCA outcome of the features
-%	- object to cluster assignment depending on number of clusters (the best ones)
-%	- cluster sizes depending on number of clusters
-% figures:
-%	- mean values of the features per cluster applied to the object
-
 
 \section{Clustering}
 
@@ -146,14 +135,6 @@ Already here we can see some similarities between the objects that are clustered
 % ======================================================================================
 % CLASSIFICATION
 %
-% GRAPHS:
-%	- loss per step
-%	- accuracy per step (validation and testing)
-%	- training speed
-% TABLES:
-%	- confusion matrix
-%	- accuracy per object
-%	-
 
 \section{Classification}
 
@@ -313,6 +294,7 @@ From the first class there are some objects that did not achieve 100\% accuracy 
 
 
 \subsection{Object impact on accuracy}
+\label{sec:obj_impact}
 
 \begin{table}
 	\centering
@@ -395,9 +377,9 @@ A more thourough method would be to test all possible permutations of objects fo
 	\label{fig:object_impact_heatmap}
 \end{figure}
 
-The results for each session are reported in table \ref{tab:results_perobj}. In figure \ref{fig:object_impact} we present the evolution of the test and validation accuracy when adding new objects to the training set, which is also summarized per object in figure \ref{fig:object_impact_heatmap}.
+The results for each session are reported in table \ref{tab:results_perobj}. In figure \ref{fig:object_impact} we present the evolution of the test and validation accuracy when adding new objects to the training set, which is also summarized per object in figure \ref{fig:object_impact_heatmap}. In the end we achieve a model with a mean test accuracy of 96.1\% with a standard deviation of 1.6\% and a validation accuracy of 99.8\% with a standard deviation of 0.1\%.
 
-In overall we can see that the network performs quite well for all sizes of the training set. Lowest is of course when training for only two objects, the \texttt{hammer} and the \texttt{glass}. But even then there are only two objects that have very low accuracy, while all others have near perfect accuracy between 96-100\%. Even the wineglass that the network usually struggles with has an accuracy of 100\%. The two objects in question here with very low accuracy are the \texttt{bottle} and the \texttt{cup}. This comes though as little surprise as they have very little similarities with the \texttt{glass} which is the representative of their common class, their shapes are not quite similar and they have more in common with the \texttt{hammer} according to their color.
+In overall we can see that the network performs quite well for all sizes of the training set. Lowest is of course when training for only two objects, the \texttt{hammer} and the \texttt{glass} with a mean test accuracy of 84.1\% and standard deviation of 2.3\%. Validation accuracy for all sessions is steady between 99.7\% and 100\%. But even then there are only two objects that have very low accuracy, while all others have near perfect accuracy between 96-100\%. Even the wineglass that the network usually struggles with has an accuracy of 100\%. The two objects in question here with very low accuracy are the \texttt{bottle} and the \texttt{cup}. This comes though as little surprise as they have very little similarities with the \texttt{glass} which is the representative of their common class, their shapes are not quite similar and they have more in common with the \texttt{hammer} according to their color.
 
 As soon as two more objects are added for training the performance for these objects directly becomes perfect. The \texttt{bottle} helps with both shape and color to group the two outliers from the previous session. However there is only a very slight increase to the overall performance of the network, as it becomes more confused over the other objects. With some small exceptions the accuracy of the network only increases for each object when adding a new pair to the training set. By looking at the curve for the test accuracy in figure \ref{fig:object_impact} we notice that the increase is quite steady per pair added. We however observe the exceptional largest increase in performance when introducing the fourth pair of objects, the \texttt{picther} and \texttt{brush}. Objects that benefit from it the most are the ones made of glass suggesting it is good with more representative features of transparent glass for the network to learn.
 
