@@ -249,10 +249,11 @@ Silhouette coefficients range from 1 to -1. 1 is the best score because ideally 
 Neither the elbow method nor the mean silhouette coefficient are not enough by themselves to make an accurate decision on the number of clusters, but together they give us a very good estimate. We will therefore start by looking at the mean squared distances of the samples to their centroids and using the elbow method to define a possible interval of possible values for number of clusters, and last use the mean silhouette coefficient to conclude.
 
 
-
 \subsubsection{Principle component analysis (PCA)}
 
 A challenge that presents itself using clustering algorithms is choosing what features are to be used for the purpose. All features are not equally important into classifying the samples. \textcite{Ding2004} showed in their work through principal components and K-means, the relevance between unsupervised dimension reduction and unsupervised learning. We will be using \emph{Principle component analysis} (PCA) to evaluate which features that are to be used to define each cluster. Ideally we use the smallest number of features possible, but also the ones that create the most distinct clusters. PCA defines the principal features as those with the highest variance. It reduces the dimensionality by calculating the variance over all dimensions, i.e. features, and either choses a fixed number of the highest ones or keeps those that represent a certain ratio of the total variance within the data.
+
+For this work we will be using PCA and try reduce the dimensions of the handover data from five to three aiming on keeping a minimum of 80\% of the variance. In the case we have 80\% of the variance over three dimensions, the two that are left would not represent more than 10\% each, which is of low significance compared to the others.
 
 %
 % Prediction of handover class

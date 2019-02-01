@@ -33,10 +33,7 @@
 	\end{center}
 \end{table}
 
-PCA was performed to keep the three most variant features of the samples. In table \ref{tab:pca_components} we can see the principle axes for maximum variance in the data. From this we find that the features that vary the most are in order of variance 3, 5 and 4 that correspond to: ratio between area of grasp and area of object, direction of vector between center of grasp and center of object in y-axis, and the direction of this same vector in the x-axis. In table \ref{tab:pca_variance} we can see the variance for each of these three features as well as their ratio for the dataset.
-
-In total these features represent around 80\% of the entire variance, seeing how we have five in total, this would mean that the other two would represent around 10\% each which is of quite small significance compared to the other three, we therefore can be content about this new dimensional reduction.
-
+In table \ref{tab:pca_components} we can see the principle axes for maximum variance in the data after performing PCA set to keep the three most principal components. From this we find that the features that vary the most are in order of variance 3, 5 and 4 that correspond to: ratio between area of grasp and area of object, direction of vector between center of grasp and center of object in y-axis, and the direction of this same vector in the x-axis. In table \ref{tab:pca_variance} we can see the variance for each of these three features as well as their ratio for the dataset. In total these features represent around 80\% of the entire variance, which we set as threshold and we therefore can be content about this new dimensional reduction.
 
 \subsection{K-means}
 
@@ -87,9 +84,9 @@ In total these features represent around 80\% of the entire variance, seeing how
 	\label{fig:clusters}
 \end{figure}
 
-K-means was later run on the transformed data for a number of output clusters ranging between two to fifteen. As to choose the best fit of number of clusters we later look at the mean silhouette coefficient and the sum of squared distances from each sample to their closest cluster center. These results are presented in figure \ref{fig:kmeans_score}. By using the \texttt{elbow method} on the graph containing the sum of squared distances for the samples, we can judge that a number of clusters between five and eight is suitable. With the help of the silhouette score, where six clusters give the best results and falls into this range, we can conclude that six clusters is our best fit.
+The results for performing k-means clustering on the transformed data for different numbers of clusters are presented in figure \ref{fig:kmeans_score}. By using the \texttt{elbow method} on the graph containing the sum of squared distances for the samples, we can judge that a number of clusters between five and eight is suitable. With the help of the silhouette score, where six clusters give the best results and falls into this range, we can conclude that six clusters is our best fit.
 
-Figure \ref{fig:silhouette_coef} shows us the silhouette coefficient per sample for the three cases of five, six and seven clusters. We can see that for five clusters there are a lot of samples that have a very poor coefficient in some clusters. Seven has a better repartition but the gradient is quite important for the larger clusters. While six gives us something more balanced, and thus confirming it is a better choice.
+Figure \ref{fig:silhouette_coef} shows us the silhouette coefficient per sample for the three cases of five, six and seven clusters. We can see that for five clusters there are a lot of samples that have a very poor coefficient in some clusters. Seven has a better repartition but the gradient is quite important for the larger clusters. While six gives us something more balanced, and thus confirming it is a better choice. In figure \ref{fig:silhouette_6} we observe two dominant clusters, the first and third one.
 
 Figure \ref{fig:clusters} show us a two-dimensional and three-dimensional representation of the data divided into clusters and their centers for six clusters. We can notice that it is not entirely obvious how the data is clustered as the data is a bit hard to reduce in dimensionality and visually represent in graphs. However the results for the silhouette scores and elbow method do confirm this clustering.
 
@@ -108,11 +105,11 @@ Figure \ref{fig:clusters} show us a two-dimensional and three-dimensional repres
 		Cluster & Objects \\
 		\hline
 		one   & hammer, pen, scalpell, scissors, knife, screwdriver, brush \\
-		two   & box \\
-		three & - \\
-		four  & can, pitcher, glass, bottle, cup \\
-		five  & tube \\
-		six   & cutters \\
+		two   & tube \\
+		three & can, pitcher, glass, bottle, cup \\
+		four  & box \\
+		five  & cutters \\
+		six   & - \\
 		\hline
 	\end{tabular}
 	\caption{Cluster assignment of objects between six clusters.}
@@ -126,7 +123,7 @@ Figure \ref{fig:clusters} show us a two-dimensional and three-dimensional repres
 	\label{fig:results_objects}
 \end{figure}
 
-In figure \ref{fig:silhouette_6} we observe two dominant clusters, the first and fourth one. Figure \ref{fig:obj_sample_heatmap} represents a heatmap over the distribution of samples belonging to each object between the clusters. We can see that each cluster represents at least one object, with the exception of the third cluster. The screwdriver, knife, scissors, pen, hammer, scalpell and brush have the largest majority of their samples belonging to the first cluster, while the bottle, pitcher, glass, cup and can are represented by the fourth cluster. The cutters, box and tube are represented by their own clusters, respectively sixth, second and fifth clusters, showing that they are handed over in unique ways compared to the other previous objects. The third cluster seems quite evenly distributed over the objects, with the pitcher having the largest part, which indicates that it can be considered as a cluster of noise from the input data. Table \ref{tab:object_cluster_assign} shows us the final distribution of the objects between the clusters. In figure \ref{fig:results_objects} every object is visualized with their corresponding cluster mean features applied to them.
+Figure \ref{fig:obj_sample_heatmap} represents a heatmap over the distribution of samples belonging to each object between the clusters. We can see that each cluster represents at least one object, with the exception of the third cluster. The screwdriver, knife, scissors, pen, hammer, scalpell and brush have the largest majority of their samples belonging to the first cluster, while the bottle, pitcher, glass, cup and can are represented by the fourth cluster. The cutters, box and tube are represented by their own clusters, respectively sixth, second and fifth clusters, showing that they are handed over in unique ways compared to the other previous objects. The third cluster seems quite evenly distributed over the objects, with the pitcher having the largest part, which indicates that it can be considered as a cluster of noise from the input data. Table \ref{tab:object_cluster_assign} shows us the final distribution of the objects between the clusters. In figure \ref{fig:results_objects} every object is visualized with their corresponding cluster mean features applied to them.
 
 Already here we can see some similarities between the objects that are clustered together, notable in clusters one and four. The first one includes objects that are longer and thinner and that often include a tip of contact for its usage, like the head of the hammer or the tip of the brush. While the fourth cluster is made of objects that are larger and cylindrical, often used for containing fluids which explains they need to be held similar fashion when handed over as to not spill out the contents.
 
