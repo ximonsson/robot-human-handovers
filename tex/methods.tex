@@ -224,15 +224,35 @@ A first step is to create a Region of Interest (ROI) in which we will concentrat
 
 After observing a number of handovers betweens humans, a first step is to try and categorise these handovers into different classes that can be applied for the objects. As we do not have any labels, or even unsure how many different categories of handovers we have recorded, we will attempt at clustering using an unsupervised learning algorithm by the features that we have extracted from the recorded material.
 
-\subsubsection{K-Means} % TODO write this section better
+\subsubsection{K-Means} % TODO references
 
 For the purpose of categorizing the handover samples we will be using the \emph{k-means} algorithm. K-means is an algorithm that attempts to classify a number of observations into \emph{k} number of clusters. The algorithm starts by creating \emph{k} number of centroids for each cluster and assigning our samples to the centroid within shortest distance. The algorithm iteratively then updates the centroids to become the mean of the samples assigned to it, and then re-assigns all samples depending on the new centroids. This is repeated either a fixed number of times or until the algorithm converges minimizing the sum of squares within the clusters.
 
-\subsubsection{Principle component analysis (PCA)} % TODO write this section better
+We are faced with the problem that we do not know in advance how many clusters are best suited in this case. We will run k-means for a range of different number of clusters between two and fifteen, thereafter we will use the \texttt{elbow method} and the mean \texttt{silhouette coefficient} to decide what is the best fit.
 
-A challenge that presents itself using clustering algorithms is choosing what features are to be used for the purpose and how many clusters should we create. We will be using \emph{Principle component analysis} (PCA) to evaluate which features that are to be used to define each cluster. Ideally we use the smallest number of features possible, but also the ones that create the most distinct clusters, which PCA will help us with. Before using techniques such as PCA to minimize the amount of features that are needed to cluster we will try to define what features matter in a handover and deduct them from the data we have, as well as trying to redefine some features in a more compressed matter.
+The more clusters you have the better it would fit your data. Imagine that you had the same number of centroids as samples, you will in this case have a perfect fit because all samples would have a distance to the centroid of zero. On the other hand what we really are searching for is the \texttt{fewest} number of clusters that gives the best "reasonable" fit. While starting with a small number of clusters and then gradually increasing the number step by step, by observing the plot the sum of distances between the samples and their assigned centroid gradually descreases. When the gradient from one observation to the next is below a certain threshold, we deem the observation as good fit. This is referred to as the \texttt{elbow method}.
+
+The formula for the \texttt{silhouette coefficient} of a sample is as following:
+
+\[
+	\frac{(b - a)}{max(a, b)}
+\]
+\[
+	a = \text{distance from sample to assigned centroid},
+\]
+\[
+	b = \text{distance from sample to nearest centroid other than assigned one}
+\]
+
+Silhouette coefficients range from 1 to -1. 1 is the best score because ideally the distance to the centroid is close to zero (\(a = 0\)) which would give us \(b / b = 1\). A score of zero indicates that some clusters might overlap each other, and a negative value shows a sample that has been assigned the wrong cluster. By looking at the mean silhouette coefficient of all samples, we can choose the number of clusters that maximizes the mean value.
+
+Neither the elbow method nor the mean silhouette coefficient are not enough by themselves to make an accurate decision on the number of clusters, but together they give us a very good estimate. We will therefore start by looking at the mean squared distances of the samples to their centroids and using the elbow method to define a possible interval of possible values for number of clusters, and last use the mean silhouette coefficient to conclude.
 
 
+
+\subsubsection{Principle component analysis (PCA)}
+
+A challenge that presents itself using clustering algorithms is choosing what features are to be used for the purpose. All features are not equally important into classifying the samples. \textcite{Ding2004} showed in their work through principal components and K-means, the relevance between unsupervised dimension reduction and unsupervised learning. We will be using \emph{Principle component analysis} (PCA) to evaluate which features that are to be used to define each cluster. Ideally we use the smallest number of features possible, but also the ones that create the most distinct clusters. PCA defines the principal features as those with the highest variance. It reduces the dimensionality by calculating the variance over all dimensions, i.e. features, and either choses a fixed number of the highest ones or keeps those that represent a certain ratio of the total variance within the data.
 
 %
 % Prediction of handover class
