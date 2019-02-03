@@ -6,8 +6,9 @@ unset xtics
 set ytics nomirror
 set style fill solid
 set border 2
-set yrange [-0.25:1.0]
+set yrange [-0.25:1.25]
 set ylabel "Silhouette coefficient per sample"
+set xlabel "Samples"
 
 set style line 2 lc rgb "#FF0A0A" lt 4 lw 1 dt 2
 set style line 3 lc rgb "#005A05" lt 4 lw 1 dt 2
@@ -25,5 +26,5 @@ do for [i=2:indices] {
 
 xcoord(n, i) = n + sizes[i+1]
 plot \
-	for [i=0:indices-1] ARG1 index i u (xcoord($0, i)):1 w boxes notitle, \
+	for [i=0:indices-1] ARG1 index i u (xcoord($0, i)):1 w boxes t "Cluster ".(i+1), \
 	M w lines ls 2 t "Mean"
