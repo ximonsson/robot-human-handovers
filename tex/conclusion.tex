@@ -8,10 +8,29 @@ Color and depth images were then taken of the objects from different angles. The
 
 Mean performance for our network is 90.6\% with a standard deviation of 1.3\% for objects that were new to the system, while 99.8\% accuracy with a standard deviation of 0.3\% on objects it was trained on. We observed that the network became more biased for the first class than the second, which is likely due to the fact that the two classes were not completely balanced between the objects, suggesting that one class had more versatile features to learn from than the other. We note that the network had a hard time learning to recognize objects made of glass, probably because of troubles with the infrared sensor in the depth camera while taking pictures, making them more challenging to recognize. Objects in the same class but made of other material had results close to 100\%, as well as the objects from the first class which confirms our hypothesis that objects with similar geometry are handed over in similar fashion. In overall the results are quite good considering the small dataset to train on and the artifacts that are created with the depth camera, and with a larger amount of objects and images better results could have probably been achieved. More ideas on how to improve this model are presented in section \ref{sec:future-work}.
 
-A last analysis was made exploring the impact of the number of objects within the training set. Starting with two objects, pairs of objects were added to the training set in between which the accuracy of the model was measured on the entire test set. These expirements showed a steady increase of the accuracy with each pair that was added, with a notable increase when objects with difficult features such as transparent glass, were added and showed promess to improve even further with a larger dataset. By adding pairs of objects, one of each class, we made sure the training set became better balanced and the model had ultimately a mean test accuracy of 96.1\% with a standard deviation of 1.6\%. This shows us the importance of keeping the training set balanced on the number of objects as to not make the network biased. The balancing was performed manually for these tests and therefore not applied earlier as we would need an algorithm for keeping or discarding objects that should be or not be trained on.
+A last analysis was made exploring the impact of the number of objects within the training set. Starting with two objects, pairs of objects were added to the training set in between which the accuracy of the model was measured on the entire test set. These experiments showed a steady increase of the accuracy with each pair that was added, with a notable increase when objects with difficult features such as transparent glass, were added and showed promise to improve even further with a larger dataset. By adding pairs of objects, one of each class, we made sure the training set became balanced and the model had ultimately a mean test accuracy of 96.1\% with a standard deviation of 1.6\%. This shows us the importance of keeping the training set balanced on the number of objects as to not make the network biased. The balancing was performed manually for these tests and therefore not applied earlier as we would need an algorithm for keeping or discarding objects that should be or not be trained on.
 
 
-\section{Future Work}
+\subsection{Research questions}
+
+We revisit our research questions stated in \ref{sec:research_questions} to see if the results from this work helped answer them.
+
+\subsubsection*{Are we able to classify objects by their handover settings?}
+
+We saw that all objects had a majority of their recorded samples belonging to one cluster, and this way many of the objects were classified together. We had three outlier objects that were handed over in all three unique ways that their samples created separate clusters, but for the rest of the objects were classified into two larger clusters. We here saw that several objects are handed over in similar ways and we can therefore classify them by this.
+
+\subsubsection*{Can we relate the visual aspects of an to it's class?}
+
+Using RGBD image data for the objects of the two larger clusters we trained a CNN to output an object's respective handover class from a three-channel image of it, compromising red, green and depth channels. The network achieves almost perfect accuracy for the validation set which leads us to believe that the objects within a same class have learnable visual aspects similar to each other.
+
+\subsubsection*{Is this model applicable to new objects?}
+
+After succesfully answering the previous question we looked at the performance of the network on objects that were not part of the recording. These objects were manually labeled using the results from the classification and tested on the achieved network in the second part of the work. We achieved our goals for accuracy for this test set and this way showed that this method of learning from a subset of objects is usable on a larger scale as well.
+
+
+
+
+\section{Future work}
 \label{sec:future-work}
 
 \begin{figure}
