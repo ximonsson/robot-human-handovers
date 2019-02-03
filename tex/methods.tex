@@ -1,6 +1,6 @@
 \section{Overview}
 
-The goal of this project is to develop a system that has autonomously learned from the handovers performed by humans to output an object's settings for how to be handed over, given an image of it. Another of our requirements is that the learning has been abstracted enough that this system is accurately applicable on new objects that are not present in the training set.
+The goal of this project is to develop a system that autonomosly learns handover settings for objects by observation. Given an image of an object, we want the system in the end to be able to output it's settings for a handover. Another of our requirements is that the learning has been abstracted enough that this system is accurately applicable on new objects that are not present in the training set.
 
 One way to go about with this would be by learning the handover settings for an object and then training for object classification. In other words, record all the handover features for each individual object, create a mean from them, and train a model to recognize the object based on images as to output its settings. Such a model would for \(n\) number of objects need to learn to output \(n\) different classes. This can potentially become an increasingly difficult task as the number of objects grows and with that the requirements on the size of the dataset grows, as to have the system be able to learn to properly recognize the objects. Such a system would believe that each object has its own unique settings, and might be not scalable to other objects absent from the training set.
 
@@ -13,8 +13,27 @@ If we instead hypothesize that some objects are handed over in similar fashion d
 	\label{fig:flowchart}
 \end{figure}
 
-In figure \ref{fig:flowchart} the workflow is summarized. The first part of this work will be to observe and record a number of handovers between humans for a defined set of objects which the system will try to categorise into different classes. In a second part each object will then be assigned a class that we train a machine to return when given an image the same object. Seeing how we do not have any labels for the handovers, but still want to train a model that outputs some defined class for how the object should be handed over, we will be using a semi-supervised approach in this project: by first applying an unsupervised learning algorithm to categorise and create classes of handovers that are later used as output for self-supervised learning.
+In figure \ref{fig:flowchart} the workflow is summarized. The first part of this work will be to observe and record a number of handovers between humans for a defined set of objects which the system will try to categorise into different classes. In a second part each object will then be assigned a class that we train a model to return when given an image the of same object. Seeing how we do not have any labels for the handovers, but still want to train a model that outputs some defined class for how the object should be handed over, we will be using a semi-supervised approach in this project: by first applying an unsupervised learning algorithm to categorise and create classes of handovers that are later used as output for self-supervised learning.
 
+
+\subsection{Research Questions}
+
+\subsubsection*{Are we able to classify objects by their handover settings?}
+
+This will be answered in the first part of our work where we try through an unsupervised clustering algorithm to classify the handover features of the objects. If for all objects, a majority of their samples belong to a specific cluster, then we deem it possible to do so.
+
+
+\subsubsection*{Can we relate the visual aspects of an to it's class?}
+
+The second part of the work is dedicated to analyzing image data of the objects. We will explore if RGBD images alone are enough to succesfully output the handover class of an object. If we are succesful in training a model to return the handover class of an object based on image data, then we can say that there are visual similarities between the objects belonging to the same class.
+
+
+\subsubsection*{Is this model applicable to new objects?}
+
+In case we can answer yes to the previous question we are going to want to try on a test set consisting of foreign objects. These new objects will be manually classified depending on the results from the first part, and tested on the model achieved from the second part. With high enough success rate we will consider this method as applicable for a larger set of objects where we only record and train for a small subset.
+
+
+% Tools and material
 
 \section{Tools and material}
 
