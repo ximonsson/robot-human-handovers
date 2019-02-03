@@ -11,6 +11,8 @@ Mean performance for our network is 90.6\% with a standard deviation of 1.3\% fo
 A last analysis was made exploring the impact of the number of objects within the training set. Starting with two objects, pairs of objects were added to the training set in between which the accuracy of the model was measured on the entire test set. These experiments showed a steady increase of the accuracy with each pair that was added, with a notable increase when objects with difficult features such as transparent glass, were added and showed promise to improve even further with a larger dataset. By adding pairs of objects, one of each class, we made sure the training set became balanced and the model had ultimately a mean test accuracy of 96.1\% with a standard deviation of 1.6\%. This shows us the importance of keeping the training set balanced on the number of objects as to not make the network biased. The balancing was performed manually for these tests and therefore not applied earlier as we would need an algorithm for keeping or discarding objects that should be or not be trained on.
 
 
+% Research question
+
 \subsection{Research questions}
 
 We revisit our research questions stated in \ref{sec:research_questions} to see if the results from this work helped answer them.
@@ -27,6 +29,18 @@ Using RGBD image data for the objects of the two larger clusters we trained a CN
 
 After succesfully answering the previous question we looked at the performance of the network on objects that were not part of the recording. These objects were manually labeled using the results from the classification and tested on the achieved network in the second part of the work. We achieved our goals for accuracy for this test set and this way showed that this method of learning from a subset of objects is usable on a larger scale as well.
 
+
+% Societal impacts and ethics
+
+\section{Ethical dilemmas and societal impacts}
+
+The domain of robotics and artificial intelligence is a domain which is considered quite controversial at times. Many do not agree with the progress that is being made within the field. Replacing human labour with robotical, loss of human intimacy, or simply control over their creation are some of the ethical questions that come up.
+
+In this case we want use robots for handing over objects, which could be used in homes of physically disabled to help them reach for things, or within a workplaces that require the use of many different tools, which is improved when recieving help with having the tools handed over. One of the intends with this project is to have robots fill in when no human is available. In the case of a physically disabled person living at home alone, a need for help might happen at any time of the day, but their external help is limited to a short span which does not cover enough. However it is also possible to replace humans already performing these kind of tasks. Despite the increase in productivity that comes with robots, they come to the cost of to unemployment in some cases, a problem robotics has unfortunately already contributed to quite a lot in the past. One could argue that with the improvements in robotics we liberate human workers from simple tasks such as just standing and handing over objects, and allocate this manpower to concentrate on more advanced tasks which their time might be better suited for. This is however no guarantee and needs to be taken into consideration.
+
+Despite the benefits, others would also oppose the use of robots for tasks that humans can do because they prefer the human touch that comes with a human. We can consider the results from studies showing that we prefer a human-like motion when being handed over objects proof of this. Even though the model of this work is based on how humans interact, it would not mean that it would be sociable acceptable because in the end it is a robot performing the handover.
+
+In the end the main advantages with this work is the ability to employ robots for simple tasks such as object handovers which results to increased productivity and filling out gaps where there are not resources to employ humans. The disadvantages include the moral issue with robots performing these tasks, as well as the possibility of replacing human labour with them. The solution which would be to employ humans to fill out the gaps does increase employment, but requires a large amount of economical resources to fulfill which needs to be taken into consideration.
 
 
 
