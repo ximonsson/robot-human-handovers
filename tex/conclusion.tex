@@ -13,13 +13,13 @@ A last analysis was made exploring the impact of the number of objects within th
 
 % Research question
 
-\subsection{Research questions}
+\subsection*{Research questions}
 
 We revisit our research questions stated in \ref{sec:research_questions} to see if the results from this work helped answer them.
 
 \subsubsection*{Are we able to classify objects by their handover settings?}
 
-We saw that all objects had a majority of their recorded samples belonging to one cluster, and this way many of the objects were classified together. We had three outlier objects that were handed over in all three unique ways that their samples created separate clusters, but for the rest of the objects were classified into two larger clusters. We here saw that several objects are handed over in similar ways and we can therefore classify them by this.
+We saw, with two exceptions, that all objects had a majority of their recorded samples belonging to one cluster, and this way many of the objects were classified together. We had three outlier objects that were handed over in all three unique ways that their samples created separate clusters, but for the rest of the objects were classified into two larger clusters. We here saw that several objects are handed over in similar ways and we can therefore classify them by this.
 
 \subsubsection*{Can we relate the visual aspects of an to it's class?}
 
@@ -27,7 +27,7 @@ Using RGBD image data for the objects of the two larger clusters we trained a CN
 
 \subsubsection*{Is this model applicable to new objects?}
 
-After succesfully answering the previous question we looked at the performance of the network on objects that were not part of the recording. These objects were manually labeled using the results from the classification and tested on the achieved network in the second part of the work. We achieved our goals for accuracy for this test set and this way showed that this method of learning from a subset of objects is usable on a larger scale as well.
+After succesfully answering the previous question we looked at the performance of the network on objects that were not part of the recording. These objects were manually labeled using the results from the classification and tested on the achieved network in the second part of the work. We achieved our goals for accuracy for this test set and this way showed that this method of learning from a small set of objects is transferable to a larger set of objects.
 
 
 % Societal impacts and ethics
