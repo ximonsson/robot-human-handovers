@@ -129,7 +129,7 @@ There are two objects that do not have a majority of their samples belonging to 
 
 Table \ref{tab:object_cluster_assign} shows us the final distribution of the objects between the clusters. In figure \ref{fig:results_objects} every object is visualized with their corresponding cluster mean features applied to them.
 
-Already here we can see some similarities between the objects that are clustered together, notable in clusters one and four. The first one includes objects that are longer and thinner and that often include a tip of contact for its usage, like the head of the hammer or the tip of the brush. While the fourth cluster is made of objects that are larger and cylindrical, often used for containing fluids which explains they need to be held similar fashion when handed over as to not spill out the contents.
+Already here we can see some similarities between the objects that are clustered together, notable in clusters one and four. The first one includes objects that are longer and thinner and that often include a tip of contact for its usage, like the head of the hammer or the tip of the brush. While the third cluster is made of objects that are larger and cylindrical, often used for containing fluids which explains they need to be held similar fashion when handed over as to not spill out the contents.
 
 
 
@@ -333,7 +333,7 @@ We will explore the effects the size of the training set, as well as the individ
 
 Table \ref{tab:obj_pairs} summarizes which pairs of objects that were created and the order they were added to the training set, and for clarification table \ref{tab:obj_training_sets} summarizes the objects that are used for each training session. These pairs were chosen randomly. Note that there are only ten objects in total for this test (five for each class), but we have twelve in total. This is because the dataset is not balanced on objects between classes so we chose to discard two: the \texttt{scalpel} and the \texttt{pen}. These last two objects were chosen to be removed because they have very similar features that are shared with and represented in the dataset through the \texttt{brush} and in some ways the \texttt{screwdriver}.
 
-A more thourough method would be to test all possible permutations of objects for training and evaluation, but this would be quite time consuming. We therefore rely on this test to give us accurate enough ideas about the impact of each object.
+A more thorough method would be to test all possible permutations of objects for training and evaluation, but this would be quite time consuming. We therefore rely on this test to give us accurate enough ideas about the impact of each object.
 
 
 \begin{table}
