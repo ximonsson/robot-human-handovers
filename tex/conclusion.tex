@@ -13,15 +13,18 @@ A last analysis was made exploring the impact of the number of objects within th
 
 % Research question
 
-\subsection*{Research questions}
+\subsection*{Answering the research questions}
 
-We revisit our research questions stated in \ref{sec:research_questions} to see if the results from this work helped answer them.
+We revisit our research questions stated in section \ref{sec:research_questions} to see if the results from this work helped answer them.
 
 \subsubsection*{Are we able to classify objects by their handover settings?}
 
-We saw, with two exceptions, that all objects had a majority of their recorded samples belonging to one cluster, and this way many of the objects were classified together. We had three outlier objects that were handed over in all three unique ways that their samples created separate clusters, but for the rest of the objects were classified into two larger clusters. We here saw that several objects are handed over in similar ways and we can therefore classify them by this.
+With two exceptions, we saw that we could classify all objects of the training set. These objects had a majority of their samples belonging to a singel cluster. Three outlier objects, the box, cutters and tube, had their own dedicated clusters because of unique ways in being handed over, while the other objects were grouped into two larger clusters.
 
-\subsubsection*{Can we relate the visual aspects of an to it's class?}
+The two exceptions being the cup and the pitcher, did not have a majority of their samples in one cluster. These results are hard to understand, but one possible explanation would be noise in data due to imperfections in data extraction. We made an exception to add them to the same group as the other glass objects where they had the largest part of their samples in.
+
+
+\subsubsection*{Can we relate the visual aspects of an object to its class?}
 
 Using RGBD image data for the objects of the two larger clusters we trained a CNN to output an object's respective handover class from a three-channel image of it, compromising red, green and depth channels. The network achieves almost perfect accuracy for the validation set which leads us to believe that the objects within a same class have learnable visual aspects similar to each other.
 
@@ -34,13 +37,13 @@ After succesfully answering the previous question we looked at the performance o
 
 \section{Ethical dilemmas and societal impacts}
 
-The domain of robotics and artificial intelligence is a domain which is considered quite controversial at times. Many do not agree with the progress that is being made within the field. Replacing human labour with robotical, loss of human intimacy, or abuse of technology are some of the ethical questions are associated with it.
+The domain of robotics and artificial intelligence is a domain which is considered quite controversial at times. Many do not agree with the progress that is being made within the field. Replacing human labour with robotical, loss of human intimacy, or abuse of technology are some of the ethical questions associated with it.
 
-In this case we want to use robots for handing over objects, which could be used in homes of physically disabled to help them reach for things, or within a workplace that requires the use of many different tools and benefits from recieving help with having the tools handed over. One of the intents with this project is to have robots fill in when no human is available. In the case of a physically disabled person living at home alone, a need for help might happen at any time of the day, but their external help (e.g. home care) might be limited to a short span of the day which does not cover their need. A robot can therefore help in covering the time the person is home alone. However it is also possible to replace humans already performing these kind of tasks. Despite the increase in productivity that comes with robots, they can often come to the cost of unemployment in some cases, a problem robotics has unfortunately already contributed to quite a lot in the past. One could counter argue that with the improvements in robotics we liberate human workers from simple tasks such as just standing and handing over objects, and allocate this manpower to concentrate on more advanced tasks which their time might be better suited for. This is however no guarantee and needs to be taken into consideration.
+In this case we want to use robots for handing over objects, which could be used in homes of physically disabled to help them reach for things, or within a workplace that requires the use of many different tools and benefits from receiving help with having the tools handed over. One of the intents with this project is to have robots fill in when no human is available. In the case of a physically disabled person living at home alone, a need for help might happen at any time of the day, but their external help (e.g. home care) might be limited to a short span of the day which does not cover their need. A robot can therefore help in covering the time the person is home alone. However it is also possible to replace humans already performing these kind of tasks. Despite the increase in productivity that comes with robots, they can often come to the cost of unemployment in some cases, a problem robotics has unfortunately already contributed to quite a lot in the past. One could counter argue that with the improvements in robotics we liberate human workers from simple tasks such as just standing and handing over objects, and allocate this manpower to concentrate on more advanced tasks which their time might be better suited for. This is however no guarantee and needs to be taken into consideration.
 
 Even though the model of this work is based on how humans interact, it would not necessarily mean that it would become sociable acceptable. Some would oppose the use of robots for tasks that humans can do because they prefer the human touch and are uncomfortable around robots. We can consider the results from studies showing that we prefer a human-like motion when being handed over objects proof of this. No matter how human-like the robot becomes it is not a guarantee that it becomes accepted.
 
-In the end the main advantages with this work is the ability to employ robots for simple tasks such as object handovers which results to increased productivity and filling out gaps where there are not resources to employ humans. The disadvantages include the moral issue with robots performing these tasks, as well as the risk of replacing human labour with them. The possible solution to these concerns where we only employ humans, and no robots at all, to fill out the gaps does increase employment, but requires an amount of economical resources which might not make it feasible. A balance could therefore be needed as to ensure humans their employment and human interaction when required, but still using robots to ensure a certain productivity.
+In the end the main advantages with this work is the ability to employ robots for simple tasks such as object handovers which results to increased productivity and filling out gaps where there are not resources to employ humans. The disadvantages include the moral issue with robots performing these tasks, as well as the risk of replacing human labour with them. The possible solution to these concerns where we only employ humans, and no robots at all, does increase employment but requires an amount of economical resources which might not make it feasible. A balance could therefore be needed as to ensure humans their employment and human interaction when required, but still using robots to ensure a certain productivity.
 
 
 
