@@ -39,7 +39,7 @@
 	%\end{center}
 %\end{table}
 
-In table \ref{tab:pca_components} we can see the principle axes for maximum variance in the data after performing PCA set to keep the three most principal components. From this we find that the features that vary the most are in order of variance 3, 5 and 4 that correspond to: ratio between area of grasp and area of object, direction of vector between center of grasp and center of object in y-axis, and the direction of this same vector in the x-axis. In fig \ref{fig:pca_variance} we can see the variance for each of these three features as well as their ratio for the data set. In total these features represent around 80\% of the entire variance, which we set as threshold and we therefore can be content about this new dimensional reduction.
+In table \ref{tab:pca_components} we can see the principle axes for maximum variance in the data after performing PCA set to keep the three most principal components. From this we find that the features that vary the most are in order of variance 3, 5 and 4 that correspond to: ratio between area of grasp and area of object, direction of vector between center of grasp and center of object in y-axis, and the direction of this same vector in the x-axis. In fig \ref{fig:pca_variance} we can see the variance for each of these three features as well as their ratio for the data set. In total these features represent around 80\% of the entire variance. We consider this as an acceptable threshold as the two that are left would not represent more than 10\% each, which is of low significance compared to the others.
 
 \subsection{K-means}
 

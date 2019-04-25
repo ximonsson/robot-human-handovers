@@ -86,12 +86,14 @@ For this purpose a number of volunteers were asked to be recorded while handing 
 
 \subsection{Extracting features}
 
+For our feature extraction we will concentrate on two things: the object and the grasp. For the object we will be looking at its orientation and transformation from ground truth to its end-position. While for the grasp we will be exploring how we can define it for each handover depending on the object.
+
 % TODO write more about image moments
 % TODO write about homography
 
 \subsubsection{Orientation of the object}
 
-The first set of features that we will extracted from the recorded material will be around the orientation of the object when being handed over, i.e. the transformation from its ground truth to the observed position. Before any work is done with the recorded material, for each object we manually create a reference image representing its ground truth position. The orientation of the ground truth was chosen to be the object's placement while in resting position (e.g for a bottle, standing up). For those objects that are laid down, their orientation was chosen to be with their head upwards. From these images we also generate binary masks that will be used to mask out the object after detection within the frames. Figure \ref{fig:objects_montage} shows the reference images created and figure \ref{fig:masks_montage} shows their binary masks. These images were created using the image manipulation software GIMP.
+The first set of features that we will extract from the recorded material will be around the orientation of the object when being handed over, i.e. the transformation from its ground truth to the observed position. Before any work is done with the recorded material, for each object we manually create a reference image representing its ground truth position. The orientation within these images was chosen to be the object's placement while in resting position (e.g for a bottle, standing up). For those objects that are laid down, their orientation was chosen to be with their head upwards. From these images we also generate binary masks that will be used to mask out the object after detection within the frames. Figure \ref{fig:objects_montage} shows the reference images created and figure \ref{fig:masks_montage} shows their binary masks. These images were created using the image manipulation software GIMP.
 
 \begin{figure}
 	\centering
@@ -107,9 +109,11 @@ The first set of features that we will extracted from the recorded material will
 	\label{fig:masks_montage}
 \end{figure}
 
-One of our biggest challenges with the project is to actually detect the object in each frame. This is a very non-trivial task and there is much research around methods for object detection. To help us with this part of the project and ensure that the data we extract is accurate, we will use AprilTags. They can easily identify the four corners of the tags in a frame and by this way locate the object. Using the OpenCV library and their \texttt{findHomography} function, we can compute the homography matrix that transforms the four corners of the tag in the reference image to the corners of the tag found in the frame.
+One of our biggest challenges with the project is to actually detect the object in each frame. This is a very non-trivial task and there is much research around methods for object detection. To help us with this part of the project and ensure that the data we extract is accurate, we will use AprilTags. They can easily identify the four corners of the tags in a frame and this way locate the object. Using the OpenCV library and their \texttt{findHomography} function, we can compute the homography matrix that transforms the four corners of the tag in the reference image to the corners of the tag found in the frame.
 
-A homography matrix \(H\) is a 3x3 matrix with a total of nine values which creates quite a few features if we would try and cluster on it. Also it contains data on how to translate the object in three-dimensional space, which in our case is irrelevant as we are only working with two-dimensional data. Alternatively we can calculate a rotation of the object and through an angle represent its orientation with instead only one feature. As we are only working with two-dimensional data we will only interest ourselves for the rotation on the z-axis. Using the homography we can calculate a rotation matrix from which we can later derive the searched angle. Using the Python code presented in listing \ref{lst:rotation_matrix} based on the OpenCV library, we compute a 3x3 rotation matrix \(R\). Using this matrix we can compute the angle \(\theta_R\) as \(\theta_R = \arctan(R_{1,0} / R_{0,0})\). In this case the rotation will be around the center of the tag because it is from which we calculated the homography matrix.
+A homography matrix \(H\) is a 3x3 matrix with a total of nine values which creates quite a few features if we would try and cluster on it. Also it contains data on how to translate the object in three-dimensional space, which in our case is irrelevant as we are only working with two-dimensional data. Alternatively we can instead calculate the angle of rotation for the object. As we are only working with two-dimensional data we will only interest ourselves for the rotation on the z-axis. This way we have reduced it to only one feature.
+
+Using the homography we can calculate a rotation matrix from which we can later derive the searched angle. This is however not trivial and for it to be entirely correct there are many aspects to take into account. We will be using the Python code presented in listing \ref{lst:rotation_matrix} based on the OpenCV library, taken from \parencite{OpenCVHomographyDemo}, that gives a good enough approximation to compute a 3x3 rotation matrix \(R\). Using this matrix we can compute the angle \(\theta_R\) as \(\theta_R = \arctan(R_{1,0} / R_{0,0})\). In this case the rotation will be around the center of the tag because it is from which we calculated the homography matrix.
 
 \begin{lstlisting}[
 	language=Python,
@@ -135,45 +139,59 @@ return np.dot(u, t)
 
 \subsubsection{Grasp features}
 
-The previously calculated homography matrix can be used to transform the object's binary mask, and then be applied on the frame as to mask out only the object. From this we can afterwards retrieve a grasp region of the object.
+The previously calculated homography matrix can be used to transform the object's binary mask, and then be applied on the frame as to mask out only the object. From this we can afterwards retrieve a grasp region of the object. Skin color is a quick way of segmenting and finding grasp region as the color of skin is quite different from the colors of the objects, but the method is not too robust as the color can vary quite a lot from person to person. The setting for skin color had to therefore be tweaked manually depending on the participant. After masking out the object in the scene, this image is later segmented by skin color. A contour expressed as a rotated rectangle is then calculated around the largest segmented region found which then represents our grasping region.
 
-Skin color is a quick way of segmenting and finding grasp region as the color of skin is quite different from the colors of the objects, but the method is not too robust in covering many different people as the color can vary quite a lot from person to person. The setting for skin color had to therefore be tweaked manually depending on the participant. By using the homography matrix and the binary image, we have been able to mask out the object from the scene. This image of the found object is later segmented by skin color. A contour expressed as a rotated rectangle which represents our grasping region is then calculated around the largest segmented region found.
+A rotated rectangle is composed of three different parameters: width, height and angle. Another possible feature we can extract is the ratio between area of grasp region and area of object. Using the binary image of the object we can compute its area \(A_{object}\) with the help of OpenCV by using \texttt{findContours} and \texttt{contourArea}. The area of the rotated rectangle is simply \(A_{grasp} = width \times height\) and the ratio between them becomes \(A_{ratio} = \frac{A_{grasp}}{A_{object}} \).
 
-A rotated rectangle is composed of three different parameters: width, height and angle. Another possible feature we can extract is the ratio between area of grasp region and area of object. Using the binary image of the object we can compute its area \(A_{object}\) with the help of OpenCV by using \texttt{findContours} and \texttt{contourArea}. The area of the rotated angle is simply \(A_{grasp} = width \times height\) and the ratio between them becomes \(A_{ratio} = \frac{A_{grasp}}{A_{object}} \).
-
-The last features that we can extract are: the distance \(\Delta\) as the L2 norm between centers of the grasp region \(O_{grasp}\) and center of mass of the object \(O_{object}\), and the direction between these centers. The center of mass can be computed using the image moments of the binary image. Moments are retrieved with the help of the \texttt{moments} function part of the OpenCV library, then the following formula gives us the center:
+We denote the distance \(\Delta\) as the L2 norm between the center of the grasp region \(O_{grasp}\) (center of the rotated rectangle we defined as our grasp) and the center of mass of the object \(O_{object}\). The center of mass can be computed using the image moments of the binary image. The moments \(M\) are retrieved with the help of the \texttt{moments} function part of the OpenCV library, then the following formula gives us the center:
 
 \[
 	O_{object} = \frac{M_y}{M}, \frac{M_x}{M}
 \]
 
-We can then extract the distance between center of mass of the object and the center of the grasping region as a feature. We can also express this as a ratio to the length of the diagonal of the object. It also enables us to create a unit vector from the center of mass of the object towards the grasping region.
+We can then extract \(\Delta = \| O_{grasp} - O_{object} \|\).
 
+We can also express this as a ratio to the length of the diagonal of the object. We compute this ratio \(\delta\) as:
+
+\[
+	\delta = \frac{\Delta}{diag(object)}
+\]
+
+It also enables us to create a unit vector \(\hat{O}\) with the direction from the center of mass of the object towards the center of the grasping region:
+
+\[
+	\hat{O} = \frac{O_{grasp} - O_{object}}{\Delta}
+\]
+
+
+\subsubsection{Summary of features}
 % TODO write better later
 To summarize we can extract the following features:
 \begin{itemize}
-	\item Rotation of object in z-axis, extracted from the homography matrix of the AprilTag.
-	\item Distance between center of mass of the object and the center of the grasping region.
-	\item Ratio of distance between center of mass of the object and the center of grasp, over the diagonal of the object.
-	\item Direction in x-axis between center of mass of the object and the center of the grasp.
-	\item Direction in y-axis between center of mass of the object and the center of the grasp.
-	\item Ratio of area of the grasping region by the area of object.
+	\item Rotation of object in z-axis \(\theta_R\), extracted from the homography matrix of the AprilTag.
+	\item Distance between center of mass of the object and the center of the grasping region \(\Delta\).
+	\item Ratio of distance between center of mass of the object and the center of grasp, over the diagonal of the object \(\delta\).
+	\item Direction in x-axis between center of mass of the object and the center of the grasp \(\hat{O}_x\).
+	\item Direction in y-axis between center of mass of the object and the center of the grasp \(\hat{O}_y\).
+	\item Ratio of area of the grasping region by the area of object \(A_{ratio}\).
 	\item Width of grasp region.
 	\item Height of grasp region.
 	\item Angle of grasp region.
-	\item Center of grasp region.
-	\item Center of mass of the object.
+	\item Center of grasp region \(O_{grasp}\).
+	\item Center of mass of the object \(O_{object}\).
 \end{itemize}
 
-With these features we define for a robot how to grasp an object and present it to a human for a handover. This list of features is however quite large and represents a very high-dimensional set of data. High-dimensionality can become quite problematic as the values might not vary with the same amount in all dimensions as well as create similarities that are not there between objects. A first filtering of these features can be made on the idea that the features should be expressible invariant to the object, i.e. we only keep the features that are expressed in relation to the object. This will leave us with the following list:
+With these features we define for a robot how to grasp an object and present it to a human for a handover. This list of features is however quite large and represents a very high-dimensional set of data. High dimensionality can become quite problematic as the values might not vary with the same amount in all dimensions as well as create similarities that are not there between objects. A first filtering of these features can be made on the idea that the features should be expressible invariant to the object, i.e. we only keep the features that are expressed in relation to the object. This will leave us with the following list:
 
 \begin{itemize}
-	\item Rotation of the object in z-axis, expressed between 0.0-1.0 where 1.0 is a full circle (360 degrees).
-	\item Direction in x-axis between center of object and center of grasp.
-	\item Direction in y-axis between center of object and center of grasp.
-	\item Ratio of distance between center of the object and the center of the grasping region to the diagonal.
-	\item Ratio area of grasp region over area of object.
+	\item Rotation of the object in z-axis \(\theta_R\), expressed between 0.0-1.0 where 1.0 is a full circle (360 degrees).
+	\item Direction in x-axis between center of object and center of grasp \(\hat{O}_x\).
+	\item Direction in y-axis between center of object and center of grasp \(\hat{O}_y\).
+	\item Ratio of distance between center of the object and the center of the grasping region to the diagonal \(\delta\).
+	\item Ratio area of grasp region over area of object \(A_{ratio}\).
 \end{itemize}
+
+Note that we only keep a limited information about the grasp (center and area). As we mentioned in section \ref{sec:rel_grasping} we will not concentrate on outputting all details needed for the robot to do the actual grasping nor do we make any assumptions on the mobility of its force closure. By giving the center and area of the grasp we deem it to be enough information for future work to derive a precise grasping.
 
 
 \subsubsection{Filtering of unwanted frames}
@@ -271,9 +289,10 @@ Neither the elbow method nor the mean silhouette coefficient are enough by thems
 
 \subsubsection{Principle component analysis (PCA)}
 
-A challenge that presents itself using clustering algorithms is choosing what features are to be used for the purpose. All features are not equally important into classifying the samples. \textcite{Ding2004} showed in their work through principal components and K-means, the relevance between unsupervised dimension reduction and unsupervised learning. We will be using \emph{Principle component analysis} (PCA) to evaluate which features that are to be used to define each cluster. Ideally we use the smallest number of features possible, but also the ones that create the most distinct clusters. PCA defines the principal features as those with the highest variance. It reduces the dimensionality by calculating the variance over all dimensions, i.e. features, and either chooses a fixed number of the highest ones or keeps those that represent a certain ratio of the total variance within the data.
+A challenge that presents itself using clustering algorithms is choosing what features are to be used for the purpose. All features are not equally important into classifying the samples. We will be using \emph{Principle component analysis} (PCA) to evaluate which features that are to be used to define each cluster. Ideally we use the smallest number of features possible, but also the ones that create the most distinct clusters. PCA defines the principal features as those with the highest variance. It reduces the dimensionality by calculating the variance over all dimensions, i.e. features, and either chooses a fixed number of the highest ones or keeps those that represent a certain ratio of the total variance within the data.
 
-For this work we will be using PCA and try to reduce the dimensions of the handover data from five to three aiming on keeping a minimum of 80\% of the variance. In the case we have 80\% of the variance over three dimensions, the two that are left would not represent more than 10\% each, which is of low significance compared to the others.
+In this work we only have five dimensions, but for the sake of visualization and making sure we work with the smallest number of dimensions possible we will reduce this to three using PCA. Also \textcite{Ding2004} showed in their work through principal components and K-means, the relevance between unsupervised dimension reduction and unsupervised learning, from which we can conclude it to be best practice to perform a dimensionality reduction before clustering through unsupervised learning for best results.
+
 
 %
 % Prediction of handover class
