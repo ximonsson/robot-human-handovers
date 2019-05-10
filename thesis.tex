@@ -9,6 +9,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{gnuplottex}
+\usepackage{pdfpages}
 
 \addbibresource{bib/references-extra.bib}
 \addbibresource{bib/references.bib} % The file containing our references, in BibTeX format
@@ -24,6 +25,9 @@
 \date{\today}
 
 \begin{document}
+
+\includepdf[pages=1]{cover_en.pdf}
+\cleardoublepage
 
 \frontmatter % Frontmatter includes the titlepage, abstracts and table-of-contents
 \titlepage
@@ -61,5 +65,8 @@
 
 \appendix
 \input{bad-images}
+
+\cleardoublepage
+\includepdf[pages=2]{cover_en.pdf}
 
 \end{document}
